@@ -1,7 +1,7 @@
 {
   "name": "wisphub-yaa-companion",
-  "version": "1.0.1",
-  "description": "Extensión de navegador — compañero de productividad para WispHub",
+  "version": "1.0.2",
+  "description": "Extensión de productividad para WispHub — (uso interno Yaa Internet)",
   "homepage": "https://github.com/JohnyDeCoder/wisphub-yaa-companion#readme",
   "bugs": {
     "url": "https://github.com/JohnyDeCoder/wisphub-yaa-companion/issues"
@@ -11,12 +11,13 @@
     "dev:firefox": "webpack --watch --mode=development --env target=firefox",
     "build": "webpack --mode=production",
     "build:firefox": "webpack --mode=production --env target=firefox",
-    "zip:chrome": "cd dist/chrome && tar -acf ../wyac-chrome.zip * && cd ../..",
-    "zip:firefox": "cd dist/firefox && tar -acf ../wyac-firefox.zip * && cd ../..",
+    "zip:chrome": "node -e \"const v=require('./package.json').version; require('child_process').execSync(`cd dist/chrome && tar -acf ../wyac-chrome-v${v}.zip *`, {stdio:'inherit'})\"",
+    "zip:firefox": "node -e \"const v=require('./package.json').version; require('child_process').execSync(`cd dist/firefox && tar -acf ../wyac-firefox-v${v}.zip *`, {stdio:'inherit'})\"",
     "package": "npm run build && npm run build:firefox && npm run zip:chrome && npm run zip:firefox",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "changelog": "node scripts/generate-changelog.js"
   },
   "keywords": [
     "wisphub",

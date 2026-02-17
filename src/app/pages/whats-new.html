@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Novedades - WispHub Yaa Companion</title>
+    <link rel="stylesheet" href="whats-new.css" />
+  </head>
+  <body>
+    <main class="hero">
+      <img
+        src="../assets/icons/icon128.png"
+        alt="WispHub Yaa Companion"
+        class="hero-icon"
+      />
+      <span class="version-badge" id="versionBadge">Cargando...</span>
+      <h1>¡Bienvenido a Wisphub Yaa Companion!</h1>
+      <p class="hero-description">
+        Descubre las herramientas y mejoras incluidas en esta versión.
+      </p>
+      <button class="btn-changelog" id="btnChangelog">
+        Ver los cambios
+        <span class="btn-arrow"></span>
+      </button>
+      <button class="btn-dismiss" id="btnDismiss">Cerrar esta página</button>
+    </main>
+
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal" id="modal">
+        <div class="modal-header">
+          <h2>Novedades</h2>
+          <button class="modal-close" id="btnClose" aria-label="Cerrar"
+            >&times;</button
+          >
+        </div>
+        <ul class="modal-changes" id="changesList"></ul>
+        <div class="modal-footer">
+          <button class="btn-primary" id="btnGotIt">Entendido</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="whats-new.js"></script>
+  </body>
+</html>

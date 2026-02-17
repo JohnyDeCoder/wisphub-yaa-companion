@@ -1,11 +1,11 @@
 // Regex building blocks for Spanish text with accents
-const S = '\\s+';
-const ACCENT_O = '[OÓ]';
-const ACCENT_E = '[EÉ]';
-const ACCENT_I = '[IÍ]';
-const ACCENT_A = '[AÁ]';
-const ACCENT_N = '[NÑ]';
-const PLURAL = 'S?';
+const S = "\\s+";
+const ACCENT_O = "[OÓ]";
+const ACCENT_E = "[EÉ]";
+const ACCENT_I = "[IÍ]";
+const ACCENT_A = "[AÁ]";
+const ACCENT_N = "[NÑ]";
+const PLURAL = "S?";
 
 // Keywords that get a double line break before them
 export const DOUBLE_BREAK_PATTERNS = [
@@ -26,8 +26,8 @@ export const SINGLE_BREAK_PATTERNS = [
   `M${ACCENT_E}TODO${PLURAL}${S}DE${S}PAGO:`,
   `FORMA${S}DE${S}CONTRATACI${ACCENT_O}N:`,
   `T${ACCENT_E}CNICO${PLURAL}:`,
-  'ASESORA?:',
-  'CELULAR:',
+  "ASESORA?:",
+  "CELULAR:",
   `REFERENCIA${PLURAL}:`,
   `COMENTARIOS(${S}ADICIONALES)?:`,
   `R${ACCENT_E}GIMEN${S}FISCAL:`,
@@ -47,5 +47,5 @@ export const ADDRESS_LABEL_PATTERN = /DIRECCI[OÓ]N\s+(CONFIRMADA|SELECCIONADA)[
 export const MAP_LABEL_PATTERN = /UBICACI[OÓ]N\s+EN\s+MAPA:/i;
 
 export function buildPattern(patterns) {
-  return new RegExp(`(${patterns.join('|')})`, 'gi');
+  return new RegExp(`(${patterns.join("|")})`, "gi");
 }

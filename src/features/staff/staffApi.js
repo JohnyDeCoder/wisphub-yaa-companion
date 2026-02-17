@@ -1,20 +1,20 @@
-import { browserAPI } from '../../utils/browser.js';
+import { browserAPI } from "../../utils/browser.js";
 
-const STORAGE_KEY = 'wisphubYaaApiKeys'; // chrome.storage key for API keys per domain
+const STORAGE_KEY = "wisphubYaaApiKeys"; // chrome.storage key for API keys per domain
 
 export async function getAllApiKeys() {
   try {
     const result = await browserAPI.storage.local.get(STORAGE_KEY);
     return result[STORAGE_KEY] || {};
   } catch (err) {
-    console.warn('[StaffApi] Storage read failed:', err?.message);
+    console.warn("[StaffApi] Storage read failed:", err?.message);
     return {};
   }
 }
 
 export async function getApiKeyForDomain(domainKey) {
   const keys = await getAllApiKeys();
-  return keys[domainKey] || '';
+  return keys[domainKey] || "";
 }
 
 export async function saveAllApiKeys(keys) {
@@ -27,7 +27,7 @@ export async function fetchAllStaff(apiKey, apiBaseUrl) {
   }
 
   const response = await browserAPI.runtime.sendMessage({
-    action: 'FETCH_STAFF',
+    action: "FETCH_STAFF",
     apiKey,
     apiBaseUrl,
   });
@@ -35,5 +35,5 @@ export async function fetchAllStaff(apiKey, apiBaseUrl) {
   if (response?.success) {
     return response.data;
   }
-  throw new Error(response?.error || 'Staff fetch failed');
+  throw new Error(response?.error || "Staff fetch failed");
 }

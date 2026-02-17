@@ -1,19 +1,19 @@
 const UPPERCASE_FIELD_IDS = [
-  'id_usr-first_name',
-  'id_usr-last_name',
-  'id_perfil-cedula',
-  'id_perfil-direccion',
-  'id_perfil-localidad',
-  'id_perfil-ciudad',
-  'id_perfil-razon_social',
-  'id_perfil-rfc',
-  'id_perfil-cedula_facturacion',
+  "id_usr-first_name",
+  "id_usr-last_name",
+  "id_perfil-cedula",
+  "id_perfil-direccion",
+  "id_perfil-localidad",
+  "id_perfil-ciudad",
+  "id_perfil-razon_social",
+  "id_perfil-rfc",
+  "id_perfil-cedula_facturacion",
 ];
 
 function triggerChange(element) {
-  element.dispatchEvent(new Event('change', { bubbles: true }));
+  element.dispatchEvent(new Event("change", { bubbles: true }));
   if (window.jQuery) {
-    window.jQuery(element).trigger('change');
+    window.jQuery(element).trigger("change");
   }
 }
 
@@ -36,7 +36,7 @@ function selectByUsername(selectId, username) {
     const options = Array.from(select.options);
     const match = options.find((opt) => {
       const text = opt.textContent.trim().toLowerCase();
-      return text.startsWith(username + '@') || text === username;
+      return text.startsWith(username + "@") || text === username;
     });
     if (match) {
       select.value = match.value;
@@ -60,7 +60,7 @@ export function uppercaseFormFields() {
       continue;
     }
 
-    if (id === 'id_perfil-direccion') {
+    if (id === "id_perfil-direccion") {
       const refParts = [];
       let val = field.value.replace(/\(Ref:[^)]*\)/gi, (m) => {
         refParts.push(m);
@@ -79,12 +79,12 @@ export function uppercaseFormFields() {
 
 function getTomorrowMexico() {
   const now = new Date();
-  const mexicoNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
+  const mexicoNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
   mexicoNow.setDate(mexicoNow.getDate() + 1);
   mexicoNow.setHours(12, 0, 0, 0);
 
-  const dd = String(mexicoNow.getDate()).padStart(2, '0');
-  const mm = String(mexicoNow.getMonth() + 1).padStart(2, '0');
+  const dd = String(mexicoNow.getDate()).padStart(2, "0");
+  const mm = String(mexicoNow.getMonth() + 1).padStart(2, "0");
   const yyyy = mexicoNow.getFullYear();
 
   return `${dd}/${mm}/${yyyy} 12:00`;
@@ -95,7 +95,7 @@ function fillRegimenFiscal(data) {
     return;
   }
 
-  const select = document.getElementById('id_perfil-obligacion_fiscal');
+  const select = document.getElementById("id_perfil-obligacion_fiscal");
   if (select) {
     const option = Array.from(select.options).find((opt) => opt.value === data.code);
     if (option) {
@@ -104,7 +104,7 @@ function fillRegimenFiscal(data) {
     }
   }
 
-  setFieldValue('id_perfil-informacion_adicional', data.description);
+  setFieldValue("id_perfil-informacion_adicional", data.description);
 }
 
 export function autoFillFormFields(parsedData) {
@@ -114,15 +114,15 @@ export function autoFillFormFields(parsedData) {
 
   uppercaseFormFields();
 
-  setFieldValue('id_cliente-cliente_rb', parsedData.installNumber);
+  setFieldValue("id_cliente-cliente_rb", parsedData.installNumber);
 
-  setFieldValue('id_cliente-fecha_instalacion', getTomorrowMexico());
+  setFieldValue("id_cliente-fecha_instalacion", getTomorrowMexico());
 
-  setFieldValue('id_cliente-costo_instalacion', parsedData.installCost);
+  setFieldValue("id_cliente-costo_instalacion", parsedData.installCost);
 
-  selectByUsername('id_cliente-creado_por', parsedData.asesor);
+  selectByUsername("id_cliente-creado_por", parsedData.asesor);
 
-  selectByUsername('id_cliente-tecnico', parsedData.tecnico);
+  selectByUsername("id_cliente-tecnico", parsedData.tecnico);
 
   fillRegimenFiscal(parsedData.regimenFiscal);
 }

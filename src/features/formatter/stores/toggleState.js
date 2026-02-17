@@ -1,4 +1,4 @@
-import { BUTTON_ID } from '../../../config/constants.js';
+import { BUTTON_ID } from "../../../config/constants.js";
 
 let originalContent = null;
 let isFormatted = false;
@@ -25,8 +25,8 @@ export function resetToggleState() {
 
   const btn = document.getElementById(BUTTON_ID);
   if (btn) {
-    btn.classList.remove('cke_button_on');
-    btn.classList.add('cke_button_off');
-    btn.setAttribute('aria-pressed', 'false');
+    btn.classList.remove("cke_button_on");
+    btn.classList.add("cke_button_off");
+    btn.setAttribute("aria-pressed", "false");
   }
 }

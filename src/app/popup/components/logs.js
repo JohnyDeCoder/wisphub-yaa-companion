@@ -1,6 +1,6 @@
-import { browserAPI } from '../../../utils/browser.js';
+import { browserAPI } from "../../../utils/browser.js";
 
-const STORAGE_KEY = 'wisphubYaaLogs'; // chrome.storage key for popup log entries
+const STORAGE_KEY = "wisphubYaaLogs"; // chrome.storage key for popup log entries
 const MAX_ENTRIES = 50; // Max stored popup log entries before pruning oldest records (default: 50)
 const LOG_TTL = 24 * 60 * 60 * 1000; // Log entry lifetime in ms (default: 24h)
 
@@ -29,10 +29,10 @@ export async function addLog(level, message) {
   const logs = await getLogs();
   const now = new Date();
   const ts = Date.now();
-  const time = now.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
+  const time = now.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
     hour12: false,
   });
   logs.push({ time, level, message, ts });
@@ -47,20 +47,20 @@ export async function clearLogs() {
 }
 
 export function renderLogs(container, logs) {
-  container.innerHTML = '';
+  container.innerHTML = "";
   logs.forEach((entry) => {
-    const el = document.createElement('div');
-    el.className = 'log-entry';
+    const el = document.createElement("div");
+    el.className = "log-entry";
 
-    const time = document.createElement('span');
-    time.className = 'log-time';
+    const time = document.createElement("span");
+    time.className = "log-time";
     time.textContent = entry.time;
 
-    const dot = document.createElement('span');
+    const dot = document.createElement("span");
     dot.className = `log-dot ${entry.level}`;
 
-    const msg = document.createElement('span');
-    msg.className = 'log-msg';
+    const msg = document.createElement("span");
+    msg.className = "log-msg";
     msg.textContent = entry.message;
 
     el.append(time, dot, msg);

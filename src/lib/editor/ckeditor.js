@@ -1,5 +1,5 @@
 export function isCKEditorAvailable() {
-  return typeof CKEDITOR !== 'undefined' && CKEDITOR.instances;
+  return typeof CKEDITOR !== "undefined" && CKEDITOR.instances;
 }
 
 export function getEditorInstance() {
@@ -14,7 +14,7 @@ export function getEditorInstance() {
 
   for (const name of names) {
     const editor = CKEDITOR.instances[name];
-    if (editor && editor.status === 'ready') {
+    if (editor && editor.status === "ready") {
       return editor;
     }
   }
@@ -23,44 +23,44 @@ export function getEditorInstance() {
 }
 
 export function isEditorReady(editor) {
-  return editor && editor.status === 'ready';
+  return editor && editor.status === "ready";
 }
 
 export function getEditorText(editor) {
   if (!editor) {
-    return '';
+    return "";
   }
 
   try {
     let html = editor.getData();
     if (!html) {
-      return '';
+      return "";
     }
 
     html = html
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/p>\s*<p>/gi, '\n\n')
-      .replace(/<\/div>\s*<div>/gi, '\n')
-      .replace(/<\/p>/gi, '\n')
-      .replace(/<p[^>]*>/gi, '')
-      .replace(/<div[^>]*>/gi, '')
-      .replace(/<[^>]+>/g, '');
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>\s*<p>/gi, "\n\n")
+      .replace(/<\/div>\s*<div>/gi, "\n")
+      .replace(/<\/p>/gi, "\n")
+      .replace(/<p[^>]*>/gi, "")
+      .replace(/<div[^>]*>/gi, "")
+      .replace(/<[^>]+>/g, "");
 
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const text = doc.body.textContent || '';
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const text = doc.body.textContent || "";
 
-    return text.replace(/\n{3,}/g, '\n\n').trim();
+    return text.replace(/\n{3,}/g, "\n\n").trim();
   } catch (err) {
-    console.warn('[CKEditor] getEditorText failed:', err?.message);
-    return '';
+    console.warn("[CKEditor] getEditorText failed:", err?.message);
+    return "";
   }
 }
 
 export function getEditorContent(editor) {
   if (!editor) {
-    return '';
+    return "";
   }
-  return editor.getData() || '';
+  return editor.getData() || "";
 }
 
 export function setEditorContent(editor, html) {

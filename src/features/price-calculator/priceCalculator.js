@@ -4,11 +4,11 @@ import {
   getEditorContent,
   setEditorContent,
   isEditorReady,
-} from '../../lib/editor/ckeditor.js';
-import { MONTH_NAMES } from '../../config/constants.js';
-import { NOTIFICATION_TYPES, UI_MESSAGES } from '../../config/messages.js';
-import { sendLogToPopup } from '../../utils/logger.js';
-import { formatPrice } from '../../utils/formatting.js';
+} from "../../lib/editor/ckeditor.js";
+import { MONTH_NAMES } from "../../config/constants.js";
+import { NOTIFICATION_TYPES, UI_MESSAGES } from "../../config/messages.js";
+import { sendLogToPopup } from "../../utils/logger.js";
+import { formatPrice } from "../../utils/formatting.js";
 
 let _notify = () => {};
 
@@ -16,10 +16,10 @@ export function initPriceCalcNotify(notifyFn) {
   _notify = notifyFn;
 }
 
-const S = '\\s+';
-const S_OPT = '\\s*';
-const PRICE = '\\$([\\d.,]+)';
-const MONTH_NAME = '([A-ZÁÉÍÓÚÑ]+)';
+const S = "\\s+";
+const S_OPT = "\\s*";
+const PRICE = "\\$([\\d.,]+)";
+const MONTH_NAME = "([A-ZÁÉÍÓÚÑ]+)";
 // Matches month labels: RESTANTE, RESTANTE DE, RESTANTE DE MES, RESTO, RESTO MES, RESTO DE MES, MES, MES COMPLETO
 const MONTH_LABEL = `(RESTANTE(?:${S}DE(?:${S}MES)?)?|RESTO(?:${S}(?:DE${S})?MES)?|MES(?:${S}COMPLETO)?)`;
 
@@ -29,25 +29,25 @@ const PRICE_PATTERN =
   `([^\\n+]+?)${S_OPT}\\+${S_OPT}${MONTH_LABEL}` +
   `${S}${MONTH_NAME}${S}${PRICE}` +
   `${S_OPT}=${S_OPT}${PRICE}(?:${S}MXN)?`;
-const PRICE_LINE_RE = new RegExp(PRICE_PATTERN, 'i');
+const PRICE_LINE_RE = new RegExp(PRICE_PATTERN, "i");
 
 // Matches incomplete price lines with optional placeholders: "<anything> + RESTANTE DE MES FEBRERO $ = $"
-const OPTIONAL_PRICE_TOKEN = '\\$[\\d.,]*';
+const OPTIONAL_PRICE_TOKEN = "\\$[\\d.,]*";
 const INCOMPLETE_MONTH_PART = `${MONTH_LABEL}(?:${S}${MONTH_NAME})?(?:${S}${OPTIONAL_PRICE_TOKEN})?`;
 const OPTIONAL_PACKAGE_PART = `(?:${S}\\d+${S_OPT}M(?:BPS?)?${S_OPT}[Xx×]?${S_OPT}${OPTIONAL_PRICE_TOKEN})?`;
 const INCOMPLETE_RE = new RegExp(
   `([^\\n+]+?)${S_OPT}\\+${S_OPT}${INCOMPLETE_MONTH_PART}${OPTIONAL_PACKAGE_PART}` +
     `(?:${S_OPT}=${S_OPT}${OPTIONAL_PRICE_TOKEN})?`,
-  'i',
+  "i",
 );
 
 // Matches package price: "PAQUETE: 20M X $350" or "20 MBPS X $350"
-const PACKAGE_PRICE_RE = new RegExp(`(?:PAQUETE:?${S})?\\d+${S_OPT}M(?:BPS?)?${S_OPT}[Xx×]?${S_OPT}\\$([\\d.,]+)`, 'i');
+const PACKAGE_PRICE_RE = new RegExp(`(?:PAQUETE:?${S})?\\d+${S_OPT}M(?:BPS?)?${S_OPT}[Xx×]?${S_OPT}\\$([\\d.,]+)`, "i");
 
 let autoPriceCalcEnabled = false,
   dateListenerActive = false,
   dateWatchSuppressed = false;
-let lastDateFieldValue = '';
+let lastDateFieldValue = "";
 
 export function setDateWatchSuppressed(val) {
   dateWatchSuppressed = val;
@@ -58,7 +58,7 @@ function getDaysInMonth(date) {
 }
 
 function getInstallDate() {
-  const field = document.getElementById('id_cliente-fecha_instalacion');
+  const field = document.getElementById("id_cliente-fecha_instalacion");
   if (!field || !field.value) {
     return null;
   }
@@ -70,7 +70,7 @@ function getInstallDate() {
 }
 
 function parsePrice(str) {
-  return parseInt(str.replace(/[$,.\s]/g, ''), 10);
+  return parseInt(str.replace(/[$,.\s]/g, ""), 10);
 }
 
 function extractPriceFromPlanText(text) {
@@ -98,20 +98,20 @@ function extractPriceFromPlanText(text) {
 }
 
 function getMonthlyPriceFromForm() {
-  const planSelect = document.getElementById('id_cliente-plan_internet');
+  const planSelect = document.getElementById("id_cliente-plan_internet");
   if (!planSelect) {
     return null;
   }
-  const text = planSelect.options?.[planSelect.selectedIndex]?.text || '';
+  const text = planSelect.options?.[planSelect.selectedIndex]?.text || "";
   return extractPriceFromPlanText(text);
 }
 
 function getInstallCostFromForm() {
-  const field = document.getElementById('id_cliente-costo_instalacion');
+  const field = document.getElementById("id_cliente-costo_instalacion");
   if (!field || !field.value) {
     return null;
   }
-  const cleaned = field.value.replace(/[$,.\s]/g, '');
+  const cleaned = field.value.replace(/[$,.\s]/g, "");
   const n = parseInt(cleaned, 10);
   return isNaN(n) ? null : n;
 }
@@ -134,16 +134,16 @@ function calculateProration(monthlyPrice, installDate) {
 }
 
 function sendLog(level, consoleMsg, popupMsg) {
-  sendLogToPopup('PriceCalc', level, consoleMsg, popupMsg);
+  sendLogToPopup("PriceCalc", level, consoleMsg, popupMsg);
 }
 
 function escapeForRegex(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function flexHtmlReplace(html, plainText, replacement) {
-  const pattern = escapeForRegex(plainText).replace(/\s+/g, '(?:\\s|&nbsp;)+');
-  return html.replace(new RegExp(pattern, 'i'), replacement);
+  const pattern = escapeForRegex(plainText).replace(/\s+/g, "(?:\\s|&nbsp;)+");
+  return html.replace(new RegExp(pattern, "i"), replacement);
 }
 
 function resolveMonthlyPrice(text) {
@@ -209,7 +209,7 @@ function updateExistingPriceLine(editor, text, match, proration, notify) {
 
   const newMonthPrice = proration.price;
   const newTotal = installPrice + newMonthPrice;
-  const newMonthLabel = proration.isProrated ? 'RESTANTE DE MES' : 'MES';
+  const newMonthLabel = proration.isProrated ? "RESTANTE DE MES" : "MES";
 
   if (
     oldMonthPrice === newMonthPrice &&
@@ -234,11 +234,11 @@ function updateExistingPriceLine(editor, text, match, proration, notify) {
 
   if (html === originalHtml) {
     sendLog(
-      'error',
+      "error",
       `Replacement failed — searching: "${oldMonthSection}" and "${oldTotalSection}"`,
-      'No pude actualizar esa línea de precios.',
+      "No pude actualizar esa línea de precios.",
     );
-    sendLog('error', `Current HTML: ${originalHtml.substring(0, 300)}`, 'Revisa el comentario y vuelve a intentarlo.');
+    sendLog("error", `Current HTML: ${originalHtml.substring(0, 300)}`, "Revisa el comentario y vuelve a intentarlo.");
     notify(UI_MESSAGES.PRICE_REPLACE_FAIL, NOTIFICATION_TYPES.WARNING);
     return { success: false, error: UI_MESSAGES.PRICE_REPLACE_FAIL };
   }
@@ -248,7 +248,7 @@ function updateExistingPriceLine(editor, text, match, proration, notify) {
   const newLine =
     `${installPart} + ${proration.label} ` + `${formatPrice(newMonthPrice)} = ${formatPrice(newTotal)} MXN`;
 
-  sendLog('success', `Price updated: ${match[0]} → ${newLine}`, `${match[0]} → ${newLine}`);
+  sendLog("success", `Price updated: ${match[0]} → ${newLine}`, `${match[0]} → ${newLine}`);
   notify(UI_MESSAGES.PRICE_UPDATED, NOTIFICATION_TYPES.SUCCESS);
   return { success: true, oldLine: match[0], newLine };
 }
@@ -266,7 +266,7 @@ function buildPriceLine(editor, text, proration, notify) {
 
   let html = getEditorContent(editor);
   const oldText = incompleteMatch[0];
-  const installPart = oldText.split('+')[0].trim();
+  const installPart = oldText.split("+")[0].trim();
   const installPartHasPrice = /\$\s*[\d.,]+/.test(installPart);
 
   const equipLabel = installCost
@@ -281,14 +281,14 @@ function buildPriceLine(editor, text, proration, notify) {
   html = flexHtmlReplace(html, oldText, newLine);
 
   if (html === originalHtml) {
-    sendLog('error', `Replacement failed — searching: "${oldText}"`, 'No pude generar la línea de precios.');
-    sendLog('error', `Current HTML: ${originalHtml.substring(0, 300)}`, 'Revisa el comentario y vuelve a intentarlo.');
+    sendLog("error", `Replacement failed — searching: "${oldText}"`, "No pude generar la línea de precios.");
+    sendLog("error", `Current HTML: ${originalHtml.substring(0, 300)}`, "Revisa el comentario y vuelve a intentarlo.");
     notify(UI_MESSAGES.PRICE_REPLACE_FAIL, NOTIFICATION_TYPES.WARNING);
     return { success: false, error: UI_MESSAGES.PRICE_REPLACE_FAIL };
   }
 
   setEditorContent(editor, html);
-  sendLog('success', `Price generated: ${newLine}`, `Precio generado: ${newLine}`);
+  sendLog("success", `Price generated: ${newLine}`, `Precio generado: ${newLine}`);
   notify(UI_MESSAGES.PRICE_UPDATED, NOTIFICATION_TYPES.SUCCESS);
   return { success: true, newLine };
 }
@@ -301,8 +301,8 @@ export function hasPriceLine(text) {
 let dateChangeTimer = null;
 
 function getDateFieldValue() {
-  const field = document.getElementById('id_cliente-fecha_instalacion');
-  return (field?.value || '').trim();
+  const field = document.getElementById("id_cliente-fecha_instalacion");
+  return (field?.value || "").trim();
 }
 
 function onDateFieldChange() {
@@ -343,27 +343,27 @@ export function watchDateField() {
     return;
   }
 
-  const field = document.getElementById('id_cliente-fecha_instalacion');
+  const field = document.getElementById("id_cliente-fecha_instalacion");
   if (!field) {
     return;
   }
 
-  lastDateFieldValue = (field.value || '').trim();
+  lastDateFieldValue = (field.value || "").trim();
 
   // Native change/input events
-  field.addEventListener('change', onDateFieldChange);
-  field.addEventListener('input', onDateFieldChange);
+  field.addEventListener("change", onDateFieldChange);
+  field.addEventListener("input", onDateFieldChange);
 
   // Bootstrap datetimepicker fires dp.change via jQuery
   if (window.jQuery) {
-    window.jQuery(field).closest('.datetimepicker-input').on('dp.change', onDateFieldChange);
+    window.jQuery(field).closest(".datetimepicker-input").on("dp.change", onDateFieldChange);
   }
 
   dateListenerActive = true;
 }
 
 export function updatePriceCalcSettings(settings) {
-  if (typeof settings?.autoPriceCalcEnabled === 'boolean') {
+  if (typeof settings?.autoPriceCalcEnabled === "boolean") {
     autoPriceCalcEnabled = settings.autoPriceCalcEnabled;
   }
 }
@@ -382,7 +382,7 @@ export function tryCalculateForTemplate() {
 
   // Use form date if available, otherwise current Mexico date
   const installDate =
-    getInstallDate() || new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
+    getInstallDate() || new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
   const installCost = getInstallCostFromForm();
   const proration = calculateProration(monthlyPrice, installDate);
 

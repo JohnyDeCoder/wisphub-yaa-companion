@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.0.2",
+    "date": "2026-02-17",
+    "changes": [
+      "Auto-rellenado de plantilla: ahora funciona de forma independiente, sin depender de Auto-formato.",
+      "Plantilla con formato: la plantilla auto-rellenada se inserta con negritas en las claves automáticamente.",
+      "Detección de páginas mejorada: las herramientas ahora se activan correctamente en páginas de agregar clientes e instalaciones.",
+      "Página de novedades: al instalar o actualizar la extensión, se abre automáticamente una página con los cambios recientes.",
+      "Indicador de actualización: badge \"UP\" en el icono de la extensión cuando hay una nueva versión disponible."
+    ]
+  },
+  {
     "version": "1.0.1",
     "date": "2026-02-16",
     "changes": [

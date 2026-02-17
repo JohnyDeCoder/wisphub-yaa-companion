@@ -1,5 +1,5 @@
-import { EXTENSION_GITHUB } from '../../config/constants.js';
-import { ALLOWED_DOMAINS } from '../../config/domains.js';
+import { EXTENSION_GITHUB } from "../../config/constants.js";
+import { ALLOWED_DOMAINS } from "../../config/domains.js";
 
 export const POPUP_CONFIG = {
   GITHUB_URL: EXTENSION_GITHUB, // External URL opened by "Código fuente" button in popup

@@ -1,4 +1,4 @@
-export const ALLOWED_DOMAINS = ['wisphub.io', 'wisphub.app'];
+export const ALLOWED_DOMAINS = ["wisphub.io", "wisphub.app"];
 
 export function isWispHubDomain(url) {
   if (!url) {

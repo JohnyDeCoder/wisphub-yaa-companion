@@ -1,16 +1,16 @@
-import { MESSAGE_TYPES } from '../config/messages.js';
+import { MESSAGE_TYPES } from "../config/messages.js";
 
 const FEATURE_LABELS = {
-  PriceCalc: 'Precios',
-  Formatter: 'Formateador',
-  Tickets: 'Tickets',
-  Installs: 'Instalaciones',
-  Clients: 'Clientes',
+  PriceCalc: "Precios",
+  Formatter: "Formateador",
+  Tickets: "Tickets",
+  Installs: "Instalaciones",
+  Clients: "Clientes",
 };
 
 function buildPopupMessage(tag, popupMsg, consoleMsg) {
-  const featureName = FEATURE_LABELS[tag] || tag || 'General';
-  const baseMsg = String(popupMsg || consoleMsg || '').trim();
+  const featureName = FEATURE_LABELS[tag] || tag || "General";
+  const baseMsg = String(popupMsg || consoleMsg || "").trim();
 
   if (!baseMsg) {
     return `[${featureName}]`;
@@ -32,6 +32,6 @@ export function sendLogToPopup(tag, level, consoleMsg, popupMsg) {
       level,
       message: buildPopupMessage(tag, popupMsg, consoleMsg),
     },
-    '*',
+    "*",
   );
 }

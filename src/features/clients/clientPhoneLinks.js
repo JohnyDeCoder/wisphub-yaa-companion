@@ -1,30 +1,30 @@
-import { sendLogToPopup } from '../../utils/logger.js';
-import { applyHostTooltip } from '../../utils/hostTooltip.js';
-import { decorateActionButtonGroup } from '../../utils/actionButtons.js';
-import { copyToClipboard } from '../../utils/clipboard.js';
+import { sendLogToPopup } from "../../utils/logger.js";
+import { applyHostTooltip } from "../../utils/hostTooltip.js";
+import { decorateActionButtonGroup } from "../../utils/actionButtons.js";
+import { copyToClipboard } from "../../utils/clipboard.js";
 
-const PROCESSED_PHONE = 'data-wisphub-wa'; // Data attribute marker to avoid re-processing phone cells
-const PROCESSED_ACTIONS = 'data-wisphub-actions'; // Data attribute marker to avoid re-injecting action buttons
-const COUNTRY_CODE = '52'; // Default country code used to normalize Mexican phone numbers
+const PROCESSED_PHONE = "data-wisphub-wa"; // Data attribute marker to avoid re-processing phone cells
+const PROCESSED_ACTIONS = "data-wisphub-actions"; // Data attribute marker to avoid re-injecting action buttons
+const COUNTRY_CODE = "52"; // Default country code used to normalize Mexican phone numbers
 const PHONE_RE = /^\+?\d[\d\s\-().]{6,}$/; // Generic phone-like text matcher before normalization
 const IP_RE = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/; // IPv4 matcher to ignore IP values in phone columns
 
 // Header keywords used to locate phone columns
-const PHONE_KEYWORDS = ['telefono', 'teléfono', 'celular', 'phone', 'tel', 'móvil', 'movil'];
+const PHONE_KEYWORDS = ["telefono", "teléfono", "celular", "phone", "tel", "móvil", "movil"];
 // Header keywords used to locate action columns
-const ACTION_KEYWORDS = ['acción', 'accion', 'acciones', 'action'];
+const ACTION_KEYWORDS = ["acción", "accion", "acciones", "action"];
 // URL matcher used to extract client slug from row links
 const SLUG_RE = /\/(?:cliente|clientes\/ver|facturas\/generar)\/([^/]+)/;
 
 let _notify = null;
 let _debounceTimer = null;
 
-function log(consoleMsg, popupMsg, level = 'info') {
-  sendLogToPopup('Clients', level, consoleMsg, popupMsg);
+function log(consoleMsg, popupMsg, level = "info") {
+  sendLogToPopup("Clients", level, consoleMsg, popupMsg);
 }
 
 function cleanPhoneNumber(raw) {
-  const digits = raw.replace(/\D/g, '');
+  const digits = raw.replace(/\D/g, "");
   if (digits.length < 7) {
     return null;
   }
@@ -42,22 +42,22 @@ function looksLikeIP(text) {
 }
 
 function createWaLink(phoneText, cleaned) {
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = `https://wa.me/${cleaned}`;
-  link.target = '_blank';
-  link.rel = 'noopener';
-  link.className = 'wisphub-yaa-wa-link';
-  applyHostTooltip(link, 'Enviar mensaje por WhatsApp (Ctrl+Click = Copiar)', { placement: 'top' });
+  link.target = "_blank";
+  link.rel = "noopener";
+  link.className = "wisphub-yaa-wa-link";
+  applyHostTooltip(link, "Enviar mensaje por WhatsApp (Ctrl+Click = Copiar)", { placement: "top" });
 
   link.textContent = phoneText;
 
-  link.addEventListener('click', (e) => {
+  link.addEventListener("click", (e) => {
     e.stopImmediatePropagation();
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
       copyToClipboard(phoneText).then((ok) => {
         if (ok && _notify) {
-          _notify(`Teléfono copiado: ${phoneText}`, 'success', 2000);
+          _notify(`Teléfono copiado: ${phoneText}`, "success", 2000);
           log(`Phone copied: ${phoneText}`, `Teléfono copiado: ${phoneText}`);
         }
       });
@@ -71,7 +71,7 @@ function processPhoneElement(el) {
   if (el.hasAttribute(PROCESSED_PHONE)) {
     return false;
   }
-  el.setAttribute(PROCESSED_PHONE, '1');
+  el.setAttribute(PROCESSED_PHONE, "1");
 
   const rawText = el.textContent.trim();
   if (!rawText) {
@@ -99,13 +99,13 @@ function processPhoneElement(el) {
     return false;
   }
 
-  el.textContent = '';
+  el.textContent = "";
 
   validPhones.forEach((phone, idx) => {
     if (idx > 0) {
-      const sep = document.createElement('span');
-      sep.className = 'wisphub-yaa-wa-separator';
-      sep.textContent = '|';
+      const sep = document.createElement("span");
+      sep.className = "wisphub-yaa-wa-separator";
+      sep.textContent = "|";
       el.appendChild(sep);
     }
     el.appendChild(createWaLink(phone.raw, phone.cleaned));
@@ -115,9 +115,9 @@ function processPhoneElement(el) {
 }
 
 function extractSlug(container) {
-  const links = container.querySelectorAll('a[href]');
+  const links = container.querySelectorAll("a[href]");
   for (const link of links) {
-    const href = link.getAttribute('href') || '';
+    const href = link.getAttribute("href") || "";
     const m = href.match(SLUG_RE);
     if (m) {
       return m[1];
@@ -130,30 +130,30 @@ function addActionButtons(container, options = {}) {
   if (container.hasAttribute(PROCESSED_ACTIONS)) {
     return false;
   }
-  container.setAttribute(PROCESSED_ACTIONS, '1');
+  container.setAttribute(PROCESSED_ACTIONS, "1");
 
   const slug = extractSlug(container);
   if (!slug) {
     return false;
   }
 
-  const btnBox = container.querySelector('.text-right') || container.querySelector('div') || container;
+  const btnBox = container.querySelector(".text-right") || container.querySelector("div") || container;
 
   // "Ver cliente" is skipped on installation list pages
   if (!options.skipViewClient) {
-    const viewBtn = document.createElement('a');
-    viewBtn.className = 'wisphub-yaa-action-btn wisphub-yaa-action-btn-view';
+    const viewBtn = document.createElement("a");
+    viewBtn.className = "wisphub-yaa-action-btn wisphub-yaa-action-btn-view";
     viewBtn.href = `/clientes/ver/${slug}/`;
-    applyHostTooltip(viewBtn, 'Ver cliente', { placement: 'top' });
-    viewBtn.addEventListener('click', (e) => e.stopImmediatePropagation());
+    applyHostTooltip(viewBtn, "Ver cliente", { placement: "top" });
+    viewBtn.addEventListener("click", (e) => e.stopImmediatePropagation());
     btnBox.append(viewBtn);
   }
 
-  const filesBtn = document.createElement('a');
-  filesBtn.className = 'wisphub-yaa-action-btn wisphub-yaa-action-btn-files';
+  const filesBtn = document.createElement("a");
+  filesBtn.className = "wisphub-yaa-action-btn wisphub-yaa-action-btn-files";
   filesBtn.href = `/clientes/ver/${slug}/#retab6`;
-  applyHostTooltip(filesBtn, 'Ver archivos', { placement: 'top' });
-  filesBtn.addEventListener('click', (e) => e.stopImmediatePropagation());
+  applyHostTooltip(filesBtn, "Ver archivos", { placement: "top" });
+  filesBtn.addEventListener("click", (e) => e.stopImmediatePropagation());
 
   btnBox.append(filesBtn);
   decorateActionButtonGroup(btnBox);
@@ -166,13 +166,13 @@ function matchesKeywords(text, keywords) {
 }
 
 function findColumnIndex(table, keywords) {
-  const headers = table.querySelectorAll('thead th');
+  const headers = table.querySelectorAll("thead th");
   for (let i = 0; i < headers.length; i++) {
     if (matchesKeywords(headers[i].textContent, keywords)) {
       return i;
     }
   }
-  const footers = table.querySelectorAll('tfoot th');
+  const footers = table.querySelectorAll("tfoot th");
   for (let i = 0; i < footers.length; i++) {
     if (matchesKeywords(footers[i].textContent, keywords)) {
       return i;
@@ -182,16 +182,16 @@ function findColumnIndex(table, keywords) {
 }
 
 function findPhoneColumnByContent(table) {
-  const rows = table.querySelectorAll('tbody tr:not(.child)');
+  const rows = table.querySelectorAll("tbody tr:not(.child)");
   if (rows.length === 0) {
     return -1;
   }
   const sampleSize = Math.min(rows.length, 5);
-  const colCount = rows[0]?.querySelectorAll('td').length || 0;
+  const colCount = rows[0]?.querySelectorAll("td").length || 0;
   const scores = new Array(colCount).fill(0);
 
   for (let r = 0; r < sampleSize; r++) {
-    const cells = rows[r].querySelectorAll('td');
+    const cells = rows[r].querySelectorAll("td");
     for (let c = 0; c < cells.length; c++) {
       const text = cells[c].textContent.trim();
       if (looksLikeIP(text)) {
@@ -204,7 +204,7 @@ function findPhoneColumnByContent(table) {
           continue;
         }
         if (PHONE_RE.test(trimmed)) {
-          const digits = trimmed.replace(/\D/g, '');
+          const digits = trimmed.replace(/\D/g, "");
           if (digits.length >= 7 && digits.length <= 15) {
             scores[c]++;
             break;
@@ -237,9 +237,9 @@ function processMainTable(table) {
   let phoneCount = 0;
   let actionCount = 0;
 
-  const rows = table.querySelectorAll('tbody tr:not(.child)');
+  const rows = table.querySelectorAll("tbody tr:not(.child)");
   rows.forEach((row) => {
-    const cells = row.querySelectorAll('td');
+    const cells = row.querySelectorAll("td");
     if (phoneCol !== -1 && cells[phoneCol]) {
       if (processPhoneElement(cells[phoneCol])) {
         phoneCount++;
@@ -260,9 +260,9 @@ function processResponsiveRows() {
   let actionCount = 0;
   const actionOpts = isInstallationListPage() ? { skipViewClient: true } : {};
 
-  document.querySelectorAll('li[data-dt-column] .dtr-data').forEach((dataSpan) => {
-    const li = dataSpan.closest('li[data-dt-column]');
-    const titleSpan = li?.querySelector('.dtr-title');
+  document.querySelectorAll("li[data-dt-column] .dtr-data").forEach((dataSpan) => {
+    const li = dataSpan.closest("li[data-dt-column]");
+    const titleSpan = li?.querySelector(".dtr-title");
     if (!titleSpan) {
       return;
     }
@@ -288,8 +288,8 @@ function processAll() {
   let totalPhone = 0;
   let totalAction = 0;
 
-  document.querySelectorAll('table').forEach((t) => {
-    if (t.querySelector('tbody tr td')) {
+  document.querySelectorAll("table").forEach((t) => {
+    if (t.querySelector("tbody tr td")) {
       const r = processMainTable(t);
       totalPhone += r.phoneCount;
       totalAction += r.actionCount;
@@ -311,7 +311,7 @@ function debouncedProcess() {
 }
 
 function startObserver() {
-  const target = document.querySelector('#content') || document.body;
+  const target = document.querySelector("#content") || document.body;
   const observer = new MutationObserver(debouncedProcess);
   observer.observe(target, { childList: true, subtree: true });
 }
@@ -359,7 +359,7 @@ export function initClientPhoneLinks(notifyFn) {
   }
 
   _notify = notifyFn;
-  log('Phone link enhancements loaded', 'Mejoras de enlaces telefónicos cargadas');
+  log("Phone link enhancements loaded", "Mejoras de enlaces telefónicos cargadas");
 
   setTimeout(() => {
     pollUntilFound(20, 1000);

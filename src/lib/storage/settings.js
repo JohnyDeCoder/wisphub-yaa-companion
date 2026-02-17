@@ -1,5 +1,5 @@
-import { EXTENSION_NAME } from '../../config/constants.js';
-import { browserAPI } from '../../utils/browser.js';
+import { EXTENSION_NAME } from "../../config/constants.js";
+import { browserAPI } from "../../utils/browser.js";
 
 const DEFAULT_SETTINGS = {
   notificationsEnabled: true, // Show in-page notifications (default: true)
@@ -10,7 +10,7 @@ const DEFAULT_SETTINGS = {
 
 export async function loadSettings() {
   try {
-    const result = await browserAPI.storage.local.get('userSettings');
+    const result = await browserAPI.storage.local.get("userSettings");
     return { ...DEFAULT_SETTINGS, ...(result.userSettings || {}) };
   } catch (e) {
     console.error(`[${EXTENSION_NAME}] Settings load error:`, e);

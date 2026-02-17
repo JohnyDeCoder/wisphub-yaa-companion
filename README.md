@@ -429,7 +429,9 @@ wisphub-yaa-companion/
 │       ├── page.js          #   └── Script principal (acceso directo al editor)
 │       ├── content.js       #   └── Puente de mensajes, staff, avatar
 │       ├── background.js    #   └── Service worker (API, caché, iconos)
-│       └── popup/           #   └── Panel de control (HTML, CSS, JS, changelog)
+│       ├── popup/           #   └── Panel de control (HTML, CSS, JS, changelog)
+│       └── pages/           #   └── Páginas estáticas (novedades)
+├── scripts/                 # Utilidades de desarrollo (generador de changelog)
 ├── assets/                  # Iconos y recursos estáticos
 ├── manifest.json            # Configuración de la extensión (Manifest V3)
 ├── webpack.config.js        # Configuración de Webpack (Chrome + Firefox)
@@ -448,7 +450,8 @@ config → utils → lib → features → app (page.js / content.js / background
 
 ## Roadmap
 
-- [x] **v1.0.1** — Primera versión completa: formateador, calculadora de precios flexible, plantilla con cálculo, auto-rellenado de plantilla, calculadora en popup, gestión masiva de tickets e instalaciones, copiado rápido por fila, WhatsApp en clientes e instalaciones, popup con ajustes y logs.
+- [x] **v1.0.1** — Primera versión completa: formateador, calculadora de precios, plantilla, auto-rellenado, gestión masiva, copiado rápido, WhatsApp, popup con ajustes y logs.
+- [x] **v1.0.2** — Auto-rellenado independiente, detección dinámica de URLs, página de novedades automática, indicador de actualización.
 - [ ] Publicación estable en Chrome Web Store.
 - [ ] Paquete dedicado para Firefox Add-ons.
 
@@ -503,7 +506,7 @@ Consulta el archivo [LICENSE](LICENSE) para el texto completo.
 [issues-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/issues
 [license-shield]: https://img.shields.io/github/license/JohnyDeCoder/wisphub-yaa-companion.svg?style=for-the-badge
 [license-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/blob/master/LICENSE
-[version-shield]: https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge
+[version-shield]: https://img.shields.io/badge/version-1.0.2-blue?style=for-the-badge
 [release-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/releases
 [manifest-shield]: https://img.shields.io/badge/manifest-v3-orange?style=for-the-badge
 [manifest-url]: https://developer.chrome.com/docs/extensions/mv3/intro/

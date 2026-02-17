@@ -1,25 +1,35 @@
-import { BUTTON_ID, TIMING, EXTENSION_NAME } from '../../config/constants.js';
-import { MESSAGE_TYPES, NOTIFICATION_TYPES, UI_MESSAGES } from '../../config/messages.js';
+import { BUTTON_ID, TIMING, EXTENSION_NAME } from "../../config/constants.js";
+import {
+  MESSAGE_TYPES,
+  NOTIFICATION_TYPES,
+  UI_MESSAGES,
+} from "../../config/messages.js";
 import {
   getEditorInstance,
   getEditorText,
   getEditorContent,
   setEditorContent,
   isEditorReady,
-} from '../../lib/editor/ckeditor.js';
-import { formatText } from './utils/textFormatter.js';
-import { parseCommentData, removeDatosFiscalesSection } from './utils/commentParser.js';
-import { completeCommentStructure } from './utils/commentCompleter.js';
-import { autoFillFormFields } from './utils/formFiller.js';
-import { injectButtonIntoToolbar } from './components/formatterButton.js';
-import { showNotification, updateNotificationSettings } from './components/notification.js';
+} from "../../lib/editor/ckeditor.js";
+import { formatText } from "./utils/textFormatter.js";
+import {
+  parseCommentData,
+  removeDatosFiscalesSection,
+} from "./utils/commentParser.js";
+import { completeCommentStructure } from "./utils/commentCompleter.js";
+import { autoFillFormFields } from "./utils/formFiller.js";
+import { injectButtonIntoToolbar } from "./components/formatterButton.js";
+import {
+  showNotification,
+  updateNotificationSettings,
+} from "./components/notification.js";
 import {
   getOriginalContent,
   setOriginalContent,
   getIsFormatted,
   setIsFormatted,
   resetToggleState,
-} from './stores/toggleState.js';
+} from "./stores/toggleState.js";
 
 let autoFormatEnabled = false;
 let autoFormatExecuted = false;
@@ -52,17 +62,12 @@ export function handleToggle(shouldFormat, options = {}) {
 
   try {
     if (shouldFormat) {
-      let plainText = getEditorText(editor);
+      const plainText = getEditorText(editor);
 
-      // If editor is empty and auto-fill is enabled, use the template as input
       if (!plainText?.trim()) {
-        if (autoFillTemplateEnabled && typeof _templateFn === 'function') {
-          plainText = _templateFn();
-        } else {
-          notify(UI_MESSAGES.EDITOR_EMPTY, NOTIFICATION_TYPES.WARNING);
-          resetToggleState();
-          return { success: false, error: UI_MESSAGES.EDITOR_EMPTY };
-        }
+        notify(UI_MESSAGES.EDITOR_EMPTY, NOTIFICATION_TYPES.WARNING);
+        resetToggleState();
+        return { success: false, error: UI_MESSAGES.EDITOR_EMPTY };
       }
 
       setOriginalContent(getEditorContent(editor));
@@ -105,9 +110,9 @@ export function applyFormatting(options = {}) {
     setIsFormatted(true);
     const btn = document.getElementById(BUTTON_ID);
     if (btn) {
-      btn.classList.add('cke_button_on');
-      btn.classList.remove('cke_button_off');
-      btn.setAttribute('aria-pressed', 'true');
+      btn.classList.add("cke_button_on");
+      btn.classList.remove("cke_button_off");
+      btn.setAttribute("aria-pressed", "true");
     }
   }
   return result;
@@ -135,8 +140,7 @@ function tryAutoFormat() {
   }
 
   const text = getEditorText(editor);
-  // Allow empty editor if auto-fill template is enabled — handleToggle will insert the template
-  if (!text?.trim() && !autoFillTemplateEnabled) {
+  if (!text?.trim()) {
     return;
   }
 
@@ -150,18 +154,20 @@ function tryAutoFormat() {
     setIsFormatted(true);
     const btn = document.getElementById(BUTTON_ID);
     if (btn) {
-      btn.classList.add('cke_button_on');
-      btn.classList.remove('cke_button_off');
-      btn.setAttribute('aria-pressed', 'true');
+      btn.classList.add("cke_button_on");
+      btn.classList.remove("cke_button_off");
+      btn.setAttribute("aria-pressed", "true");
     }
 
-    // Silent: the combined notification is handled by the onAutoFormatComplete callback
     const result = handleToggle(true, { silent: true });
 
-    if (typeof _onAutoFormatComplete === 'function') {
+    if (typeof _onAutoFormatComplete === "function") {
       _onAutoFormatComplete(result);
     } else if (result.success) {
-      showNotification(UI_MESSAGES.AUTO_FORMAT_APPLIED, NOTIFICATION_TYPES.INFO);
+      showNotification(
+        UI_MESSAGES.AUTO_FORMAT_APPLIED,
+        NOTIFICATION_TYPES.INFO,
+      );
     }
   }, 100);
 }
@@ -173,14 +179,14 @@ export function updateSettings(settings) {
 
   updateNotificationSettings(settings);
 
-  if (typeof settings.autoFormatEnabled === 'boolean') {
+  if (typeof settings.autoFormatEnabled === "boolean") {
     autoFormatEnabled = settings.autoFormatEnabled;
     if (autoFormatEnabled) {
       tryAutoFormat();
     }
   }
 
-  if (typeof settings.autoFillTemplateEnabled === 'boolean') {
+  if (typeof settings.autoFillTemplateEnabled === "boolean") {
     autoFillTemplateEnabled = settings.autoFillTemplateEnabled;
   }
 }
@@ -196,11 +202,48 @@ export function initFormatter(editor) {
         type: MESSAGE_TYPES.EDITOR_READY,
         editorName: editor.name,
       },
-      '*',
+      "*",
     );
 
     setTimeout(tryAutoFormat, TIMING.CHECK_INTERVAL);
   }
 
   return success;
+}
+
+export function tryAutoFillTemplate() {
+  if (!autoFillTemplateEnabled || typeof _templateFn !== "function") {
+    return false;
+  }
+
+  const editor = getEditorInstance();
+  if (!editor || !isEditorReady(editor)) {
+    return false;
+  }
+
+  const text = getEditorText(editor);
+  if (text && text.trim().length > 0) {
+    return false;
+  }
+
+  const templateText = _templateFn();
+  if (templateText) {
+    const formattedHtml = formatText(templateText);
+    setEditorContent(editor, formattedHtml);
+
+    autoFormatExecuted = true;
+
+    showNotification(
+      "Plantilla insertada automáticamente",
+      NOTIFICATION_TYPES.SUCCESS,
+    );
+
+    if (typeof _onAutoFormatComplete === "function") {
+      _onAutoFormatComplete({ success: true, templateFilled: true });
+    }
+
+    return true;
+  }
+
+  return false;
 }

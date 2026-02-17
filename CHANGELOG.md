@@ -1,0 +1,32 @@
+# Changelog — Wisphub Yaa Companion
+
+Todos los cambios notables de este proyecto se documentan aquí.
+
+## v1.0.2 — 2026-02-17
+
+- Auto-rellenado de plantilla: ahora funciona de forma independiente, sin depender de Auto-formato.
+- Plantilla con formato: la plantilla auto-rellenada se inserta con negritas en las claves automáticamente.
+- Detección de páginas mejorada: las herramientas ahora se activan correctamente en páginas de agregar clientes e instalaciones.
+- Página de novedades: al instalar o actualizar la extensión, se abre automáticamente una página con los cambios recientes.
+- Indicador de actualización: badge "UP" en el icono de la extensión cuando hay una nueva versión disponible.
+
+## v1.0.1 — 2026-02-16
+
+- Formateador de comentarios: limpia y organiza el texto del editor con negritas, mayúsculas y saltos de línea automáticos. Usa Ctrl+Shift+F.
+- Calculadora de precios: recalcula automáticamente los precios según la fecha de instalación y el paquete del cliente. Acepta cualquier texto antes del "+" (migración, cortesía, equipos, etc.). Usa Ctrl+Shift+Alt+P.
+- Plantilla con cálculo: al copiar la plantilla, incluye los precios calculados si hay un plan y fecha disponibles. Si no, copia la plantilla vacía.
+- Auto-rellenado de plantilla: si el editor está vacío al formatear, se inserta automáticamente la plantilla completa con precios (si están disponibles) o con el mes actual.
+- Calculadora de precios en herramientas: calcula precios de instalación con prorrateo desde el popup, siempre disponible sin importar la página. Los valores se guardan automáticamente al cerrar el popup.
+- Auto-llenado de formularios: al formatear, la extensión detecta secciones como datos fiscales, costo de instalación y staff automáticamente.
+- Gestión masiva de tickets: selecciona varios tickets y márcalos todos como "Nuevos" con un solo clic.
+- Gestión masiva de instalaciones: cambia instalaciones "En Progreso" a "Nuevas" de forma masiva desde la tabla.
+- Copiado rápido de tickets: botón por fila que copia Barrio/Localidad - Cliente - Asunto al portapapeles.
+- Copiado rápido de instalaciones: botón por fila que copia Barrio/Localidad - Nombre - Inst. Antena/Fibra según el dominio.
+- Enlace rápido a WhatsApp: cada teléfono en la lista de clientes e instalaciones abre WhatsApp directamente. Ctrl+Clic copia el número.
+- Acceso rápido a "Subir Archivos": botón que te lleva directo a la pestaña de archivos del cliente.
+- Notificaciones en página: mensajes visuales al completar acciones que desaparecen automáticamente.
+- Panel de control (popup): estado de conexión, configuraciones, registros de actividad y changelog.
+- Detección automática de staff: identifica tu usuario de WispHub y muestra tu ID de staff en el popup.
+- Inyección de IDs de staff: columna automática con el ID numérico de cada miembro en la tabla de personal.
+- Avatar por defecto reemplazado en toda la UI.
+- Compatible con Chrome, Edge y Firefox. Funciona SÓLO en wisphub.io y wisphub.app.

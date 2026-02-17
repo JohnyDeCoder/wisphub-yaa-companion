@@ -1,8 +1,8 @@
 // Normalize a string: strip HTML tags, collapse whitespace, trim.
 export function normalizeText(value) {
-  return String(value || '')
-    .replace(/<[^>]+>/g, '')
-    .replace(/\s+/g, ' ')
+  return String(value || "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -15,7 +15,7 @@ export function findColumnIndex(table, keywords, excludeIndices, logTag) {
   }
 
   const skip = excludeIndices || [];
-  const tag = logTag || 'Table';
+  const tag = logTag || "Table";
 
   // Prefer DataTables API — enumerates ALL columns including hidden ones
   // and returns the logical index that dt.cell() expects.
@@ -48,7 +48,7 @@ export function findColumnIndex(table, keywords, excludeIndices, logTag) {
   }
 
   // Fallback: DOM <th> scan (may miss hidden columns)
-  const thElements = table.querySelectorAll('thead th');
+  const thElements = table.querySelectorAll("thead th");
   const thTexts = Array.from(thElements).map((h) => normalizeText(h.textContent).toLowerCase());
 
   for (const kw of keywords) {
@@ -72,20 +72,20 @@ export function findColumnIndex(table, keywords, excludeIndices, logTag) {
 // This is immune to responsive column hiding and column reordering.
 export function getDataTableCellText(tableSelector, row, colIndex, logTag) {
   if (!row || colIndex < 0) {
-    return '';
+    return "";
   }
 
   const $ = window.jQuery;
   if (!$ || !$.fn?.DataTable) {
-    return '';
+    return "";
   }
 
   const tableEl = $(tableSelector);
   if (!tableEl.length || !$.fn.DataTable.isDataTable(tableEl)) {
-    return '';
+    return "";
   }
 
-  const tag = logTag || 'Table';
+  const tag = logTag || "Table";
 
   try {
     const dt = tableEl.DataTable();
@@ -93,6 +93,6 @@ export function getDataTableCellText(tableSelector, row, colIndex, logTag) {
     return normalizeText(raw);
   } catch (err) {
     console.warn(`[${tag}] DataTable cell read error (col ${colIndex}):`, err?.message);
-    return '';
+    return "";
   }
 }

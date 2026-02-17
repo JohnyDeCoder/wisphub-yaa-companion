@@ -14,12 +14,12 @@ export function parseInstallCost(text) {
   if (!match) {
     return null;
   }
-  return match[1].replace(/,/g, '');
+  return match[1].replace(/,/g, "");
 }
 
 // Extract value after a label, stopping before the next keyword or delimiter
 function extractLabelValue(text, labelPattern) {
-  const re = new RegExp(labelPattern + '\\s*([^\\n]*)', 'i');
+  const re = new RegExp(labelPattern + "\\s*([^\\n]*)", "i");
   const section = re.exec(text);
   if (!section) {
     return null;
@@ -30,7 +30,7 @@ function extractLabelValue(text, labelPattern) {
 }
 
 export function parseAsesor(text) {
-  const content = extractLabelValue(text, 'ASESORA?:');
+  const content = extractLabelValue(text, "ASESORA?:");
   if (!content) {
     return null;
   }
@@ -49,7 +49,7 @@ export function parseAsesor(text) {
 }
 
 export function parseTecnico(text) {
-  const content = extractLabelValue(text, 'T[E\u00c9]CNICO(?:S)?:');
+  const content = extractLabelValue(text, "T[E\u00c9]CNICO(?:S)?:");
   if (!content) {
     return null;
   }
@@ -78,7 +78,7 @@ export function parseInstallNumber() {
     return urlMatch[1];
   }
 
-  const h1 = document.querySelector('.page-header h1 span');
+  const h1 = document.querySelector(".page-header h1 span");
   if (h1) {
     const h1Match = h1.textContent.match(/(\d+)@/);
     if (h1Match) {
@@ -104,7 +104,7 @@ export function canRemoveDatosFiscalesSection(text) {
 }
 
 export function removeDatosFiscalesSection(text) {
-  return text.replace(/\s*===+\s*DATOS\s+FISCALES\s*[\s\S]*?===+\s*/gi, ' ').trim();
+  return text.replace(/\s*===+\s*DATOS\s+FISCALES\s*[\s\S]*?===+\s*/gi, " ").trim();
 }
 
 export function parseCommentData(text) {

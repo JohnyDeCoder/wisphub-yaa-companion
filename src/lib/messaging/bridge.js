@@ -1,10 +1,10 @@
-import { EXTENSION_NAME } from '../../config/constants.js';
-import { getDomainKey, getApiBaseUrl } from '../../config/domains.js';
-import { MESSAGE_TYPES, ACTIONS } from '../../config/messages.js';
-import { browserAPI } from '../../utils/browser.js';
+import { EXTENSION_NAME } from "../../config/constants.js";
+import { getDomainKey, getApiBaseUrl } from "../../config/domains.js";
+import { MESSAGE_TYPES, ACTIONS } from "../../config/messages.js";
+import { browserAPI } from "../../utils/browser.js";
 
-const LOG_STORAGE_KEY = 'wisphubYaaLogs'; // chrome.storage key for popup log entries
-const API_KEY_STORAGE_KEY = 'wisphubYaaApiKeys'; // chrome.storage key for API keys per domain
+const LOG_STORAGE_KEY = "wisphubYaaLogs"; // chrome.storage key for popup log entries
+const API_KEY_STORAGE_KEY = "wisphubYaaApiKeys"; // chrome.storage key for API keys per domain
 const MAX_LOG_ENTRIES = 50; // Max stored log entries before oldest are pruned (default: 50)
 const LOG_TTL = 24 * 60 * 60 * 1000; // Log entry lifetime in ms (default: 24h)
 
@@ -23,13 +23,13 @@ function persistLogEntry(data) {
       .then((res) => {
         const logs = pruneExpiredLogs(res[LOG_STORAGE_KEY] || []);
         const ts = Date.now();
-        const time = new Date().toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
+        const time = new Date().toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
           hour12: false,
         });
-        logs.push({ time, level: data.level || 'info', message: data.message || '', ts });
+        logs.push({ time, level: data.level || "info", message: data.message || "", ts });
         if (logs.length > MAX_LOG_ENTRIES) {
           logs.splice(0, logs.length - MAX_LOG_ENTRIES);
         }
@@ -54,7 +54,7 @@ async function getApiKeyForCurrentDomain() {
 }
 
 export function listenToPageMessages() {
-  window.addEventListener('message', (event) => {
+  window.addEventListener("message", (event) => {
     if (event.source !== window) {
       return;
     }
@@ -88,18 +88,18 @@ export function listenToPageMessages() {
 }
 
 async function relayTicketUpdate(ticketIds) {
-  const sendResult = (results) => window.postMessage({ type: MESSAGE_TYPES.UPDATE_TICKETS_RESPONSE, results }, '*');
+  const sendResult = (results) => window.postMessage({ type: MESSAGE_TYPES.UPDATE_TICKETS_RESPONSE, results }, "*");
 
-  const failAll = (msg) => sendResult({ success: 0, failed: ticketIds.length, errors: [{ id: 'all', error: msg }] });
+  const failAll = (msg) => sendResult({ success: 0, failed: ticketIds.length, errors: [{ id: "all", error: msg }] });
 
   try {
     const { domainKey, apiKey } = await getApiKeyForCurrentDomain();
 
     if (!domainKey) {
-      return failAll('Dominio no soportado');
+      return failAll("Dominio no soportado");
     }
     if (!apiKey) {
-      return failAll('API Key no configurada. Configura tu API Key en el popup.');
+      return failAll("API Key no configurada. Configura tu API Key en el popup.");
     }
 
     const response = await browserAPI.runtime.sendMessage({
@@ -113,7 +113,7 @@ async function relayTicketUpdate(ticketIds) {
       response?.results || {
         success: 0,
         failed: ticketIds.length,
-        errors: [{ id: 'all', error: response?.error || 'Unknown error' }],
+        errors: [{ id: "all", error: response?.error || "Unknown error" }],
       },
     );
   } catch (err) {
@@ -126,8 +126,8 @@ export function listenToExtensionMessages() {
     const { action } = message;
 
     if (action === ACTIONS.PING) {
-      window.postMessage({ type: MESSAGE_TYPES.PING_REQUEST }, '*');
-      setTimeout(() => sendResponse({ status: 'OK', editorReady }), 100);
+      window.postMessage({ type: MESSAGE_TYPES.PING_REQUEST }, "*");
+      setTimeout(() => sendResponse({ status: "OK", editorReady }), 100);
       return true;
     }
 
@@ -142,19 +142,19 @@ export function listenToExtensionMessages() {
           settings: userSettings,
           fromPopup: !!message.fromPopup,
         },
-        '*',
+        "*",
       );
       setTimeout(() => {
-        sendResponse(window.__WISPHUB_LAST_FORMAT_RESULT__ || { success: false, error: 'No editor response' });
+        sendResponse(window.__WISPHUB_LAST_FORMAT_RESULT__ || { success: false, error: "No editor response" });
       }, 200);
       return true;
     }
 
     if (action === ACTIONS.RESTORE_COMMENTS) {
       window.__WISPHUB_LAST_RESTORE_RESULT__ = null;
-      window.postMessage({ type: MESSAGE_TYPES.RESTORE_REQUEST }, '*');
+      window.postMessage({ type: MESSAGE_TYPES.RESTORE_REQUEST }, "*");
       setTimeout(() => {
-        sendResponse(window.__WISPHUB_LAST_RESTORE_RESULT__ || { success: false, error: 'No editor response' });
+        sendResponse(window.__WISPHUB_LAST_RESTORE_RESULT__ || { success: false, error: "No editor response" });
       }, 200);
       return true;
     }
@@ -167,29 +167,29 @@ export function listenToExtensionMessages() {
     if (action === ACTIONS.UPDATE_SETTINGS) {
       if (message.settings) {
         userSettings = { ...userSettings, ...message.settings };
-        window.postMessage({ type: MESSAGE_TYPES.SETTINGS_UPDATE, settings: userSettings }, '*');
+        window.postMessage({ type: MESSAGE_TYPES.SETTINGS_UPDATE, settings: userSettings }, "*");
       }
       sendResponse({ success: true });
       return true;
     }
 
-    sendResponse({ success: false, error: 'Unknown action' });
+    sendResponse({ success: false, error: "Unknown action" });
     return true;
   });
 }
 
 async function handleGetStaffInfo(sendResponse) {
   try {
-    const usernameEl = document.querySelector('.user-menu .user-name');
+    const usernameEl = document.querySelector(".user-menu .user-name");
     const username = usernameEl?.textContent?.trim();
     if (!username) {
-      sendResponse({ staff: null, error: 'Username not found in DOM' });
+      sendResponse({ staff: null, error: "Username not found in DOM" });
       return;
     }
 
     const { domainKey, apiKey } = await getApiKeyForCurrentDomain();
     if (!domainKey) {
-      sendResponse({ staff: null, error: 'Unknown domain', username });
+      sendResponse({ staff: null, error: "Unknown domain", username });
       return;
     }
     if (!apiKey) {
@@ -198,25 +198,25 @@ async function handleGetStaffInfo(sendResponse) {
     }
 
     const fetchResult = await browserAPI.runtime.sendMessage({
-      action: 'FETCH_STAFF',
+      action: "FETCH_STAFF",
       apiKey,
       apiBaseUrl: getApiBaseUrl(domainKey),
     });
 
     if (!fetchResult?.success) {
-      sendResponse({ staff: null, error: fetchResult?.error || 'API error', username });
+      sendResponse({ staff: null, error: fetchResult?.error || "API error", username });
       return;
     }
 
     const needle = username.toLowerCase();
     const match = (fetchResult.data || []).find(
-      (s) => (s.username || '').toLowerCase() === needle || (s.nombre || '').toLowerCase() === needle,
+      (s) => (s.username || "").toLowerCase() === needle || (s.nombre || "").toLowerCase() === needle,
     );
 
     if (match) {
       sendResponse({ staff: { id: match.id, nombre: match.nombre, username: match.username } });
     } else {
-      sendResponse({ staff: null, error: 'Staff not found', username });
+      sendResponse({ staff: null, error: "Staff not found", username });
     }
   } catch (e) {
     sendResponse({ staff: null, error: e.message });
@@ -225,10 +225,10 @@ async function handleGetStaffInfo(sendResponse) {
 
 export async function loadAndSyncSettings() {
   try {
-    const result = await browserAPI.storage.local.get('userSettings');
+    const result = await browserAPI.storage.local.get("userSettings");
     if (result.userSettings) {
       userSettings = { ...userSettings, ...result.userSettings };
-      window.postMessage({ type: MESSAGE_TYPES.SETTINGS_UPDATE, settings: userSettings }, '*');
+      window.postMessage({ type: MESSAGE_TYPES.SETTINGS_UPDATE, settings: userSettings }, "*");
     }
   } catch (e) {
     console.error(`[${EXTENSION_NAME}] Settings load error:`, e);

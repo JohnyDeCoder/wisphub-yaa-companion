@@ -1,8 +1,8 @@
-import { ALLOWED_DOMAINS } from '../config/domains.js';
-import { CACHE_TTL } from '../config/constants.js';
+import { ALLOWED_DOMAINS } from "../config/domains.js";
+import { CACHE_TTL } from "../config/constants.js";
 
-const ICON_ACTIVE = { 48: 'assets/icons/icon48_st_on.png' };
-const ICON_INACTIVE = { 48: 'assets/icons/icon48_st_off.png' };
+const ICON_ACTIVE = { 48: "assets/icons/icon48_st_on.png" };
+const ICON_INACTIVE = { 48: "assets/icons/icon48_st_off.png" };
 
 function isWispHubUrl(url) {
   if (!url) {
@@ -29,7 +29,7 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.url || changeInfo.status === 'complete') {
+  if (changeInfo.url || changeInfo.status === "complete") {
     updateIcon(tabId, tab.url);
   }
 });
@@ -40,7 +40,7 @@ const staffCache = {};
 async function fetchStaffFromApi(apiKey, apiBaseUrl) {
   const cached = staffCache[apiBaseUrl];
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
-    console.log('[Background] Staff cache hit for', apiBaseUrl);
+    console.log("[Background] Staff cache hit for", apiBaseUrl);
     return cached.data;
   }
 
@@ -52,7 +52,7 @@ async function fetchStaffFromApi(apiKey, apiBaseUrl) {
       headers: { Authorization: `Api-Key ${apiKey}` },
     });
     if (!res.ok) {
-      const body = await res.text().catch(() => '');
+      const body = await res.text().catch(() => "");
       throw new Error(`HTTP ${res.status} — ${body || res.statusText}`);
     }
     const data = await res.json();
@@ -63,7 +63,9 @@ async function fetchStaffFromApi(apiKey, apiBaseUrl) {
   }
 
   staffCache[apiBaseUrl] = { data: allStaff, ts: Date.now() };
-  console.log(`[Background] Staff fetched: ${allStaff.length} records from ${apiBaseUrl}`);
+  console.log(
+    `[Background] Staff fetched: ${allStaff.length} records from ${apiBaseUrl}`,
+  );
   return allStaff;
 }
 
@@ -72,9 +74,9 @@ async function updateTicketStatus(apiKey, apiBaseUrl, ticketId, headers) {
 
   // Attempt 1: simple status update
   const form1 = new FormData();
-  form1.append('estado', '1');
+  form1.append("estado", "1");
   console.log(`[Background] PUT #${ticketId} attempt 1 (standard subject)`);
-  const res1 = await fetch(url, { method: 'PUT', headers, body: form1 });
+  const res1 = await fetch(url, { method: "PUT", headers, body: form1 });
 
   if (res1.ok) {
     console.log(`[Background] PUT #${ticketId} attempt 1 → OK`);
@@ -82,24 +84,28 @@ async function updateTicketStatus(apiKey, apiBaseUrl, ticketId, headers) {
   }
 
   // Attempt 2: include custom subject to satisfy API validation
-  console.log(`[Background] PUT #${ticketId} attempt 1 failed (${res1.status}), trying attempt 2`);
+  console.log(
+    `[Background] PUT #${ticketId} attempt 1 failed (${res1.status}), trying attempt 2`,
+  );
   const getRes = await fetch(url, { headers });
   if (!getRes.ok) {
-    const body = await getRes.text().catch(() => '');
+    const body = await getRes.text().catch(() => "");
     throw new Error(`GET ${getRes.status}: ${body || getRes.statusText}`);
   }
 
   const ticket = await getRes.json();
   const form2 = new FormData();
-  form2.append('estado', '1');
-  form2.append('asuntos_default', 'Otro Asunto');
-  form2.append('asunto', ticket.asunto);
+  form2.append("estado", "1");
+  form2.append("asuntos_default", "Otro Asunto");
+  form2.append("asunto", ticket.asunto);
 
-  console.log(`[Background] PUT #${ticketId} attempt 2 (custom subject: "${ticket.asunto}")`);
-  const res2 = await fetch(url, { method: 'PUT', headers, body: form2 });
+  console.log(
+    `[Background] PUT #${ticketId} attempt 2 (custom subject: "${ticket.asunto}")`,
+  );
+  const res2 = await fetch(url, { method: "PUT", headers, body: form2 });
 
   if (!res2.ok) {
-    const body = await res2.text().catch(() => '');
+    const body = await res2.text().catch(() => "");
     throw new Error(`PUT attempt 2 ${res2.status}: ${body || res2.statusText}`);
   }
   console.log(`[Background] PUT #${ticketId} attempt 2 → OK`);
@@ -143,5 +149,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (handler) {
     handler();
     return true;
+  }
+});
+
+chrome.runtime.onUpdateAvailable.addListener((details) => {
+  console.log(`[Background] Update available: ${details.version}`);
+  chrome.action.setBadgeText({ text: "UP" });
+  chrome.action.setBadgeBackgroundColor({ color: "#FF0000" });
+});
+
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === "install" || details.reason === "update") {
+    chrome.tabs.create({ url: "pages/whats-new.html" });
   }
 });

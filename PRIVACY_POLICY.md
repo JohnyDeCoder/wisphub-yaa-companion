@@ -1,6 +1,6 @@
 # Privacy Policy — Wisphub Yaa Companion
 
-**Last updated:** February 15, 2026
+**Last updated:** February 17, 2026
 
 ## Overview
 

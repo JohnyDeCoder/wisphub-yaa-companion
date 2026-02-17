@@ -1,34 +1,34 @@
-import { EXTENSION_NAME } from '../../config/constants.js';
-import { getDomainKey, getApiBaseUrl } from '../../config/domains.js';
-import { getApiKeyForDomain, fetchAllStaff } from './staffApi.js';
+import { EXTENSION_NAME } from "../../config/constants.js";
+import { getDomainKey, getApiBaseUrl } from "../../config/domains.js";
+import { getApiKeyForDomain, fetchAllStaff } from "./staffApi.js";
 
-const COL_CLASS = 'wisphub-id-col';
-const CELL_CLASS = 'wisphub-id-cell';
+const COL_CLASS = "wisphub-id-col";
+const CELL_CLASS = "wisphub-id-cell";
 
 function addHeaderCells(table) {
-  table.querySelectorAll('thead tr').forEach((row, i) => {
+  table.querySelectorAll("thead tr").forEach((row, i) => {
     if (row.querySelector(`.${COL_CLASS}`)) {
       return;
     }
-    const th = document.createElement('th');
+    const th = document.createElement("th");
     th.classList.add(COL_CLASS);
     if (i === 0) {
-      th.textContent = 'ID';
+      th.textContent = "ID";
     }
     row.insertBefore(th, row.firstChild);
   });
-  table.querySelectorAll('tfoot tr').forEach((row) => {
+  table.querySelectorAll("tfoot tr").forEach((row) => {
     if (row.querySelector(`.${COL_CLASS}`)) {
       return;
     }
-    const th = document.createElement('th');
+    const th = document.createElement("th");
     th.classList.add(COL_CLASS);
     row.insertBefore(th, row.firstChild);
   });
 }
 
 function injectRowIds(table, usernameToId) {
-  table.querySelectorAll('tbody tr').forEach((row) => {
+  table.querySelectorAll("tbody tr").forEach((row) => {
     if (row.querySelector(`.${CELL_CLASS}`)) {
       return;
     }
@@ -41,11 +41,11 @@ function injectRowIds(table, usernameToId) {
         break;
       }
     }
-    const td = document.createElement('td');
+    const td = document.createElement("td");
     td.classList.add(CELL_CLASS);
-    td.textContent = foundId ?? '—';
-    td.style.fontWeight = '600';
-    td.style.textAlign = 'center';
+    td.textContent = foundId ?? "—";
+    td.style.fontWeight = "600";
+    td.style.textAlign = "center";
     row.insertBefore(td, row.firstChild);
   });
 }
@@ -55,7 +55,7 @@ export async function injectStaffIds() {
     return;
   }
 
-  const table = document.querySelector('table');
+  const table = document.querySelector("table");
   if (!table) {
     return;
   }
@@ -79,7 +79,7 @@ export async function injectStaffIds() {
     addHeaderCells(table);
     injectRowIds(table, usernameToId);
 
-    const tbody = table.querySelector('tbody');
+    const tbody = table.querySelector("tbody");
     if (tbody) {
       new MutationObserver(() => injectRowIds(table, usernameToId)).observe(tbody, {
         childList: true,
