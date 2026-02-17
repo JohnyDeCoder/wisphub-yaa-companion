@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Packed extensions
+*.crx
+*.xpi
+*.zip
+*.pem
+web-ext-artifacts/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment / Secrets
+.env
+.env.*
+*.secret
+*.key
+
+# Testing
+coverage/
+
+# Lint cache
+.eslintcache
+
+# Misc
+.cache/
+tmp/

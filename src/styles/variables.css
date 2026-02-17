@@ -1,0 +1,94 @@
+/* Theme variables */
+:root {
+  /* Primary Colors */
+  --wt-primary: #00c491;
+  --wt-primary-hover: #00a87d;
+  --wt-primary-light: #e6f9f4;
+  --wt-primary-dark: #008c68;
+
+  /* Status Colors */
+  --wt-success: #3ed15e;
+  --wt-success-hover: #32b84e;
+  --wt-success-light: #eafaee;
+  --wt-success-dark: #2a9a42;
+
+  --wt-info: #166cff;
+  --wt-info-hover: #0d5ae6;
+  --wt-info-light: #e8f0ff;
+  --wt-info-dark: #0b4acc;
+
+  --wt-warning: #f2ee10;
+  --wt-warning-hover: #d9d50e;
+  --wt-warning-light: #fefee8;
+  --wt-warning-dark: #c0bc0c;
+  --wt-warning-text: #78350f;
+
+  --wt-danger: #ff4e32;
+  --wt-danger-hover: #e6442b;
+  --wt-danger-light: #ffebe8;
+  --wt-danger-dark: #cc3e28;
+
+  /* Neutral Colors */
+  --wt-white: #ffffff;
+  --wt-gray-50: #f9fafb;
+  --wt-gray-100: #f3f4f6;
+  --wt-gray-200: #e5e7eb;
+  --wt-gray-300: #d1d5db;
+  --wt-gray-400: #9ca3af;
+  --wt-gray-500: #6b7280;
+  --wt-gray-600: #4b5563;
+  --wt-gray-700: #374151;
+  --wt-gray-800: #1f2937;
+  --wt-gray-900: #111827;
+  --wt-black: #000000;
+
+  /* Typography */
+  --wt-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  --wt-font-size-xs: 0.75rem;
+  --wt-font-size-sm: 0.875rem;
+  --wt-font-size-base: 1rem;
+  --wt-font-size-lg: 1.125rem;
+  --wt-font-size-xl: 1.25rem;
+
+  /* Spacing */
+  --wt-spacing-xs: 0.25rem;
+  --wt-spacing-sm: 0.5rem;
+  --wt-spacing-md: 1rem;
+  --wt-spacing-lg: 1.5rem;
+  --wt-spacing-xl: 2rem;
+
+  /* Border Radius */
+  --wt-radius-sm: 4px;
+  --wt-radius-md: 6px;
+  --wt-radius-lg: 8px;
+  --wt-radius-xl: 12px;
+  --wt-radius-full: 9999px;
+
+  /* Shadows */
+  --wt-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --wt-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --wt-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --wt-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+
+  /* Transitions */
+  --wt-transition-fast: 150ms ease;
+  --wt-transition-normal: 250ms ease;
+  --wt-transition-slow: 350ms ease;
+
+  /* Button Sizes */
+  --wt-btn-height-sm: 28px;
+  --wt-btn-height-md: 36px;
+  --wt-btn-height-lg: 44px;
+  --wt-btn-padding-sm: 0.5rem 0.75rem;
+  --wt-btn-padding-md: 0.625rem 1rem;
+  --wt-btn-padding-lg: 0.75rem 1.5rem;
+
+  /* Notification */
+  --wt-notification-duration: 5000ms;
+  --wt-notification-width: 320px;
+
+  /* Z-index layers */
+  --wt-z-notification: 999999;
+  --wt-z-modal: 99999;
+  --wt-z-dropdown: 9999;
+}

@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "Wisphub Yaa Companion",
+  "description": "Extensión de productividad para WispHub — (uso interno Yaa Internet).",
+  "version": "1.0.1",
+  "author": "JohnyDeCoder",
+  "homepage_url": "https://github.com/JohnyDeCoder/wisphub-yaa-companion",
+  "minimum_chrome_version": "110",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "johny.m@yaainternet.com",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
+  "permissions": ["storage"],
+  "host_permissions": ["https://*.wisphub.io/*", "https://*.wisphub.app/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.wisphub.io/*", "https://*.wisphub.app/*"],
+      "js": ["content.js"],
+      "css": ["styles/content.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://*.wisphub.io/*", "https://*.wisphub.app/*"],
+      "js": ["page.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/images/avatar.jpg"],
+      "matches": ["https://*.wisphub.io/*", "https://*.wisphub.app/*"]
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "48": "assets/icons/icon48_st_off.png"
+    },
+    "default_title": "Wisphub Yaa Companion",
+    "default_popup": "popup/popup.html"
+  }
+}

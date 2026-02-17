@@ -1,0 +1,58 @@
+{
+  "name": "wisphub-yaa-companion",
+  "version": "1.0.1",
+  "description": "Extensión de navegador — compañero de productividad para WispHub",
+  "homepage": "https://github.com/JohnyDeCoder/wisphub-yaa-companion#readme",
+  "bugs": {
+    "url": "https://github.com/JohnyDeCoder/wisphub-yaa-companion/issues"
+  },
+  "scripts": {
+    "dev": "webpack --watch --mode=development",
+    "dev:firefox": "webpack --watch --mode=development --env target=firefox",
+    "build": "webpack --mode=production",
+    "build:firefox": "webpack --mode=production --env target=firefox",
+    "zip:chrome": "cd dist/chrome && tar -acf ../wyac-chrome.zip * && cd ../..",
+    "zip:firefox": "cd dist/firefox && tar -acf ../wyac-firefox.zip * && cd ../..",
+    "package": "npm run build && npm run build:firefox && npm run zip:chrome && npm run zip:firefox",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "clean": "rimraf dist"
+  },
+  "keywords": [
+    "wisphub",
+    "browser-extension",
+    "chrome-extension",
+    "edge-extension",
+    "firefox-addon",
+    "opera-extension",
+    "manifest-v3",
+    "comment-formatter",
+    "ckeditor"
+  ],
+  "author": "YAA Internet by VW",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JohnyDeCoder/wisphub-yaa-companion.git"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "copy-webpack-plugin": "^13.0.1",
+    "css-loader": "^7.1.3",
+    "eslint": "^10.0.0",
+    "eslint-plugin-boundaries": "^5.4.0",
+    "globals": "^17.3.0",
+    "rimraf": "^6.1.2",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.105.2",
+    "webpack-cli": "^6.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Firefox versions",
+    "last 2 Edge versions"
+  ]
+}
