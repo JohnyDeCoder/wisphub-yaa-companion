@@ -1,11 +1,15 @@
 import { EXTENSION_NAME, INSTALL_BUTTON_ID } from "../../config/constants.js";
 import { sendLogToPopup } from "../../utils/logger.js";
-import { waitForElement, waitForCondition } from "../../utils/polling.js";
+import { waitForElement } from "../../utils/polling.js";
 import { applyHostTooltip } from "../../utils/hostTooltip.js";
 import { decorateActionButtonGroup } from "../../utils/actionButtons.js";
 import { getDomainKey } from "../../config/domains.js";
 import { copyToClipboard } from "../../utils/clipboard.js";
-import { normalizeText, findColumnIndex, getDataTableCellText } from "../../utils/tableHelpers.js";
+import {
+  normalizeText,
+  findColumnIndex,
+  getDataTableCellText,
+} from "../../utils/tableHelpers.js";
 
 let _busy = false;
 
@@ -15,9 +19,21 @@ const ACTION_BAR_SELECTOR = ".btn-group.new-buttons"; // Container selector wher
 const TABLE_SELECTOR = "#lista-instalaciones"; // DataTable selector for installations list
 const COPY_BUTTON_CLASS = "wisphub-yaa-install-copy-btn"; // CSS class for custom copy button in action cells
 const COPY_BUTTON_VARIANT_CLASS = "wisphub-yaa-action-btn-copy-install"; // CSS class for copy icon variant
-const LOCALITY_KEYWORDS = ["barrio/localidad", "barrio", "localidad", "neighborhood"]; // Locality header aliases
+const LOCALITY_KEYWORDS = [
+  "barrio/localidad",
+  "barrio",
+  "localidad",
+  "neighborhood",
+]; // Locality header aliases
 // Client header aliases — ordered from most specific to least specific
-const CLIENT_KEYWORDS = ["nombre del cliente", "nombre", "cliente", "client", "usuario", "user"];
+const CLIENT_KEYWORDS = [
+  "nombre del cliente",
+  "nombre",
+  "cliente",
+  "client",
+  "usuario",
+  "user",
+];
 let _copyObserver = null;
 let _copyDebounceTimer = 0;
 let _copyClickBound = false;
@@ -73,7 +89,9 @@ function getInProgressEntries() {
       if (STATUS_PROGRESS_RE.test(cellText)) {
         const idServicio = normalizeText(data[0]);
         const editUrl = extractEditUrl(node, idServicio);
-        console.log(`[Installs] In Progress → id=${idServicio}, url=${editUrl}`);
+        console.log(
+          `[Installs] In Progress → id=${idServicio}, url=${editUrl}`,
+        );
         entries.push({ clientId: idServicio, row: node, editUrl });
         break;
       }
@@ -91,7 +109,7 @@ async function updateViaWebForm(editUrl) {
   }
 
   const doc = new DOMParser().parseFromString(await getRes.text(), "text/html");
-  const csrfInput = doc.querySelector("input[name=\"csrfmiddlewaretoken\"]");
+  const csrfInput = doc.querySelector('input[name="csrfmiddlewaretoken"]');
   if (!csrfInput) {
     throw new Error("CSRF token not found");
   }
@@ -107,7 +125,7 @@ async function updateViaWebForm(editUrl) {
   }
 
   estadoSelect.value = "1";
-  form.querySelectorAll("input[type=\"file\"]").forEach((el) => el.remove());
+  form.querySelectorAll('input[type="file"]').forEach((el) => el.remove());
 
   console.log(`[Installs] POST ${editUrl} estado_instalacion=1`);
   const postRes = await fetch(editUrl, {
@@ -130,11 +148,15 @@ async function handleMarkAsNew() {
 
   const entries = getInProgressEntries();
   if (entries.length === 0) {
-    _notify("No se encontraron instalaciones \"En Progreso\"", "warning");
+    _notify('No se encontraron instalaciones "En Progreso"', "warning");
     return;
   }
 
-  if (!confirm(`¿Marcar ${entries.length} instalación(es) de "En Progreso" a "Nueva"?`)) {
+  if (
+    !confirm(
+      `¿Marcar ${entries.length} instalación(es) de "En Progreso" a "Nueva"?`,
+    )
+  ) {
     return;
   }
 
@@ -148,7 +170,11 @@ async function handleMarkAsNew() {
     entries.map((e) => e.clientId),
   );
 
-  const dismissLoading = _notify(`Procesando ${entries.length} instalación(es)...`, "loading", 120000);
+  const dismissLoading = _notify(
+    `Procesando ${entries.length} instalación(es)...`,
+    "loading",
+    120000,
+  );
 
   let success = 0;
   let failed = 0;
@@ -178,14 +204,28 @@ async function handleMarkAsNew() {
     );
   } else if (success > 0) {
     _notify(`${success} OK, ${failed} con error`, "warning", 7000);
-    log(`${success} succeeded, ${failed} failed`, `${success} exitosas, ${failed} con error`, "warning");
+    log(
+      `${success} succeeded, ${failed} failed`,
+      `${success} exitosas, ${failed} con error`,
+      "warning",
+    );
   } else {
     _notify(`Error al actualizar ${failed} instalación(es)`, "error", 7000);
-    log(`${failed} installation(s) failed to update`, `${failed} instalación(es) fallaron al actualizar`, "error");
+    log(
+      `${failed} installation(s) failed to update`,
+      `${failed} instalación(es) fallaron al actualizar`,
+      "error",
+    );
   }
 
   if (errors.length) {
-    errors.forEach((err) => log(`Install #${err.id}: ${err.error}`, `Instalación #${err.id}: ${err.error}`, "error"));
+    errors.forEach((err) =>
+      log(
+        `Install #${err.id}: ${err.error}`,
+        `Instalación #${err.id}: ${err.error}`,
+        "error",
+      ),
+    );
   }
 
   if (success > 0) {
@@ -196,32 +236,13 @@ async function handleMarkAsNew() {
         badge.textContent = " Nueva ";
       }
     });
-    log(`${success} row(s) updated to "New"`, `${success} fila(s) actualizadas a "Nueva"`);
+    log(
+      `${success} row(s) updated to "New"`,
+      `${success} fila(s) actualizadas a "Nueva"`,
+    );
   }
 
   _busy = false;
-}
-
-function showAllRecords() {
-  waitForCondition(
-    () => {
-      const $ = window.jQuery;
-      if (!$ || !$.fn.DataTable) {
-        return null;
-      }
-      const el = $(TABLE_SELECTOR);
-      if (!el.length || !$.fn.DataTable.isDataTable(el)) {
-        return null;
-      }
-      return el.DataTable();
-    },
-    { interval: 1000 },
-  ).then((dt) => {
-    if (dt && dt.page.len() !== -1) {
-      dt.page.len(-1).draw();
-      log("Table set to show all records", "Tabla ajustada a mostrar todos los registros");
-    }
-  });
 }
 
 function injectButton(btnGroup) {
@@ -233,7 +254,9 @@ function injectButton(btnGroup) {
   btn.id = INSTALL_BUTTON_ID;
   btn.className = "wisphub-yaa-action-btn wisphub-yaa-action-btn-mark-new";
   btn.href = "";
-  applyHostTooltip(btn, "Marcar instalaciones \"En Progreso\" como \"Nueva\"", { placement: "top" });
+  applyHostTooltip(btn, 'Marcar instalaciones "En Progreso" como "Nueva"', {
+    placement: "top",
+  });
   btn.addEventListener("click", (e) => {
     e.preventDefault();
     handleMarkAsNew();
@@ -256,20 +279,42 @@ function getInstallTypeSuffix() {
 // ── Build copy text ─────────────────────────────────────────────────────
 function buildInstallCopyText(row, table) {
   if (!row || !table) {
-    console.warn("[Installs] buildInstallCopyText: missing row or table reference");
+    console.warn(
+      "[Installs] buildInstallCopyText: missing row or table reference",
+    );
     return "";
   }
 
   const localityCol = findColumnIndex(table, LOCALITY_KEYWORDS, [], "Installs");
-  const clientCol = findColumnIndex(table, CLIENT_KEYWORDS, [localityCol], "Installs");
+  const clientCol = findColumnIndex(
+    table,
+    CLIENT_KEYWORDS,
+    [localityCol],
+    "Installs",
+  );
 
-  console.log("[Installs] Column indices → locality:", localityCol, "| client:", clientCol);
+  console.log(
+    "[Installs] Column indices → locality:",
+    localityCol,
+    "| client:",
+    clientCol,
+  );
 
   // Use DataTables API only — immune to column hiding / reordering.
   // getCellTextByIndex (DOM-based) is NOT used because hidden columns
   // shift DOM <td> indices and would return wrong data.
-  const locality = getDataTableCellText(TABLE_SELECTOR, row, localityCol, "Installs");
-  const client = getDataTableCellText(TABLE_SELECTOR, row, clientCol, "Installs");
+  const locality = getDataTableCellText(
+    TABLE_SELECTOR,
+    row,
+    localityCol,
+    "Installs",
+  );
+  const client = getDataTableCellText(
+    TABLE_SELECTOR,
+    row,
+    clientCol,
+    "Installs",
+  );
   const suffix = getInstallTypeSuffix();
 
   console.log(
@@ -309,8 +354,13 @@ function createCopyActionButton() {
   button.href = "#";
   button.className = `wisphub-yaa-action-btn ${COPY_BUTTON_VARIANT_CLASS} ${COPY_BUTTON_CLASS}`;
   button.setAttribute("role", "button");
-  button.setAttribute("aria-label", "Copiar localidad, nombre y tipo de instalación");
-  applyHostTooltip(button, "Copiar localidad, nombre y tipo de instalación", { placement: "top" });
+  button.setAttribute(
+    "aria-label",
+    "Copiar localidad, nombre y tipo de instalación",
+  );
+  applyHostTooltip(button, "Copiar localidad, nombre y tipo de instalación", {
+    placement: "top",
+  });
   return button;
 }
 
@@ -372,7 +422,11 @@ function bindInstallCopyClickHandler(table) {
       }
       const payload = buildInstallCopyText(row, table);
       if (!payload) {
-        _notify("No se pudo construir el texto de la instalación", "warning", 3000);
+        _notify(
+          "No se pudo construir el texto de la instalación",
+          "warning",
+          3000,
+        );
         return;
       }
 
@@ -430,13 +484,12 @@ export function initInstallationActions() {
   console.log(`[${EXTENSION_NAME}] Installations page detected`);
   log("Installations module loaded", "Módulo de instalaciones cargado");
 
-  showAllRecords();
   initInstallCopyButtons();
   waitForElement(ACTION_BAR_SELECTOR).then((btnGroup) => {
     if (!btnGroup) {
       return;
     }
     injectButton(btnGroup);
-    log("\"Mark as New\" button added", "Botón \"Marcar como Nuevas\" añadido");
+    log('"Mark as New" button added', 'Botón "Marcar como Nuevas" añadido');
   });
 }
