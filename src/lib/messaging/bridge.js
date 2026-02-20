@@ -9,6 +9,7 @@ const MAX_LOG_ENTRIES = 50; // Max stored log entries before oldest are pruned (
 const LOG_TTL = 24 * 60 * 60 * 1000; // Log entry lifetime in ms (default: 24h)
 
 let editorReady = false;
+let formatterEnabled = false;
 let userSettings = { notificationsEnabled: true, autoFormatEnabled: false, autoPriceCalcEnabled: false };
 
 function pruneExpiredLogs(logs) {
@@ -63,10 +64,12 @@ export function listenToPageMessages() {
 
     if (type === MESSAGE_TYPES.EDITOR_READY) {
       editorReady = true;
+      formatterEnabled = true;
     }
 
     if (type === MESSAGE_TYPES.PING_RESPONSE) {
       editorReady = isReady;
+      formatterEnabled = !!event.data.formatterEnabled;
     }
 
     if (type === MESSAGE_TYPES.FORMAT_RESPONSE) {
@@ -127,7 +130,7 @@ export function listenToExtensionMessages() {
 
     if (action === ACTIONS.PING) {
       window.postMessage({ type: MESSAGE_TYPES.PING_REQUEST }, "*");
-      setTimeout(() => sendResponse({ status: "OK", editorReady }), 100);
+      setTimeout(() => sendResponse({ status: "OK", editorReady, formatterEnabled }), 100);
       return true;
     }
 

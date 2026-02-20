@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.1.1",
+    "date": "2026-02-20",
+    "changes": [
+      "Se deshabilitó el formateador en las páginas de agregar tickets y editar servicio del cliente para evitar comportamiento incorrecto.",
+      "Cálculo de precios: se corrigió un error al actualizar precios dinámicamente cuando dos valores coincidían.",
+      "Cálculo de precios: ahora se puede actualizar el costo de instalación en comentarios sin necesidad de tener todos los campos."
+    ]
+  },
+  {
     "version": "1.1.0",
     "date": "2026-02-20",
     "changes": [

@@ -34,7 +34,10 @@ import {
   tryCalculateForTemplate,
 } from "../features/price-calculator/priceCalculator.js";
 import { injectCalculatorButton } from "../features/price-calculator/components/calculatorButton.js";
-import { showNotification } from "../features/formatter/components/notification.js";
+import {
+  showNotification,
+  updateNotificationSettings,
+} from "../features/formatter/components/notification.js";
 import {
   initTicketNotify,
   initTicketActions,
@@ -74,7 +77,11 @@ setFormatterTemplateFn(() => generateTemplate(tryCalculateForTemplate));
 function getPageFeatures() {
   const currentPath = window.location.pathname;
 
-  if (/\/tickets\/editar/i.test(currentPath)) {
+  if (/\/tickets\/(editar|agregar)/i.test(currentPath)) {
+    return { formatter: false, priceCalc: false, template: false };
+  }
+
+  if (/\/clientes\/editar\/servicio/i.test(currentPath)) {
     return { formatter: false, priceCalc: false, template: false };
   }
 
@@ -89,15 +96,13 @@ function getPageFeatures() {
     currentPath,
   );
   const isRequestInstall = /\/solicitar-instalacion/i.test(currentPath);
-  const isClientAdd = /\/clientes\/agregar/i.test(currentPath);
 
-  if (
-    isInstallationAction ||
-    isPreInstallAction ||
-    isRequestInstall ||
-    isClientAdd
-  ) {
+  if (isInstallationAction || isPreInstallAction || isRequestInstall) {
     return { formatter: true, priceCalc: true, template: true };
+  }
+
+  if (/\/clientes\/agregar/i.test(currentPath)) {
+    return { formatter: true, priceCalc: false, template: true };
   }
 
   return { formatter: true, priceCalc: false, template: false };
@@ -165,18 +170,21 @@ function setupMessageListener() {
       type === MESSAGE_TYPES.SETTINGS_UPDATE ||
       (settings && type === MESSAGE_TYPES.FORMAT_REQUEST)
     ) {
-      updateSettings(settings);
+      updateNotificationSettings(settings);
+      if (pageFeatures.formatter) {
+        updateSettings(settings);
+      }
       updatePriceCalcSettings(settings);
       updateTicketAutoFillSettings(settings);
       setTimeout(tryAutoPriceCalc, 300);
     }
 
-    if (type === MESSAGE_TYPES.FORMAT_REQUEST) {
+    if (type === MESSAGE_TYPES.FORMAT_REQUEST && pageFeatures.formatter) {
       const result = applyFormatting({ silent: !!event.data.fromPopup });
       window.postMessage({ type: MESSAGE_TYPES.FORMAT_RESPONSE, result }, "*");
     }
 
-    if (type === MESSAGE_TYPES.RESTORE_REQUEST) {
+    if (type === MESSAGE_TYPES.RESTORE_REQUEST && pageFeatures.formatter) {
       const result = restoreFormatting();
       window.postMessage({ type: MESSAGE_TYPES.RESTORE_RESPONSE, result }, "*");
     }
@@ -188,6 +196,7 @@ function setupMessageListener() {
           type: MESSAGE_TYPES.PING_RESPONSE,
           editorReady: isEditorReady(editor),
           isWispHub: isWispHubDomain(window.location.href),
+          formatterEnabled: pageFeatures.formatter,
         },
         "*",
       );

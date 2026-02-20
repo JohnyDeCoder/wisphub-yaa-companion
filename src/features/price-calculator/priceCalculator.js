@@ -215,55 +215,65 @@ export function calculatePrices(options = {}) {
   }
 
   const installDate = getInstallDate();
+  const monthlyPrice = resolveMonthlyPrice(text);
+  const completeMatch = text.match(PRICE_LINE_RE);
+
+  // Full calculation: date + monthly price available
+  if (installDate && monthlyPrice) {
+    const proration = calculateProration(monthlyPrice, installDate);
+    if (completeMatch) {
+      return updateExistingPriceLine(editor, completeMatch, proration, notify);
+    }
+    if (INCOMPLETE_RE.test(text)) {
+      return buildPriceLine(editor, text, proration, notify);
+    }
+    notify(UI_MESSAGES.PRICE_NO_LINE, NOTIFICATION_TYPES.WARNING);
+    return { success: false, error: UI_MESSAGES.PRICE_NO_LINE };
+  }
+
+  // Partial update: existing complete line → update install cost, keep month values
+  if (completeMatch) {
+    return updateExistingPriceLine(editor, completeMatch, null, notify);
+  }
+
+  // Incomplete line without full data → fill install cost placeholder
+  if (INCOMPLETE_RE.test(text)) {
+    const formCost = getInstallCostFromForm();
+    if (formCost !== null) {
+      return fillCostInIncomplete(editor, text, formCost, notify);
+    }
+  }
+
   if (!installDate) {
     notify(UI_MESSAGES.PRICE_NO_DATE, NOTIFICATION_TYPES.WARNING);
     return { success: false, error: UI_MESSAGES.PRICE_NO_DATE };
   }
 
-  const monthlyPrice = resolveMonthlyPrice(text);
-  if (!monthlyPrice) {
-    notify(UI_MESSAGES.PRICE_NO_PACKAGE, NOTIFICATION_TYPES.WARNING);
-    return { success: false, error: UI_MESSAGES.PRICE_NO_PACKAGE };
-  }
-
-  const proration = calculateProration(monthlyPrice, installDate);
-  const match = text.match(PRICE_LINE_RE);
-
-  if (match) {
-    return updateExistingPriceLine(editor, text, match, proration, notify);
-  }
-
-  if (INCOMPLETE_RE.test(text)) {
-    return buildPriceLine(editor, text, proration, notify);
-  }
-
-  notify(UI_MESSAGES.PRICE_NO_LINE, NOTIFICATION_TYPES.WARNING);
-  return { success: false, error: UI_MESSAGES.PRICE_NO_LINE };
+  notify(UI_MESSAGES.PRICE_NO_PACKAGE, NOTIFICATION_TYPES.WARNING);
+  return { success: false, error: UI_MESSAGES.PRICE_NO_PACKAGE };
 }
 
-function updateExistingPriceLine(editor, text, match, proration, notify) {
+function updateExistingPriceLine(editor, match, proration, notify) {
   const installPart = match[1].trim();
   const installPriceMatch = installPart.match(/\$([\d.,]+)/);
   const textInstallPrice = installPriceMatch
     ? parsePrice(installPriceMatch[1])
     : 0;
 
-  // Use form cost when available, otherwise keep the price already in the text
   const formCost = getInstallCostFromForm();
   const installPrice = formCost !== null ? formCost : textInstallPrice;
 
-  const oldMonthLabel = match[2].toUpperCase().trim();
-  const oldMonthName = match[3].toUpperCase().trim();
   const oldMonthPrice = parsePrice(match[4]);
   const oldTotal = parsePrice(match[5]);
 
-  const newMonthPrice = proration.price;
+  // With proration: full recalc; without: keep existing month values (cost-only)
+  const newMonthPrice = proration ? proration.price : oldMonthPrice;
+  const monthLabel = proration
+    ? proration.label
+    : `${match[2].trim()} ${match[3].trim()}`;
   const newTotal = installPrice + newMonthPrice;
-  const newMonthLabel = proration.isProrated ? "RESTANTE DE MES" : "MES";
 
-  // Determine if the install part price needs updating from the form field
-  const installChanged =
-    formCost !== null && formCost !== textInstallPrice;
+  const installChanged = formCost !== null && formCost !== textInstallPrice;
   let newInstallPart = installPart;
   if (installChanged) {
     if (installPriceMatch) {
@@ -276,39 +286,30 @@ function updateExistingPriceLine(editor, text, match, proration, notify) {
     }
   }
 
+  const oldLabelText = `${match[2].trim()} ${match[3].trim()}`;
   if (
     !installChanged &&
     oldMonthPrice === newMonthPrice &&
     oldTotal === newTotal &&
-    oldMonthName === proration.monthName &&
-    oldMonthLabel === newMonthLabel
+    monthLabel === oldLabelText
   ) {
     notify(UI_MESSAGES.PRICE_NO_CHANGE, NOTIFICATION_TYPES.INFO);
     return { success: true, noChange: true };
   }
 
+  // Build the complete new line and replace in one shot (avoids ambiguous partial matches)
+  const newLine =
+    `${newInstallPart} + ${monthLabel} ` +
+    `${formatPrice(newMonthPrice)} = ${formatPrice(newTotal)} MXN`;
+
   let html = getEditorContent(editor);
   const originalHtml = html;
-
-  // Step 1: Replace install price if the form value changed
-  if (installChanged && newInstallPart !== installPart) {
-    html = flexHtmlReplace(html, installPart, newInstallPart);
-  }
-
-  // Step 2: Replace month section (label + name + price)
-  const oldMonthSection = `${oldMonthLabel} ${oldMonthName} $${match[4]}`;
-  const newMonthSection = `${proration.label} ${formatPrice(newMonthPrice)}`;
-  html = flexHtmlReplace(html, oldMonthSection, newMonthSection);
-
-  // Step 3: Replace total
-  const oldTotalSection = `$${match[5]}`;
-  const newTotalSection = formatPrice(newTotal);
-  html = flexHtmlReplace(html, oldTotalSection, newTotalSection);
+  html = flexHtmlReplace(html, match[0], newLine);
 
   if (html === originalHtml) {
     sendLog(
       "error",
-      `Replacement failed — searching: "${oldMonthSection}" and "${oldTotalSection}"`,
+      `Replacement failed — searching: "${match[0]}"`,
       "No pude actualizar esa línea de precios.",
     );
     sendLog(
@@ -321,10 +322,6 @@ function updateExistingPriceLine(editor, text, match, proration, notify) {
   }
 
   setEditorContent(editor, html);
-
-  const newLine =
-    `${newInstallPart} + ${proration.label} ` +
-    `${formatPrice(newMonthPrice)} = ${formatPrice(newTotal)} MXN`;
 
   sendLog(
     "success",
@@ -396,6 +393,53 @@ function buildPriceLine(editor, text, proration, notify) {
   );
   notify(UI_MESSAGES.PRICE_UPDATED, NOTIFICATION_TYPES.SUCCESS);
   return { success: true, newLine };
+}
+
+function fillCostInIncomplete(editor, text, formCost, notify) {
+  const incMatch = text.match(INCOMPLETE_RE);
+  if (!incMatch) {
+    return { success: false };
+  }
+
+  const oldText = incMatch[0];
+  const plusIdx = oldText.indexOf("+");
+  const installPart = oldText.substring(0, plusIdx).trim();
+  const restPart = oldText.substring(plusIdx);
+
+  const textPriceMatch = installPart.match(/\$([\d.,]+)/);
+  const existingPrice = textPriceMatch ? parsePrice(textPriceMatch[1]) : null;
+
+  if (existingPrice === formCost) {
+    return { success: true, noChange: true };
+  }
+
+  let newInstallPart;
+  if (textPriceMatch) {
+    newInstallPart = installPart.replace(/\$[\d.,]+/, formatPrice(formCost));
+  } else if (/\$\s*$/.test(installPart)) {
+    newInstallPart = installPart.replace(/\$\s*$/, formatPrice(formCost));
+  } else {
+    newInstallPart = `${installPart} ${formatPrice(formCost)}`;
+  }
+
+  const newText = `${newInstallPart} ${restPart}`;
+
+  let html = getEditorContent(editor);
+  const originalHtml = html;
+  html = flexHtmlReplace(html, oldText, newText);
+
+  if (html === originalHtml) {
+    return { success: false, error: UI_MESSAGES.PRICE_REPLACE_FAIL };
+  }
+
+  setEditorContent(editor, html);
+  sendLog(
+    "success",
+    `Cost updated: ${oldText} → ${newText}`,
+    `Costo: ${newText}`,
+  );
+  notify(UI_MESSAGES.PRICE_UPDATED, NOTIFICATION_TYPES.SUCCESS);
+  return { success: true, newLine: newText };
 }
 
 export function hasPriceLine(text) {

@@ -142,7 +142,7 @@ export async function checkConnection(elements, onLog) {
       if (response?.status === "OK") {
         retryCount = 0;
 
-        const state = { ok: true, editorReady: !!response.editorReady };
+        const state = { ok: true, editorReady: !!response.editorReady, formatterEnabled: !!response.formatterEnabled };
 
         saveConnCache(tab.url, state);
 
@@ -179,7 +179,7 @@ function applyConnState(
   if (editorExpected && state.editorReady) {
     updateStatus(elements, "connected", "Todo listo");
 
-    updateToolCards({ formatter: true });
+    updateToolCards({ formatter: !!state.formatterEnabled });
 
     if (!fromCache) {
       log("success", `Página con editor detectada: ${pathname}`);
