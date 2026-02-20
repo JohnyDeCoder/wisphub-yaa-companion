@@ -1,5 +1,5 @@
 export const EXTENSION_NAME = "Wisphub Yaa Companion"; // Display name shown in logs and UI
-export const EXTENSION_VERSION = "1.0.1"; // Synced with manifest.json and package.json
+export const EXTENSION_VERSION = "1.1.0"; // Synced with manifest.json and package.json
 export const EXTENSION_AUTHOR = "JohnyDeCoder"; // Author metadata shown in extension manifests/docs
 export const EXTENSION_GITHUB = "https://github.com/JohnyDeCoder/wisphub-yaa-companion"; // Repo link used in popup
 

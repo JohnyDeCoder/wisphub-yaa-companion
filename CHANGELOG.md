@@ -2,6 +2,19 @@
 
 Todos los cambios notables de este proyecto se documentan aquí.
 
+## v1.1.0 — 2026-02-20
+
+- Tickets especiales: nuevo botón para crear rápidamente tickets de Mantenimiento General, Ir a Sitio y Sitio Día Completo.
+- Auto-rellenado de tickets: al crear un ticket, se rellenan automáticamente el departamento, la fecha estimada y el asunto.
+- Ver cliente desde tickets: enlace directo a la información del cliente desde la lista de tickets.
+- Cálculo de precios dinámico: ahora detecta automáticamente cambios en Plan internet, Costo instalación y Fecha instalación para recalcular precios al instante.
+- Soporte para "Cambio de compañía": comentarios con "CAMBIO DE COMPAÑIA $350 + RESTO DE MES" ahora calculan precios correctamente.
+- Prioridad del plan: el plan seleccionado en el formulario siempre tiene prioridad sobre el que aparece en los comentarios.
+- Caracteres especiales: se corrigió el cálculo de precios en comentarios con Ñ, acentos y otros caracteres especiales.
+- Caché de staff: los IDs de staff se guardan localmente para cargar más rápido.
+- Plantilla más limpia: texto simplificado y sin usuarios admin en el campo ASESOR.
+- Ajustes del popup: la configuración de auto-rellenado ahora cubre tanto tickets como instalaciones.
+
 ## v1.0.2 — 2026-02-17
 
 - Auto-rellenado de plantilla: ahora funciona de forma independiente, sin depender de Auto-formato.
