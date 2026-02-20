@@ -21,6 +21,7 @@ export const DOUBLE_BREAK_PATTERNS = [
 // Keywords that get a single line break before them
 export const SINGLE_BREAK_PATTERNS = [
   `PAQUETE${PLURAL}:`,
+  `FECHA${S}DE${S}INSTALACI${ACCENT_O}N${S}SOLICITADA:`,
   `HORARIO${PLURAL}:`,
   `FORMA${S}DE${S}PAGO:`,
   `M${ACCENT_E}TODO${PLURAL}${S}DE${S}PAGO:`,
@@ -40,9 +41,11 @@ export const PRESERVE_CASE_PATTERN = /\([^)]*@[^)]*\)/g;
 
 export const SECTION_DELIMITER_PATTERN = /\s*(---+|===+)/g;
 
-export const PRE_INSTALL_FORM_PATTERN = /---+\s*HECHO CON (?:EL )?FORMULARIO DE PRE-INSTALACI[OÓ]N/i;
+export const PRE_INSTALL_FORM_PATTERN =
+  /---+\s*HECHO CON (?:EL )?FORMULARIO DE PRE-INSTALACI[OÓ]N/i;
 
-export const ADDRESS_LABEL_PATTERN = /DIRECCI[OÓ]N\s+(CONFIRMADA|SELECCIONADA)[^:]*/i;
+export const ADDRESS_LABEL_PATTERN =
+  /DIRECCI[OÓ]N\s+(CONFIRMADA|SELECCIONADA)[^:]*/i;
 
 export const MAP_LABEL_PATTERN = /UBICACI[OÓ]N\s+EN\s+MAPA:/i;
 

@@ -3,8 +3,17 @@ import { MONTH_NAMES } from "../config/constants.js";
 import { formatPrice } from "./formatting.js";
 import { getCurrentUserName } from "./currentUser.js";
 
+const ADMIN_NAMES = ["admin", "administrador"];
+
 function getMexicoDate() {
-  return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }),
+  );
+}
+
+function isAdminUser(name) {
+  const lower = (name || "").trim().toLowerCase();
+  return ADMIN_NAMES.includes(lower);
 }
 
 // Generates the installation comment template.
@@ -14,7 +23,9 @@ export function generateTemplate(calcFn) {
   const day = date.getDate();
   const monthName = MONTH_NAMES[date.getMonth()];
   const isProrated = day > 5 && day < 26;
-  const monthLabel = isProrated ? `RESTANTE DE MES ${monthName}` : `MES ${monthName}`;
+  const monthLabel = isProrated
+    ? `RESTANTE DE MES ${monthName}`
+    : `MES ${monthName}`;
 
   // Try to include calculated prices from form data (plan selector, date, install cost)
   const calc = typeof calcFn === "function" ? calcFn() : null;
@@ -23,12 +34,15 @@ export function generateTemplate(calcFn) {
   if (calc) {
     const installPart =
       calc.installCost > 0
-        ? `EQUIPO PRESTADO/COMPRADO/COMODATO ${formatPrice(calc.installCost)}`
-        : "EQUIPO PRESTADO/COMPRADO/COMODATO $";
+        ? `EQUIPO COMODATO ${formatPrice(calc.installCost)}`
+        : "EQUIPO COMODATO $";
     priceLine = `${installPart} + ${calc.monthLabel} ${formatPrice(calc.monthPrice)} = ${formatPrice(calc.total)} MXN`;
   } else {
-    priceLine = `EQUIPO PRESTADO/COMPRADO/COMODATO $ + ${monthLabel} $ = $`;
+    priceLine = `EQUIPO COMODATO $ + ${monthLabel} $ = $`;
   }
+
+  const userName = getCurrentUserName();
+  const asesorLine = isAdminUser(userName) ? [] : ["", `ASESOR: ${userName}`];
 
   return [
     "CLIENTE NUEVO",
@@ -40,7 +54,6 @@ export function generateTemplate(calcFn) {
     "FORMA DE PAGO: POR CONFIRMAR",
     "",
     "TECNICO: ",
-    "",
-    `ASESOR: ${getCurrentUserName() || ""}`,
+    ...asesorLine,
   ].join("\n");
 }
