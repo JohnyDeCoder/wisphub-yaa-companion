@@ -1,6 +1,6 @@
 {
   "name": "wisphub-yaa-companion",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Extensión de productividad para WispHub — (uso interno Yaa Internet)",
   "homepage": "https://github.com/JohnyDeCoder/wisphub-yaa-companion#readme",
   "bugs": {
@@ -13,7 +13,8 @@
     "build:firefox": "webpack --mode=production --env target=firefox",
     "zip:chrome": "node -e \"const v=require('./package.json').version; require('child_process').execSync(`cd dist/chrome && tar -acf ../wyac-chrome-v${v}.zip *`, {stdio:'inherit'})\"",
     "zip:firefox": "node -e \"const v=require('./package.json').version; require('child_process').execSync(`cd dist/firefox && tar -acf ../wyac-firefox-v${v}.zip *`, {stdio:'inherit'})\"",
-    "package": "npm run build && npm run build:firefox && npm run zip:chrome && npm run zip:firefox",
+    "zip:source": "node -e \"const v=require('./package.json').version;const fs=require('fs');fs.copyFileSync('dist/BUILD_INSTRUCTIONS.md','BUILD_INSTRUCTIONS.md');try{require('child_process').execSync('tar -acf dist/wyac-source-v'+v+'.zip src package.json package-lock.json webpack.config.js manifest.json eslint.config.mjs BUILD_INSTRUCTIONS.md',{stdio:'inherit'})}finally{try{fs.unlinkSync('BUILD_INSTRUCTIONS.md')}catch(e){}}\"",
+    "package": "npm run build && npm run build:firefox && npm run zip:chrome && npm run zip:firefox && npm run zip:source",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "clean": "rimraf dist",

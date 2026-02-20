@@ -2,6 +2,12 @@
 
 Todos los cambios notables de este proyecto se documentan aquí.
 
+## v1.1.1 — 2026-02-20
+
+- Se deshabilitó el formateador en las páginas de agregar tickets y editar servicio del cliente para evitar comportamiento incorrecto.
+- Cálculo de precios: se corrigió un error al actualizar precios dinámicamente cuando dos valores coincidían.
+- Cálculo de precios: ahora se puede actualizar el costo de instalación en comentarios sin necesidad de tener todos los campos.
+
 ## v1.1.0 — 2026-02-20
 
 - Tickets especiales: nuevo botón para crear rápidamente tickets de Mantenimiento General, Ir a Sitio y Sitio Día Completo.
