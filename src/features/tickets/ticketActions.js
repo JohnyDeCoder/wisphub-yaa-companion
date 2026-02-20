@@ -2,9 +2,13 @@ import { EXTENSION_NAME } from "../../config/constants.js";
 import { MESSAGE_TYPES } from "../../config/messages.js";
 import { sendLogToPopup } from "../../utils/logger.js";
 import { applyHostTooltip } from "../../utils/hostTooltip.js";
-import { waitForElement, waitForCondition } from "../../utils/polling.js";
+import { waitForElement } from "../../utils/polling.js";
 import { copyToClipboard } from "../../utils/clipboard.js";
-import { normalizeText, findColumnIndex, getDataTableCellText } from "../../utils/tableHelpers.js";
+import {
+  normalizeText,
+  findColumnIndex,
+  getDataTableCellText,
+} from "../../utils/tableHelpers.js";
 
 const CUSTOM_ACTION = "new_selected_wisphub"; // Custom bulk-action value injected into ticket action selector
 const OPTION_LABEL = `Marcar Tickets Como Nuevos — ${EXTENSION_NAME}`; // Visible label for custom ticket bulk action
@@ -12,7 +16,14 @@ const TICKETS_PATH_RE = /\/tickets\/\d*\/?$/; // URL path matcher for ticket lis
 const TABLE_SELECTOR = "#data-table-tickets"; // DataTable selector used to remove updated ticket rows
 const COPY_BUTTON_CLASS = "wisphub-yaa-ticket-copy-btn"; // CSS class for custom copy button in action cells
 const COPY_BUTTON_VARIANT_CLASS = "wisphub-yaa-action-btn-copy-ticket"; // CSS class for copy icon variant
-const LOCALITY_KEYWORDS = ["barrio/localidad", "barrio", "localidad", "neighborhood"]; // Locality header aliases
+const VIEW_CLIENT_LINK_CLASS = "wisphub-yaa-view-client-link"; // CSS class for inline view-client icon
+const USER_KEYWORDS = ["usuario", "user"]; // Header aliases for user/username column
+const LOCALITY_KEYWORDS = [
+  "barrio/localidad",
+  "barrio",
+  "localidad",
+  "neighborhood",
+]; // Locality header aliases
 const CLIENT_KEYWORDS = ["cliente", "client", "usuario", "user"]; // Header aliases for client column
 const SUBJECT_KEYWORDS = ["asunto", "subject"]; // Header aliases for subject column
 let _copyObserver = null;
@@ -30,7 +41,9 @@ function log(consoleMsg, popupMsg, level = "info") {
 }
 
 function getSelectedTicketIds() {
-  return Array.from(document.querySelectorAll("input.editor-active:checked")).map((cb) => cb.value);
+  return Array.from(
+    document.querySelectorAll("input.editor-active:checked"),
+  ).map((cb) => cb.value);
 }
 
 function matchesKeywords(text, keywords) {
@@ -73,7 +86,9 @@ function getLocalityFromResponsiveContainer(container, keywords) {
       continue;
     }
 
-    const value = normalizeText(item.querySelector(".dtr-data")?.textContent || "");
+    const value = normalizeText(
+      item.querySelector(".dtr-data")?.textContent || "",
+    );
     if (value) {
       return value;
     }
@@ -104,7 +119,9 @@ function getValueFromResponsiveRows(row, rowIndex, keywords) {
       continue;
     }
 
-    const value = normalizeText(item.querySelector(".dtr-data")?.textContent || "");
+    const value = normalizeText(
+      item.querySelector(".dtr-data")?.textContent || "",
+    );
     if (value) {
       return value;
     }
@@ -125,13 +142,25 @@ function trimIssueText(value) {
 
 function buildTicketCopyText(row, table) {
   if (!row || !table) {
-    console.warn("[Tickets] buildTicketCopyText: missing row or table reference");
+    console.warn(
+      "[Tickets] buildTicketCopyText: missing row or table reference",
+    );
     return "";
   }
 
   const localityCol = findColumnIndex(table, LOCALITY_KEYWORDS, [], "Tickets");
-  const clientCol = findColumnIndex(table, CLIENT_KEYWORDS, [localityCol], "Tickets");
-  const subjectCol = findColumnIndex(table, SUBJECT_KEYWORDS, [localityCol, clientCol], "Tickets");
+  const clientCol = findColumnIndex(
+    table,
+    CLIENT_KEYWORDS,
+    [localityCol],
+    "Tickets",
+  );
+  const subjectCol = findColumnIndex(
+    table,
+    SUBJECT_KEYWORDS,
+    [localityCol, clientCol],
+    "Tickets",
+  );
   const rowIndex = getDataTableRowIndex(row);
 
   console.log(
@@ -152,17 +181,23 @@ function buildTicketCopyText(row, table) {
   // shift DOM <td> indices and would return wrong data.
   const locality =
     getDataTableCellText(TABLE_SELECTOR, row, localityCol, "Tickets") ||
-    getCellTextBySelectors(row, "td.localidad, td.barrio, td[class*=\"localidad\"], td[class*=\"barrio\"]") ||
+    getCellTextBySelectors(
+      row,
+      'td.localidad, td.barrio, td[class*="localidad"], td[class*="barrio"]',
+    ) ||
     getValueFromResponsiveRows(row, rowIndex, LOCALITY_KEYWORDS);
 
   const client =
     getDataTableCellText(TABLE_SELECTOR, row, clientCol, "Tickets") ||
-    getCellTextBySelectors(row, "td.cliente, td.usuario, td[class*=\"cliente\"], td[class*=\"usuario\"]") ||
+    getCellTextBySelectors(
+      row,
+      'td.cliente, td.usuario, td[class*="cliente"], td[class*="usuario"]',
+    ) ||
     getValueFromResponsiveRows(row, rowIndex, CLIENT_KEYWORDS);
 
   const issueRaw =
     getDataTableCellText(TABLE_SELECTOR, row, subjectCol, "Tickets") ||
-    getCellTextBySelectors(row, "td.asunto, td[class*=\"asunto\"]") ||
+    getCellTextBySelectors(row, 'td.asunto, td[class*="asunto"]') ||
     getValueFromResponsiveRows(row, rowIndex, SUBJECT_KEYWORDS);
   const issue = trimIssueText(issueRaw);
 
@@ -208,8 +243,112 @@ function createCopyActionButton() {
   button.className = `wisphub-yaa-action-btn ${COPY_BUTTON_VARIANT_CLASS} ${COPY_BUTTON_CLASS}`;
   button.setAttribute("role", "button");
   button.setAttribute("aria-label", "Copiar localidad, cliente y asunto");
-  applyHostTooltip(button, "Copiar localidad, cliente y asunto", { placement: "top" });
+  applyHostTooltip(button, "Copiar localidad, cliente y asunto", {
+    placement: "top",
+  });
   return button;
+}
+
+function extractUsernameFromRow(row) {
+  const userCell = row.querySelector("td.usuario");
+  if (userCell) {
+    const username = normalizeText(userCell.textContent);
+    if (username) {
+      return username;
+    }
+  }
+
+  const rowIndex = getDataTableRowIndex(row);
+  const responsiveUsername = getValueFromResponsiveRows(
+    row,
+    rowIndex,
+    USER_KEYWORDS,
+  );
+  if (responsiveUsername) {
+    return responsiveUsername;
+  }
+
+  const printLink = row.querySelector("a[href*='/tickets/imprimir/']");
+  if (printLink) {
+    const segments = printLink.getAttribute("href").split("/").filter(Boolean);
+    const printIndex = segments.indexOf("imprimir");
+    if (printIndex >= 0 && segments[printIndex + 1]) {
+      return segments[printIndex + 1];
+    }
+  }
+
+  return "";
+}
+
+function buildClientViewUrl(username) {
+  if (!username) {
+    return "";
+  }
+  return `/clientes/ver/${username}/`;
+}
+
+function createClientViewLink(clientUrl) {
+  const link = document.createElement("a");
+  link.href = clientUrl;
+  link.target = "_blank";
+  link.rel = "noopener";
+  link.className = VIEW_CLIENT_LINK_CLASS;
+  link.setAttribute("aria-label", "Ver información del cliente");
+  applyHostTooltip(link, "Ver información del cliente", { placement: "top" });
+  return link;
+}
+
+function findClientCellInRow(row) {
+  const directCell = row.querySelector("td.cliente");
+  if (directCell) {
+    return directCell;
+  }
+
+  const clientColIndex = findColumnIndex(
+    document.querySelector(TABLE_SELECTOR),
+    ["cliente", "client"],
+    ["ticket"],
+    "ViewClient",
+  );
+  if (clientColIndex < 0) {
+    return null;
+  }
+
+  const cells = row.querySelectorAll("td");
+  return cells[clientColIndex] || null;
+}
+
+function injectClientViewLinks() {
+  const table = document.querySelector(TABLE_SELECTOR);
+  if (!table) {
+    return 0;
+  }
+
+  let injected = 0;
+  const rows = table.querySelectorAll("tbody tr:not(.child)");
+
+  rows.forEach((row) => {
+    if (row.querySelector(`.${VIEW_CLIENT_LINK_CLASS}`)) {
+      return;
+    }
+
+    const clientCell = findClientCellInRow(row);
+    if (!clientCell) {
+      return;
+    }
+
+    const username = extractUsernameFromRow(row);
+    const clientUrl = buildClientViewUrl(username);
+    if (!clientUrl) {
+      return;
+    }
+
+    const link = createClientViewLink(clientUrl);
+    clientCell.appendChild(link);
+    injected++;
+  });
+
+  return injected;
 }
 
 function injectTicketCopyButtons() {
@@ -219,13 +358,14 @@ function injectTicketCopyButtons() {
   }
 
   let injected = 0;
-  const actionCells = table.querySelectorAll("tbody tr:not(.child) td.accion, tbody tr:not(.child) td.acciones");
+  const actionCells = table.querySelectorAll(
+    "tbody tr:not(.child) td.accion, tbody tr:not(.child) td.acciones",
+  );
 
   actionCells.forEach((cell) => {
     if (cell.querySelector(`.${COPY_BUTTON_CLASS}`)) {
       return;
     }
-
     cell.append(" ", createCopyActionButton());
     injected++;
   });
@@ -233,10 +373,11 @@ function injectTicketCopyButtons() {
   return injected;
 }
 
-function scheduleTicketCopyButtonsInjection() {
+function scheduleTicketButtonsInjection() {
   clearTimeout(_copyDebounceTimer);
   _copyDebounceTimer = setTimeout(() => {
     injectTicketCopyButtons();
+    injectClientViewLinks();
   }, 120);
 }
 
@@ -279,56 +420,42 @@ function bindTicketCopyClickHandler(table) {
   _copyClickBound = true;
 }
 
-function startTicketCopyObserver(table) {
+function startTicketButtonsObserver(table) {
   if (!table || _copyObserver) {
     return;
   }
 
   _copyObserver = new MutationObserver(() => {
-    scheduleTicketCopyButtonsInjection();
+    scheduleTicketButtonsInjection();
   });
 
   _copyObserver.observe(table, { childList: true, subtree: true });
 }
 
-function initTicketCopyButtons() {
+function initTicketActionButtons() {
   waitForElement(TABLE_SELECTOR).then((table) => {
     if (!table) {
       return;
     }
 
-    const injected = injectTicketCopyButtons();
-    if (injected > 0) {
+    const copyCount = injectTicketCopyButtons();
+    if (copyCount > 0) {
       log(
-        `Custom copy button added to ${injected} ticket row(s)`,
-        `Botón de copiado agregado en ${injected} ticket(s)`,
+        `Copy button added to ${copyCount} ticket(s)`,
+        `Botón de copiado agregado en ${copyCount} ticket(s)`,
+      );
+    }
+
+    const linkCount = injectClientViewLinks();
+    if (linkCount > 0) {
+      log(
+        `Client view link added to ${linkCount} ticket(s)`,
+        `Enlace de ver cliente agregado en ${linkCount} ticket(s)`,
       );
     }
 
     bindTicketCopyClickHandler(table);
-    startTicketCopyObserver(table);
-  });
-}
-
-function setTablePageLength(length) {
-  waitForCondition(
-    () => {
-      const $ = window.jQuery;
-      if (!$ || !$.fn.DataTable) {
-        return null;
-      }
-      const el = $(TABLE_SELECTOR);
-      if (!el.length || !$.fn.DataTable.isDataTable(el)) {
-        return null;
-      }
-      return el.DataTable();
-    },
-    { interval: 1000 },
-  ).then((dt) => {
-    if (dt && dt.page.len() !== length) {
-      dt.page.len(length).draw();
-      log("Table set to 500 records", "Tabla ajustada a 500 registros");
-    }
+    startTicketButtonsObserver(table);
   });
 }
 
@@ -343,7 +470,7 @@ function injectOption(select) {
 }
 
 function interceptSubmit() {
-  const btn = document.querySelector("button[name=\"form-acciones\"]");
+  const btn = document.querySelector('button[name="form-acciones"]');
   if (!btn) {
     return;
   }
@@ -373,10 +500,17 @@ function handleMarkAsNew() {
     return;
   }
 
-  log(`Marking ${ticketIds.length} ticket(s) as New...`, `Marcando ${ticketIds.length} ticket(s) como Nuevos...`);
+  log(
+    `Marking ${ticketIds.length} ticket(s) as New...`,
+    `Marcando ${ticketIds.length} ticket(s) como Nuevos...`,
+  );
   console.log("[Tickets] Selected IDs:", ticketIds);
 
-  const dismissLoading = _notify(`Procesando ${ticketIds.length} ticket(s)...`, "loading", 120000);
+  const dismissLoading = _notify(
+    `Procesando ${ticketIds.length} ticket(s)...`,
+    "loading",
+    120000,
+  );
 
   const handler = (event) => {
     if (event.source !== window) {
@@ -394,7 +528,10 @@ function handleMarkAsNew() {
   };
 
   window.addEventListener("message", handler);
-  window.postMessage({ type: MESSAGE_TYPES.UPDATE_TICKETS_REQUEST, ticketIds }, "*");
+  window.postMessage(
+    { type: MESSAGE_TYPES.UPDATE_TICKETS_REQUEST, ticketIds },
+    "*",
+  );
 }
 
 function processResults(results, ticketIds) {
@@ -415,14 +552,28 @@ function processResults(results, ticketIds) {
     );
   } else if (success > 0) {
     _notify(`${success} OK, ${failed} con error`, "warning", 7000);
-    log(`${success} succeeded, ${failed} failed`, `${success} exitosos, ${failed} con error`, "warning");
+    log(
+      `${success} succeeded, ${failed} failed`,
+      `${success} exitosos, ${failed} con error`,
+      "warning",
+    );
   } else {
     _notify(`Error al actualizar ${failed} ticket(s)`, "error", 7000);
-    log(`${failed} ticket(s) failed to update`, `${failed} ticket(s) fallaron al actualizar`, "error");
+    log(
+      `${failed} ticket(s) failed to update`,
+      `${failed} ticket(s) fallaron al actualizar`,
+      "error",
+    );
   }
 
   if (errors?.length) {
-    errors.forEach((err) => log(`Ticket #${err.id}: ${err.error}`, `Ticket #${err.id}: ${err.error}`, "error"));
+    errors.forEach((err) =>
+      log(
+        `Ticket #${err.id}: ${err.error}`,
+        `Ticket #${err.id}: ${err.error}`,
+        "error",
+      ),
+    );
   }
 
   if (success > 0) {
@@ -434,7 +585,8 @@ function removeTicketRows(ticketIds) {
   try {
     const $ = window.jQuery;
     const tableEl = $ ? $(TABLE_SELECTOR) : null;
-    const hasDT = tableEl && $.fn.DataTable && $.fn.DataTable.isDataTable(tableEl);
+    const hasDT =
+      tableEl && $.fn.DataTable && $.fn.DataTable.isDataTable(tableEl);
 
     ticketIds.forEach((id) => {
       const cb = document.querySelector(`input.editor-active[value="${id}"]`);
@@ -458,7 +610,10 @@ function removeTicketRows(ticketIds) {
       select.selectedIndex = 0;
     }
 
-    log(`${ticketIds.length} row(s) removed from table`, `${ticketIds.length} fila(s) eliminadas de la tabla`);
+    log(
+      `${ticketIds.length} row(s) removed from table`,
+      `${ticketIds.length} fila(s) eliminadas de la tabla`,
+    );
   } catch (err) {
     console.error("[Tickets] Row removal failed:", err);
     window.location.reload();
@@ -472,15 +627,14 @@ export function initTicketActions() {
 
   console.log(`[${EXTENSION_NAME}] Tickets page detected`);
   log("Tickets module loaded", "Módulo de tickets cargado");
-  initTicketCopyButtons();
+  initTicketActionButtons();
 
   waitForElement("#id_accion_select").then((select) => {
     if (!select) {
       return;
     }
-    setTablePageLength(500);
     injectOption(select);
     interceptSubmit();
-    log("\"Mark as New\" option added", "Opción \"Marcar como Nuevos\" añadida");
+    log('"Mark as New" option added', 'Opción "Marcar como Nuevos" añadida');
   });
 }

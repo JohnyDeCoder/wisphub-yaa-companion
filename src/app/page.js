@@ -51,6 +51,12 @@ import {
 import { initClientPhoneLinks } from "../features/clients/clientPhoneLinks.js";
 import { initClientUploadButton } from "../features/clients/clientUploadButton.js";
 import { initScrollTopButton } from "../features/navigation/scrollTopButton.js";
+import { initSpecialTickets } from "../features/tickets/specialTickets.js";
+import {
+  initTicketAutoFill,
+  initTicketAutoFillNotify,
+  updateTicketAutoFillSettings,
+} from "../features/tickets/ticketAutoFill.js";
 
 if (window.__WISPHUB_TOOLS_LOADED__) {
   throw new Error(`[${EXTENSION_NAME}] Already loaded — skipping duplicate.`);
@@ -61,6 +67,7 @@ initPriceCalcNotify(showNotification);
 initTicketNotify(showNotification);
 initInstallNotify(showNotification);
 initTemplateNotify(showNotification);
+initTicketAutoFillNotify(showNotification);
 setTemplateCalcFn(tryCalculateForTemplate);
 setFormatterTemplateFn(() => generateTemplate(tryCalculateForTemplate));
 
@@ -160,6 +167,7 @@ function setupMessageListener() {
     ) {
       updateSettings(settings);
       updatePriceCalcSettings(settings);
+      updateTicketAutoFillSettings(settings);
       setTimeout(tryAutoPriceCalc, 300);
     }
 
@@ -256,6 +264,8 @@ function init() {
   initClientPhoneLinks(showNotification);
   initClientUploadButton();
   initScrollTopButton();
+  initSpecialTickets();
+  initTicketAutoFill();
 }
 
 onDomReady(init);
