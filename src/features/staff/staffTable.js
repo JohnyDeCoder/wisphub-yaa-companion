@@ -1,6 +1,7 @@
 import { EXTENSION_NAME } from "../../config/constants.js";
 import { getDomainKey, getApiBaseUrl } from "../../config/domains.js";
 import { getApiKeyForDomain, fetchAllStaff } from "./staffApi.js";
+import { loadCachedStaffIds, saveStaffIdsToCache } from "./staffCache.js";
 
 const COL_CLASS = "wisphub-id-col";
 const CELL_CLASS = "wisphub-id-cell";
@@ -50,6 +51,32 @@ function injectRowIds(table, usernameToId) {
   });
 }
 
+async function resolveStaffIds(domainKey) {
+  const cached = await loadCachedStaffIds(domainKey);
+  if (cached) {
+    console.log(
+      `[${EXTENSION_NAME}] Staff IDs loaded from cache (${cached.size} entries)`,
+    );
+    return cached;
+  }
+
+  const apiKey = await getApiKeyForDomain(domainKey);
+  if (!apiKey) {
+    console.log(`[${EXTENSION_NAME}] No API key for ${domainKey}`);
+    return null;
+  }
+
+  const allStaff = await fetchAllStaff(apiKey, getApiBaseUrl(domainKey));
+  const usernameToId = new Map();
+  allStaff.forEach((s) => usernameToId.set(s.username, s.id));
+
+  await saveStaffIdsToCache(domainKey, usernameToId);
+  console.log(
+    `[${EXTENSION_NAME}] Staff IDs fetched and cached (${allStaff.length} entries)`,
+  );
+  return usernameToId;
+}
+
 export async function injectStaffIds() {
   if (!/^\/staff\/?$/.test(window.location.pathname)) {
     return;
@@ -65,28 +92,28 @@ export async function injectStaffIds() {
     return;
   }
 
-  const apiKey = await getApiKeyForDomain(domainKey);
-  if (!apiKey) {
-    console.log(`[${EXTENSION_NAME}] No API key for ${domainKey}`);
-    return;
-  }
-
   try {
-    const allStaff = await fetchAllStaff(apiKey, getApiBaseUrl(domainKey));
-    const usernameToId = new Map();
-    allStaff.forEach((s) => usernameToId.set(s.username, s.id));
+    const usernameToId = await resolveStaffIds(domainKey);
+    if (!usernameToId) {
+      return;
+    }
 
     addHeaderCells(table);
     injectRowIds(table, usernameToId);
 
     const tbody = table.querySelector("tbody");
     if (tbody) {
-      new MutationObserver(() => injectRowIds(table, usernameToId)).observe(tbody, {
-        childList: true,
-      });
+      new MutationObserver(() => injectRowIds(table, usernameToId)).observe(
+        tbody,
+        {
+          childList: true,
+        },
+      );
     }
 
-    console.log(`[${EXTENSION_NAME}] Staff IDs ready (${allStaff.length} loaded)`);
+    console.log(
+      `[${EXTENSION_NAME}] Staff IDs ready (${usernameToId.size} loaded)`,
+    );
   } catch (e) {
     console.error(`[${EXTENSION_NAME}] Staff ID injection failed:`, e);
   }
