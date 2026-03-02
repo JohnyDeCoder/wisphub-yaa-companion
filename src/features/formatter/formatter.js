@@ -1,4 +1,4 @@
-import { BUTTON_ID, TIMING, EXTENSION_NAME } from "../../config/constants.js";
+import { TIMING, EXTENSION_NAME } from "../../config/constants.js";
 import {
   MESSAGE_TYPES,
   NOTIFICATION_TYPES,
@@ -17,7 +17,10 @@ import {
   removeDatosFiscalesSection,
 } from "./utils/commentParser.js";
 import { completeCommentStructure } from "./utils/commentCompleter.js";
-import { autoFillFormFields } from "./utils/formFiller.js";
+import {
+  autoFillFormFields,
+  clearAllFieldIndicators,
+} from "./utils/formFiller.js";
 import { injectButtonIntoToolbar } from "./components/formatterButton.js";
 import {
   showNotification,
@@ -29,6 +32,7 @@ import {
   getIsFormatted,
   setIsFormatted,
   resetToggleState,
+  updateButtonVisual,
 } from "./stores/toggleState.js";
 
 let autoFormatEnabled = false;
@@ -81,7 +85,10 @@ export function handleToggle(shouldFormat, options = {}) {
 
       const formattedHtml = formatText(textToFormat);
       setEditorContent(editor, formattedHtml);
-      autoFillFormFields(parsedData);
+
+      if (options.fillFields !== false) {
+        autoFillFormFields(parsedData);
+      }
 
       notify(UI_MESSAGES.FORMAT_SUCCESS, NOTIFICATION_TYPES.SUCCESS);
       return { success: true };
@@ -105,15 +112,13 @@ export function applyFormatting(options = {}) {
   if (getIsFormatted()) {
     return { success: false, error: UI_MESSAGES.ALREADY_FORMATTED };
   }
-  const result = handleToggle(true, { silent: !!options.silent });
+  const result = handleToggle(true, {
+    silent: !!options.silent,
+    fillFields: options.fillFields,
+  });
   if (result.success) {
     setIsFormatted(true);
-    const btn = document.getElementById(BUTTON_ID);
-    if (btn) {
-      btn.classList.add("cke_button_on");
-      btn.classList.remove("cke_button_off");
-      btn.setAttribute("aria-pressed", "true");
-    }
+    updateButtonVisual(true);
   }
   return result;
 }
@@ -124,6 +129,7 @@ export function restoreFormatting() {
   }
   const result = handleToggle(false);
   if (result.success) {
+    clearAllFieldIndicators();
     resetToggleState();
   }
   return result;
@@ -152,14 +158,9 @@ function tryAutoFormat() {
     }
 
     setIsFormatted(true);
-    const btn = document.getElementById(BUTTON_ID);
-    if (btn) {
-      btn.classList.add("cke_button_on");
-      btn.classList.remove("cke_button_off");
-      btn.setAttribute("aria-pressed", "true");
-    }
+    updateButtonVisual(true);
 
-    const result = handleToggle(true, { silent: true });
+    const result = handleToggle(true, { silent: true, fillFields: true });
 
     if (typeof _onAutoFormatComplete === "function") {
       _onAutoFormatComplete(result);

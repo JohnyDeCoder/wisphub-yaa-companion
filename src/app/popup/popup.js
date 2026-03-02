@@ -1,16 +1,21 @@
 import { browserAPI } from "../../utils/browser.js";
 import { getDomainKey, isWispHubDomain } from "../../config/domains.js";
-import { MONTH_NAMES } from "../../config/constants.js";
+import { getTodayISO } from "../../utils/date.js";
+import { formatPrice } from "../../utils/formatting.js";
+import { calculateProration } from "../../features/price-calculator/priceCalculator.js";
 import { loadSettings, saveSettings } from "../../lib/storage/settings.js";
-import { getAllApiKeys, saveAllApiKeys } from "../../features/staff/staffApi.js";
+import {
+  getAllApiKeys,
+  saveAllApiKeys,
+} from "../../features/staff/staffApi.js";
 import { POPUP_CONFIG } from "./config.js";
 import { showToast } from "./components/toast.js";
 import { checkConnection } from "./components/connection.js";
 import { renderChangelog } from "./components/changelog.js";
 import { addLog, getLogs, clearLogs, renderLogs } from "./components/logs.js";
 
-const STAFF_CACHE_KEY = "wisphubStaffInfoCache"; // chrome.storage key for cached staff data per domain
-const STAFF_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // Staff cache lifetime in ms (default: 7 days)
+const STAFF_CACHE_KEY = "wisphubStaffInfoCache";
+const STAFF_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 
 let userSettings = {};
 let elements = {};
@@ -78,7 +83,8 @@ function applySettingsToUI() {
     elements.settingsAutoPriceCalc.checked = userSettings.autoPriceCalcEnabled;
   }
   if (elements.settingsAutoFillTemplate) {
-    elements.settingsAutoFillTemplate.checked = userSettings.autoFillTemplateEnabled;
+    elements.settingsAutoFillTemplate.checked =
+      userSettings.autoFillTemplateEnabled;
   }
 }
 
@@ -111,7 +117,9 @@ function closeLogsViewer() {
 async function syncSettingsToContentScript() {
   try {
     const tabs = await browserAPI.tabs.query({});
-    const wisphubTabs = tabs.filter((tab) => tab?.id && isWispHubDomain(tab.url));
+    const wisphubTabs = tabs.filter(
+      (tab) => tab?.id && isWispHubDomain(tab.url),
+    );
 
     await Promise.allSettled(
       wisphubTabs.map((tab) =>
@@ -123,7 +131,11 @@ async function syncSettingsToContentScript() {
     );
 
     if (wisphubTabs.length > 0) {
-      await writeLog("info", `Ajustes sincronizados en ${wisphubTabs.length} pestaña(s)`, "Ajustes");
+      await writeLog(
+        "info",
+        `Ajustes sincronizados en ${wisphubTabs.length} pestaña(s)`,
+        "Ajustes",
+      );
     }
   } catch {
     // Content script may not be ready
@@ -138,7 +150,10 @@ async function handleSettingChange(key, value) {
 
 async function formatComment() {
   try {
-    const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await browserAPI.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
     if (!tab) {
       showToast(elements.toast, "Sin pestaña activa", "error");
       return;
@@ -153,9 +168,20 @@ async function formatComment() {
 
     if (response?.success) {
       isFormatted = !isFormatted;
-      elements.btnFormatComment.textContent = isFormatted ? "Restaurar" : "Usar";
-      showToast(elements.toast, isFormatted ? "¡Formateado!" : "Texto restaurado", isFormatted ? "success" : "info");
-      writeLog("success", isFormatted ? "Formateador aplicado desde popup" : "Texto restaurado desde popup");
+      elements.btnFormatComment.textContent = isFormatted
+        ? "Restaurar"
+        : "Usar";
+      showToast(
+        elements.toast,
+        isFormatted ? "¡Formateado!" : "Texto restaurado",
+        isFormatted ? "success" : "info",
+      );
+      writeLog(
+        "success",
+        isFormatted
+          ? "Formateador aplicado desde popup"
+          : "Texto restaurado desde popup",
+      );
     } else if (response?.error) {
       showToast(elements.toast, response.error, "error");
       writeLog("error", `Formateador: ${response.error}`);
@@ -198,7 +224,11 @@ function setupEventListeners() {
       return;
     }
     await saveAllApiKeys({ "wisphub.io": keyIo, "wisphub.app": keyApp });
-    showToast(elements.toast, "API Keys guardadas", "success");
+    showToast(
+      elements.toast,
+      "API Keys guardadas, reinicia la página para que surtan efecto",
+      "success",
+    );
     writeLog("success", "API Keys actualizadas");
   });
 
@@ -222,7 +252,6 @@ function setupEventListeners() {
     renderLogs(elements.logsList, []);
   });
 
-  // Calculator
   elements.btnOpenCalc?.addEventListener("click", openCalculator);
   elements.btnCalcClose?.addEventListener("click", closeCalculator);
   elements.btnCalcRun?.addEventListener("click", runCalculator);
@@ -233,24 +262,7 @@ function setupEventListeners() {
   elements.calcDate?.addEventListener("change", saveCalcState);
 }
 
-// ======================== Calculator ========================
-
-const CALC_STORAGE_KEY = "wisphubCalcState"; // chrome.storage key for calculator state persistence
-
-function getTodayISO() {
-  const d = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function formatCalcPrice(n) {
-  if (!n || n <= 0) {
-    return "$0";
-  }
-  return "$" + n.toLocaleString("es-MX");
-}
+const CALC_STORAGE_KEY = "wisphubCalcState";
 
 async function saveCalcState() {
   const state = {
@@ -343,27 +355,13 @@ function runCalculator() {
 
   const [y, m, d] = dateStr.split("-").map(Number);
   const installDate = new Date(y, m - 1, d);
-  const day = installDate.getDate();
-  const totalDays = new Date(y, m, 0).getDate();
-  const isProrated = day > 5 && day < 26;
+  const proration = calculateProration(packagePrice, installDate);
 
-  let monthPrice;
-  let monthLabel;
+  const total = installPrice + proration.price;
 
-  if (isProrated) {
-    const remaining = totalDays - day;
-    monthPrice = Math.round((packagePrice / totalDays) * remaining);
-    monthLabel = `RESTANTE DE MES ${MONTH_NAMES[installDate.getMonth()]}`;
-  } else {
-    const targetDate = day > 25 ? new Date(y, m, 1) : installDate;
-    monthPrice = packagePrice;
-    monthLabel = `MES ${MONTH_NAMES[targetDate.getMonth()]}`;
-  }
-
-  const total = installPrice + monthPrice;
-
-  const installPart = installPrice > 0 ? `COMODATO ${formatCalcPrice(installPrice)}` : "COMODATO $0";
-  const line = `${installPart} + ${monthLabel} ${formatCalcPrice(monthPrice)} = ${formatCalcPrice(total)} MXN`;
+  const installPart =
+    installPrice > 0 ? `COMODATO ${formatPrice(installPrice)}` : "COMODATO $0";
+  const line = `${installPart} + ${proration.label} ${formatPrice(proration.price)} = ${formatPrice(total)} MXN`;
 
   if (elements.calcResultLine) {
     elements.calcResultLine.textContent = line;
@@ -387,6 +385,23 @@ function copyCalcResult() {
     });
 }
 
+function showApiKeyWarning() {
+  if (!elements.staffInfo) {
+    return;
+  }
+  const existing = elements.staffInfo.querySelector(".wisphub-yaa-api-warning");
+  if (existing) {
+    return;
+  }
+  const badge = document.createElement("span");
+  badge.className = "wisphub-yaa-api-warning";
+  badge.textContent = "API Keys no configuradas";
+  elements.staffInfo.parentElement?.insertBefore(
+    badge,
+    elements.staffInfo.nextSibling,
+  );
+}
+
 async function loadApiKeysToUI() {
   const keys = await getAllApiKeys();
   if (keys["wisphub.io"] && elements.settingsApiKeyIo) {
@@ -394,6 +409,9 @@ async function loadApiKeysToUI() {
   }
   if (keys["wisphub.app"] && elements.settingsApiKeyApp) {
     elements.settingsApiKeyApp.value = keys["wisphub.app"];
+  }
+  if (!keys["wisphub.io"] && !keys["wisphub.app"]) {
+    showApiKeyWarning();
   }
 }
 
@@ -434,20 +452,32 @@ async function saveStaffInfoToCache(domainKey, staff) {
 
 async function fetchStaffInfo() {
   try {
-    const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await browserAPI.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
     if (!tab || !isWispHubDomain(tab.url)) {
       return;
     }
 
     const domainKey = getDomainKey(tab.url);
-    const response = await browserAPI.tabs.sendMessage(tab.id, { action: "GET_STAFF_INFO" });
+    const response = await browserAPI.tabs.sendMessage(tab.id, {
+      action: "GET_STAFF_INFO",
+    });
 
     if (response?.staff) {
-      showStaffInfo(response.staff.username || response.staff.nombre, response.staff.id);
+      showStaffInfo(
+        response.staff.username || response.staff.nombre,
+        response.staff.id,
+      );
       if (domainKey) {
         saveStaffInfoToCache(domainKey, response.staff);
       }
-      writeLog("info", `Staff detectado: ${response.staff.username} (ID: ${response.staff.id})`, "Staff");
+      writeLog(
+        "info",
+        `Staff detectado: ${response.staff.username} (ID: ${response.staff.id})`,
+        "Staff",
+      );
     }
   } catch {
     // Staff info not available yet
@@ -457,7 +487,9 @@ async function fetchStaffInfo() {
 async function init() {
   initElements();
 
-  const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true }).catch(() => []);
+  const [tab] = await browserAPI.tabs
+    .query({ active: true, currentWindow: true })
+    .catch(() => []);
   const domainKey = getDomainKey(tab?.url);
 
   const [settings, , hasFreshCache] = await Promise.all([
@@ -471,7 +503,6 @@ async function init() {
   setupEventListeners();
   renderChangelog(elements.changelogList);
 
-  // Restore calculator overlay if it was open
   const calcState = await loadCalcState();
   if (calcState?.overlayOpen) {
     openCalculator();

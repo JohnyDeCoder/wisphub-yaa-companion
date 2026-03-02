@@ -2,18 +2,24 @@ import { sendLogToPopup } from "../../utils/logger.js";
 import { applyHostTooltip } from "../../utils/hostTooltip.js";
 import { decorateActionButtonGroup } from "../../utils/actionButtons.js";
 import { copyToClipboard } from "../../utils/clipboard.js";
+import { findColumnIndex } from "../../utils/tableHelpers.js";
 
-const PROCESSED_PHONE = "data-wisphub-wa"; // Data attribute marker to avoid re-processing phone cells
-const PROCESSED_ACTIONS = "data-wisphub-actions"; // Data attribute marker to avoid re-injecting action buttons
-const COUNTRY_CODE = "52"; // Default country code used to normalize Mexican phone numbers
-const PHONE_RE = /^\+?\d[\d\s\-().]{6,}$/; // Generic phone-like text matcher before normalization
-const IP_RE = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/; // IPv4 matcher to ignore IP values in phone columns
+const PROCESSED_PHONE = "data-wisphub-wa";
+const PROCESSED_ACTIONS = "data-wisphub-actions";
+const COUNTRY_CODE = "52";
+const PHONE_RE = /^\+?\d[\d\s\-().]{6,}$/;
+const IP_RE = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
 
-// Header keywords used to locate phone columns
-const PHONE_KEYWORDS = ["telefono", "teléfono", "celular", "phone", "tel", "móvil", "movil"];
-// Header keywords used to locate action columns
+const PHONE_KEYWORDS = [
+  "telefono",
+  "teléfono",
+  "celular",
+  "phone",
+  "tel",
+  "móvil",
+  "movil",
+];
 const ACTION_KEYWORDS = ["acción", "accion", "acciones", "action"];
-// URL matcher used to extract client slug from row links
 const SLUG_RE = /\/(?:cliente|clientes\/ver|facturas\/generar)\/([^/]+)/;
 
 let _notify = null;
@@ -47,7 +53,9 @@ function createWaLink(phoneText, cleaned) {
   link.target = "_blank";
   link.rel = "noopener";
   link.className = "wisphub-yaa-wa-link";
-  applyHostTooltip(link, "Enviar mensaje por WhatsApp (Ctrl+Click = Copiar)", { placement: "top" });
+  applyHostTooltip(link, "Enviar mensaje por WhatsApp (Ctrl+Click = Copiar)", {
+    placement: "top",
+  });
 
   link.textContent = phoneText;
 
@@ -137,7 +145,10 @@ function addActionButtons(container, options = {}) {
     return false;
   }
 
-  const btnBox = container.querySelector(".text-right") || container.querySelector("div") || container;
+  const btnBox =
+    container.querySelector(".text-right") ||
+    container.querySelector("div") ||
+    container;
 
   // "Ver cliente" is skipped on installation list pages
   if (!options.skipViewClient) {
@@ -163,22 +174,6 @@ function addActionButtons(container, options = {}) {
 function matchesKeywords(text, keywords) {
   const lower = text.trim().toLowerCase();
   return keywords.some((kw) => lower.includes(kw));
-}
-
-function findColumnIndex(table, keywords) {
-  const headers = table.querySelectorAll("thead th");
-  for (let i = 0; i < headers.length; i++) {
-    if (matchesKeywords(headers[i].textContent, keywords)) {
-      return i;
-    }
-  }
-  const footers = table.querySelectorAll("tfoot th");
-  for (let i = 0; i < footers.length; i++) {
-    if (matchesKeywords(footers[i].textContent, keywords)) {
-      return i;
-    }
-  }
-  return -1;
 }
 
 function findPhoneColumnByContent(table) {
@@ -231,9 +226,7 @@ function processMainTable(table) {
     phoneCol = findPhoneColumnByContent(table);
   }
   const actionCol = findColumnIndex(table, ACTION_KEYWORDS);
-  // On installation list pages, only inject "Ver archivos" (skip "Ver cliente")
   const actionOpts = isInstallationListPage() ? { skipViewClient: true } : {};
-
   let phoneCount = 0;
   let actionCount = 0;
 
@@ -260,26 +253,28 @@ function processResponsiveRows() {
   let actionCount = 0;
   const actionOpts = isInstallationListPage() ? { skipViewClient: true } : {};
 
-  document.querySelectorAll("li[data-dt-column] .dtr-data").forEach((dataSpan) => {
-    const li = dataSpan.closest("li[data-dt-column]");
-    const titleSpan = li?.querySelector(".dtr-title");
-    if (!titleSpan) {
-      return;
-    }
-    const title = titleSpan.textContent;
-
-    if (matchesKeywords(title, PHONE_KEYWORDS)) {
-      if (processPhoneElement(dataSpan)) {
-        phoneCount++;
+  document
+    .querySelectorAll("li[data-dt-column] .dtr-data")
+    .forEach((dataSpan) => {
+      const li = dataSpan.closest("li[data-dt-column]");
+      const titleSpan = li?.querySelector(".dtr-title");
+      if (!titleSpan) {
+        return;
       }
-    }
+      const title = titleSpan.textContent;
 
-    if (matchesKeywords(title, ACTION_KEYWORDS)) {
-      if (addActionButtons(dataSpan, actionOpts)) {
-        actionCount++;
+      if (matchesKeywords(title, PHONE_KEYWORDS)) {
+        if (processPhoneElement(dataSpan)) {
+          phoneCount++;
+        }
       }
-    }
-  });
+
+      if (matchesKeywords(title, ACTION_KEYWORDS)) {
+        if (addActionButtons(dataSpan, actionOpts)) {
+          actionCount++;
+        }
+      }
+    });
 
   return { phoneCount, actionCount };
 }
@@ -307,7 +302,7 @@ function debouncedProcess() {
   clearTimeout(_debounceTimer);
   _debounceTimer = setTimeout(() => {
     processAll();
-  }, 300);
+  }, 50);
 }
 
 function startObserver() {
@@ -322,7 +317,10 @@ function pollUntilFound(maxAttempts, interval) {
     attempts++;
     const found = processAll();
     if (found > 0) {
-      log(`Client enhancements injected: ${found} elements`, `Mejoras de clientes inyectadas: ${found} elementos`);
+      log(
+        `Client enhancements injected: ${found} elements`,
+        `Mejoras de clientes inyectadas: ${found} elementos`,
+      );
       startObserver();
       return;
     }
@@ -335,18 +333,18 @@ function pollUntilFound(maxAttempts, interval) {
   check();
 }
 
-// Installation list page — only phone links, no action buttons
 function isInstallationListPage() {
   return /^\/Instalaciones\/?$/i.test(window.location.pathname);
 }
 
 function isSupportedPhonePage() {
   const path = window.location.pathname;
-  // Client list pages (exclude detail/edit pages)
-  if (/\/clientes(\/|$)/i.test(path) && !/\/clientes\/(ver|editar|agregar|nuevo)\//i.test(path)) {
+  if (
+    /\/clientes(\/|$)/i.test(path) &&
+    !/\/clientes\/(ver|editar|agregar|nuevo)\//i.test(path)
+  ) {
     return true;
   }
-  // Installation list page
   if (isInstallationListPage()) {
     return true;
   }
@@ -359,9 +357,10 @@ export function initClientPhoneLinks(notifyFn) {
   }
 
   _notify = notifyFn;
-  log("Phone link enhancements loaded", "Mejoras de enlaces telefónicos cargadas");
+  log(
+    "Phone link enhancements loaded",
+    "Mejoras de enlaces telefónicos cargadas",
+  );
 
-  setTimeout(() => {
-    pollUntilFound(20, 1000);
-  }, 2000);
+  pollUntilFound(20, 1000);
 }

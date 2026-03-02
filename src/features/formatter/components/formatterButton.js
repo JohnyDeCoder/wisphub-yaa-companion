@@ -1,6 +1,6 @@
 import { BUTTON_ID } from "../../../config/constants.js";
 import { createToolbarButton, injectIntoToolbar, addKeyboardShortcut } from "../../../utils/toolbar.js";
-import { setIsFormatted, getIsFormatted } from "../stores/toggleState.js";
+import { setIsFormatted, getIsFormatted, updateButtonVisual } from "../stores/toggleState.js";
 
 function createButton(onToggle) {
   const btn = createToolbarButton({
@@ -10,20 +10,12 @@ function createButton(onToggle) {
     onClick: () => {
       const nextState = !getIsFormatted();
       setIsFormatted(nextState);
-
-      btn.classList.toggle("cke_button_on", nextState);
-      btn.classList.toggle("cke_button_off", !nextState);
-      btn.setAttribute("aria-pressed", String(nextState));
-
-      onToggle(nextState);
+      updateButtonVisual(nextState);
+      onToggle(nextState, { fillFields: false });
     },
   });
 
-  // Reflect current state (auto-format may have run before button was injected)
-  const isActive = getIsFormatted();
-  btn.classList.toggle("cke_button_on", isActive);
-  btn.classList.toggle("cke_button_off", !isActive);
-  btn.setAttribute("aria-pressed", String(isActive));
+  updateButtonVisual(getIsFormatted());
   return btn;
 }
 

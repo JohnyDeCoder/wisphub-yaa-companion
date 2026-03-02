@@ -2,10 +2,10 @@ import { EXTENSION_NAME } from "../../config/constants.js";
 import { browserAPI } from "../../utils/browser.js";
 
 const DEFAULT_SETTINGS = {
-  notificationsEnabled: true, // Show in-page notifications (default: true)
-  autoFormatEnabled: false, // Auto-format comments on page load (default: false)
-  autoPriceCalcEnabled: false, // Auto-calculate prices on page load (default: false)
-  autoFillTemplateEnabled: true, // Auto-fill empty editor with template on format (default: true)
+  notificationsEnabled: true,
+  autoFormatEnabled: false,
+  autoPriceCalcEnabled: false,
+  autoFillTemplateEnabled: true,
 };
 
 export async function loadSettings() {

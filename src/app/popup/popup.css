@@ -43,7 +43,8 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   font-size: 14px;
 
@@ -67,7 +68,11 @@ body {
 }
 
 .dashboard-header {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-dark) 100%
+  );
 
   color: white;
 
@@ -298,6 +303,18 @@ body {
   line-height: 1.5;
 }
 
+.wisphub-yaa-api-warning {
+  display: block;
+  margin-bottom: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 239, 16, 0.2);
+  border-radius: var(--radius);
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff5c2;
+  text-align: center;
+}
+
 .header-badge:hover {
   background: rgba(255, 255, 255, 0.35);
 }
@@ -450,7 +467,7 @@ body {
 .flip-card:not(.disabled) .flip-card-back::before {
   position: absolute;
 
-  content: '';
+  content: "";
 
   display: block;
 
@@ -458,7 +475,12 @@ body {
 
   height: 160%;
 
-  background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-primary),
+    transparent
+  );
 
   animation: card_border_rotation 4s infinite linear;
 }
@@ -466,7 +488,7 @@ body {
 .flip-card:not(.disabled) .flip-card-back::after {
   position: absolute;
 
-  content: '';
+  content: "";
 
   width: calc(100% - 4px);
 
@@ -748,7 +770,7 @@ body {
 .switch .slider:before {
   position: absolute;
 
-  content: '';
+  content: "";
 
   height: 18px;
 
@@ -768,7 +790,11 @@ body {
 }
 
 .switch input:checked + .slider {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-dark) 100%
+  );
 }
 
 .switch input:checked + .slider:before {
@@ -998,7 +1024,7 @@ body {
 }
 
 .logs-list:empty::after {
-  content: 'Sin registros';
+  content: "Sin registros";
 
   text-align: center;
 
@@ -1193,7 +1219,7 @@ body {
   margin: 0;
 }
 
-.calc-input[type='number'] {
+.calc-input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
@@ -1374,7 +1400,7 @@ body {
 }
 
 .changelog-changes li::before {
-  content: '•';
+  content: "•";
 
   position: absolute;
 

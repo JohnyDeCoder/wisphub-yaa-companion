@@ -1,23 +1,8 @@
-// Shared template generator — used by both the template copy button and auto-fill feature.
 import { MONTH_NAMES } from "../config/constants.js";
 import { formatPrice } from "./formatting.js";
-import { getCurrentUserName } from "./currentUser.js";
+import { getCurrentUserName, isAdminUser } from "./currentUser.js";
+import { getMexicoDate } from "./date.js";
 
-const ADMIN_NAMES = ["admin", "administrador"];
-
-function getMexicoDate() {
-  return new Date(
-    new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }),
-  );
-}
-
-function isAdminUser(name) {
-  const lower = (name || "").trim().toLowerCase();
-  return ADMIN_NAMES.includes(lower);
-}
-
-// Generates the installation comment template.
-// calcFn (optional): () => { installCost, monthPrice, monthLabel, total } | null
 export function generateTemplate(calcFn) {
   const date = getMexicoDate();
   const day = date.getDate();
@@ -27,7 +12,6 @@ export function generateTemplate(calcFn) {
     ? `RESTANTE DE MES ${monthName}`
     : `MES ${monthName}`;
 
-  // Try to include calculated prices from form data (plan selector, date, install cost)
   const calc = typeof calcFn === "function" ? calcFn() : null;
   let priceLine;
 

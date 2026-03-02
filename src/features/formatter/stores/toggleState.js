@@ -19,14 +19,17 @@ export function setIsFormatted(value) {
   isFormatted = value;
 }
 
+export function updateButtonVisual(isActive) {
+  const btn = document.getElementById(BUTTON_ID);
+  if (btn) {
+    btn.classList.toggle("cke_button_on", isActive);
+    btn.classList.toggle("cke_button_off", !isActive);
+    btn.setAttribute("aria-pressed", String(isActive));
+  }
+}
+
 export function resetToggleState() {
   isFormatted = false;
   originalContent = null;
-
-  const btn = document.getElementById(BUTTON_ID);
-  if (btn) {
-    btn.classList.remove("cke_button_on");
-    btn.classList.add("cke_button_off");
-    btn.setAttribute("aria-pressed", "false");
-  }
+  updateButtonVisual(false);
 }

@@ -1,14 +1,12 @@
-// Normalize a string: strip HTML tags, collapse whitespace, trim.
 export function normalizeText(value) {
   return String(value || "")
     .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-// Find the logical column index matching one of the given keywords.
-// Pass excludeIndices (array of indices) to skip columns already claimed
-// by a prior field — prevents the same column from matching twice.
+// Pass excludeIndices to skip columns already claimed by a prior field.
 export function findColumnIndex(table, keywords, excludeIndices, logTag) {
   if (!table) {
     return -1;
@@ -24,7 +22,9 @@ export function findColumnIndex(table, keywords, excludeIndices, logTag) {
     try {
       const dt = $(table).DataTable();
       const hdrs = dt.columns().header().toArray();
-      const normalized = hdrs.map((h) => normalizeText($(h).text()).toLowerCase());
+      const normalized = hdrs.map((h) =>
+        normalizeText($(h).text()).toLowerCase(),
+      );
 
       // Pass 1: exact match (keyword === full header text)
       for (const kw of keywords) {
@@ -49,7 +49,9 @@ export function findColumnIndex(table, keywords, excludeIndices, logTag) {
 
   // Fallback: DOM <th> scan (may miss hidden columns)
   const thElements = table.querySelectorAll("thead th");
-  const thTexts = Array.from(thElements).map((h) => normalizeText(h.textContent).toLowerCase());
+  const thTexts = Array.from(thElements).map((h) =>
+    normalizeText(h.textContent).toLowerCase(),
+  );
 
   for (const kw of keywords) {
     const idx = thTexts.indexOf(kw);
@@ -68,8 +70,6 @@ export function findColumnIndex(table, keywords, excludeIndices, logTag) {
   return -1;
 }
 
-// Retrieve cell text via DataTables API using the logical column index (header-based).
-// This is immune to responsive column hiding and column reordering.
 export function getDataTableCellText(tableSelector, row, colIndex, logTag) {
   if (!row || colIndex < 0) {
     return "";
@@ -92,7 +92,10 @@ export function getDataTableCellText(tableSelector, row, colIndex, logTag) {
     const raw = dt.cell(row, colIndex).data();
     return normalizeText(raw);
   } catch (err) {
-    console.warn(`[${tag}] DataTable cell read error (col ${colIndex}):`, err?.message);
+    console.warn(
+      `[${tag}] DataTable cell read error (col ${colIndex}):`,
+      err?.message,
+    );
     return "";
   }
 }

@@ -40,7 +40,7 @@ export const UI_MESSAGES = {
   NOT_WISPHUB: "No estás en WispHub",
   AUTO_FORMAT_APPLIED: "Auto-formateado aplicado",
   PRICE_UPDATED: "¡Precios actualizados!",
-  PRICE_NO_CHANGE: "Precios ya están actualizados",
+  PRICE_NO_CHANGE: "Los precios ya están actualizados",
   PRICE_NO_LINE: "No se encontró línea de precios",
   PRICE_NO_DATE: "Fecha de instalación no encontrada",
   PRICE_NO_PACKAGE: "Precio de paquete no encontrado",

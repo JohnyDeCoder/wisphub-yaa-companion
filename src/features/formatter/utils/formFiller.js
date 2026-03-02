@@ -1,3 +1,5 @@
+import { getMexicoDateTime } from "../../../utils/date.js";
+
 const UPPERCASE_FIELD_IDS = [
   "id_usr-first_name",
   "id_usr-last_name",
@@ -5,6 +7,7 @@ const UPPERCASE_FIELD_IDS = [
   "id_perfil-direccion",
   "id_perfil-localidad",
   "id_perfil-ciudad",
+  "id_cliente-coordenadas",
   "id_perfil-razon_social",
   "id_perfil-rfc",
   "id_perfil-cedula_facturacion",
@@ -29,6 +32,11 @@ function setFieldValue(id, value) {
 function selectByUsername(selectId, username) {
   const select = document.getElementById(selectId);
   if (!select) {
+    return;
+  }
+
+  // Only fill if the field is currently empty/unset
+  if (select.value && select.value !== "") {
     return;
   }
 
@@ -60,6 +68,8 @@ export function uppercaseFormFields() {
       continue;
     }
 
+    const original = field.value;
+
     if (id === "id_perfil-direccion") {
       const refParts = [];
       let val = field.value.replace(/\(Ref:[^)]*\)/gi, (m) => {
@@ -74,20 +84,70 @@ export function uppercaseFormFields() {
     } else {
       field.value = field.value.toUpperCase();
     }
+
+    if (field.value !== original) {
+      markFieldAsFormatted(field, original);
+    }
   }
 }
 
-function getTomorrowMexico() {
-  const now = new Date();
-  const mexicoNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
-  mexicoNow.setDate(mexicoNow.getDate() + 1);
-  mexicoNow.setHours(12, 0, 0, 0);
+function markFieldAsFormatted(field, originalValue) {
+  field.dataset.wisphubOriginal = originalValue ?? "";
+  field.classList.add("wisphub-yaa-field-formatted");
 
-  const dd = String(mexicoNow.getDate()).padStart(2, "0");
-  const mm = String(mexicoNow.getMonth() + 1).padStart(2, "0");
-  const yyyy = mexicoNow.getFullYear();
+  // Find the appropriate container for the indicator
+  const container = field.closest(".controls") || field.parentElement;
+  const existing = container?.querySelector(".wisphub-yaa-field-indicator");
+  if (existing) {
+    existing.remove();
+  }
 
-  return `${dd}/${mm}/${yyyy} 12:00`;
+  const indicator = document.createElement("span");
+  indicator.className = "wisphub-yaa-field-indicator";
+
+  const label = document.createTextNode("Campo formateado \u00B7 ");
+  const undoLink = document.createElement("a");
+  undoLink.textContent = "Deshacer";
+  undoLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    field.value = field.dataset.wisphubOriginal || "";
+    triggerChange(field);
+    field.classList.remove("wisphub-yaa-field-formatted");
+    delete field.dataset.wisphubOriginal;
+    indicator.remove();
+  });
+
+  indicator.appendChild(label);
+  indicator.appendChild(undoLink);
+  container?.appendChild(indicator);
+}
+
+export function clearAllFieldIndicators() {
+  document.querySelectorAll(".wisphub-yaa-field-formatted").forEach((field) => {
+    if (field.dataset.wisphubOriginal !== undefined) {
+      field.value = field.dataset.wisphubOriginal;
+      triggerChange(field);
+      delete field.dataset.wisphubOriginal;
+    }
+    field.classList.remove("wisphub-yaa-field-formatted");
+  });
+  document
+    .querySelectorAll(".wisphub-yaa-field-indicator")
+    .forEach((el) => el.remove());
+}
+
+function setFieldValueWithMark(id, value) {
+  const field = document.getElementById(id);
+  if (!field || !value) {
+    return;
+  }
+  const originalValue = field.value || "";
+  if (originalValue === value) {
+    return;
+  }
+  field.value = value;
+  triggerChange(field);
+  markFieldAsFormatted(field, originalValue);
 }
 
 function fillRegimenFiscal(data) {
@@ -97,7 +157,9 @@ function fillRegimenFiscal(data) {
 
   const select = document.getElementById("id_perfil-obligacion_fiscal");
   if (select) {
-    const option = Array.from(select.options).find((opt) => opt.value === data.code);
+    const option = Array.from(select.options).find(
+      (opt) => opt.value === data.code,
+    );
     if (option) {
       select.value = data.code;
       triggerChange(select);
@@ -114,11 +176,20 @@ export function autoFillFormFields(parsedData) {
 
   uppercaseFormFields();
 
-  setFieldValue("id_cliente-cliente_rb", parsedData.installNumber);
+  setFieldValueWithMark("id_cliente-cliente_rb", parsedData.installNumber);
 
-  setFieldValue("id_cliente-fecha_instalacion", getTomorrowMexico());
+  const fechaField = document.getElementById("id_cliente-fecha_instalacion");
+  if (fechaField && !fechaField.value?.trim()) {
+    setFieldValueWithMark("id_cliente-fecha_instalacion", getMexicoDateTime());
+  }
 
-  setFieldValue("id_cliente-costo_instalacion", parsedData.installCost);
+  const costoField = document.getElementById("id_cliente-costo_instalacion");
+  if (costoField && !costoField.value?.trim()) {
+    setFieldValueWithMark(
+      "id_cliente-costo_instalacion",
+      parsedData.installCost,
+    );
+  }
 
   selectByUsername("id_cliente-creado_por", parsedData.asesor);
 

@@ -55,6 +55,7 @@ import { initClientPhoneLinks } from "../features/clients/clientPhoneLinks.js";
 import { initClientUploadButton } from "../features/clients/clientUploadButton.js";
 import { initScrollTopButton } from "../features/navigation/scrollTopButton.js";
 import { initSpecialTickets } from "../features/tickets/specialTickets.js";
+import { initFormGuards } from "../features/formatter/utils/formGuards.js";
 import {
   initTicketAutoFill,
   initTicketAutoFillNotify,
@@ -74,38 +75,35 @@ initTicketAutoFillNotify(showNotification);
 setTemplateCalcFn(tryCalculateForTemplate);
 setFormatterTemplateFn(() => generateTemplate(tryCalculateForTemplate));
 
+const PAGE_RULES = [
+  {
+    match: /\/tickets\/(editar|agregar)/i,
+    features: { formatter: false, priceCalc: false, template: false },
+  },
+  {
+    match: /\/clientes\/editar\/servicio/i,
+    features: { formatter: false, priceCalc: false, template: false },
+  },
+  {
+    match: /\/clientes\/editar/i,
+    features: { formatter: true, priceCalc: false, template: false },
+  },
+  {
+    match:
+      /\/(instalaciones\/(editar|agregar|nuevo)|preinstalacion\/(activar|editar)|solicitar-instalacion)/i,
+    features: { formatter: true, priceCalc: true, template: true },
+  },
+  {
+    match: /\/clientes\/agregar/i,
+    features: { formatter: true, priceCalc: false, template: true },
+  },
+];
+const DEFAULT_FEATURES = { formatter: true, priceCalc: false, template: false };
+
 function getPageFeatures() {
   const currentPath = window.location.pathname;
-
-  if (/\/tickets\/(editar|agregar)/i.test(currentPath)) {
-    return { formatter: false, priceCalc: false, template: false };
-  }
-
-  if (/\/clientes\/editar\/servicio/i.test(currentPath)) {
-    return { formatter: false, priceCalc: false, template: false };
-  }
-
-  if (/\/clientes\/editar/i.test(currentPath)) {
-    return { formatter: true, priceCalc: false, template: false };
-  }
-
-  const isInstallationAction = /\/instalaciones\/(editar|agregar|nuevo)/i.test(
-    currentPath,
-  );
-  const isPreInstallAction = /\/preinstalacion\/(activar|editar)/i.test(
-    currentPath,
-  );
-  const isRequestInstall = /\/solicitar-instalacion/i.test(currentPath);
-
-  if (isInstallationAction || isPreInstallAction || isRequestInstall) {
-    return { formatter: true, priceCalc: true, template: true };
-  }
-
-  if (/\/clientes\/agregar/i.test(currentPath)) {
-    return { formatter: true, priceCalc: false, template: true };
-  }
-
-  return { formatter: true, priceCalc: false, template: false };
+  const rule = PAGE_RULES.find((r) => r.match.test(currentPath));
+  return rule ? rule.features : DEFAULT_FEATURES;
 }
 
 const pageFeatures = getPageFeatures();
@@ -180,7 +178,10 @@ function setupMessageListener() {
     }
 
     if (type === MESSAGE_TYPES.FORMAT_REQUEST && pageFeatures.formatter) {
-      const result = applyFormatting({ silent: !!event.data.fromPopup });
+      const result = applyFormatting({
+        silent: !!event.data.fromPopup,
+        fillFields: !!event.data.fromPopup,
+      });
       window.postMessage({ type: MESSAGE_TYPES.FORMAT_RESPONSE, result }, "*");
     }
 
@@ -275,6 +276,7 @@ function init() {
   initScrollTopButton();
   initSpecialTickets();
   initTicketAutoFill();
+  initFormGuards();
 }
 
 onDomReady(init);

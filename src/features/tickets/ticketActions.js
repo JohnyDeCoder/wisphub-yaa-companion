@@ -4,28 +4,34 @@ import { sendLogToPopup } from "../../utils/logger.js";
 import { applyHostTooltip } from "../../utils/hostTooltip.js";
 import { waitForElement } from "../../utils/polling.js";
 import { copyToClipboard } from "../../utils/clipboard.js";
+import { showCopySuccess } from "../../utils/copyFeedback.js";
 import {
   normalizeText,
   findColumnIndex,
   getDataTableCellText,
 } from "../../utils/tableHelpers.js";
 
-const CUSTOM_ACTION = "new_selected_wisphub"; // Custom bulk-action value injected into ticket action selector
-const OPTION_LABEL = `Marcar Tickets Como Nuevos — ${EXTENSION_NAME}`; // Visible label for custom ticket bulk action
-const TICKETS_PATH_RE = /\/tickets\/\d*\/?$/; // URL path matcher for ticket list pages
-const TABLE_SELECTOR = "#data-table-tickets"; // DataTable selector used to remove updated ticket rows
-const COPY_BUTTON_CLASS = "wisphub-yaa-ticket-copy-btn"; // CSS class for custom copy button in action cells
-const COPY_BUTTON_VARIANT_CLASS = "wisphub-yaa-action-btn-copy-ticket"; // CSS class for copy icon variant
-const VIEW_CLIENT_LINK_CLASS = "wisphub-yaa-view-client-link"; // CSS class for inline view-client icon
-const USER_KEYWORDS = ["usuario", "user"]; // Header aliases for user/username column
+const CUSTOM_ACTION = "new_selected_wisphub";
+const OPTION_LABEL = `Marcar Tickets Como Nuevos — ${EXTENSION_NAME}`;
+const TICKETS_PATH_RE = /\/tickets\/\d*\/?$/;
+const TABLE_SELECTOR = "#data-table-tickets";
+const COPY_BUTTON_CLASS = "wisphub-yaa-ticket-copy-btn";
+const COPY_BUTTON_VARIANT_CLASS = "wisphub-yaa-action-btn-copy-ticket";
+const VIEW_CLIENT_LINK_CLASS = "wisphub-yaa-view-client-link";
+const USER_KEYWORDS = ["usuario", "user"];
 const LOCALITY_KEYWORDS = [
   "barrio/localidad",
   "barrio",
   "localidad",
   "neighborhood",
-]; // Locality header aliases
-const CLIENT_KEYWORDS = ["cliente", "client", "usuario", "user"]; // Header aliases for client column
-const SUBJECT_KEYWORDS = ["asunto", "subject"]; // Header aliases for subject column
+];
+const CLIENT_KEYWORDS = ["cliente", "client", "usuario", "user"];
+const SUBJECT_KEYWORDS = ["asunto", "subject"];
+const DESCRIPTION_KEYWORDS = ["descripción", "descripcion", "description"];
+const MAINTENANCE_CLIENTS = [
+  "mantenimiento publicas",
+  "mantenimiento ap publicas",
+];
 let _copyObserver = null;
 let _copyDebounceTimer = 0;
 let _copyClickBound = false;
@@ -230,6 +236,37 @@ function buildTicketCopyText(row, table) {
     return "";
   }
 
+  // Special handling for Mantenimiento clients
+  const isMaintenanceClient = MAINTENANCE_CLIENTS.some((mc) =>
+    client.toLowerCase().includes(mc),
+  );
+  if (isMaintenanceClient) {
+    const descCol = findColumnIndex(
+      table,
+      DESCRIPTION_KEYWORDS,
+      [localityCol, clientCol, subjectCol],
+      "Tickets",
+    );
+    let descFirstLine = "";
+    const descRaw =
+      getDataTableCellText(TABLE_SELECTOR, row, descCol, "Tickets") ||
+      getCellTextBySelectors(row, 'td.descripcion, td[class*="descripcion"]') ||
+      getValueFromResponsiveRows(row, rowIndex, DESCRIPTION_KEYWORDS);
+    if (descRaw) {
+      const lines = descRaw
+        .split(/\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+      descFirstLine = lines[0] || "";
+    }
+    console.log(
+      "[Tickets] Maintenance client detected,",
+      "first desc line:",
+      JSON.stringify(descFirstLine),
+    );
+    return [client, descFirstLine, issue].filter(Boolean).join(" - ");
+  }
+
   if (!locality) {
     console.log("[Tickets] Locality is empty, building text without it");
   }
@@ -328,24 +365,48 @@ function injectClientViewLinks() {
   const rows = table.querySelectorAll("tbody tr:not(.child)");
 
   rows.forEach((row) => {
-    if (row.querySelector(`.${VIEW_CLIENT_LINK_CLASS}`)) {
+    // Inject into the hidden td.cliente cell
+    if (!row.querySelector(`.${VIEW_CLIENT_LINK_CLASS}`)) {
+      const clientCell = findClientCellInRow(row);
+      if (clientCell) {
+        const username = extractUsernameFromRow(row);
+        const clientUrl = buildClientViewUrl(username);
+        if (clientUrl) {
+          clientCell.appendChild(createClientViewLink(clientUrl));
+          injected++;
+        }
+      }
+    }
+
+    // Inject into the responsive child row if it exists
+    const childRow = row.nextElementSibling;
+    if (!childRow || !childRow.classList.contains("child")) {
+      return;
+    }
+    if (childRow.querySelector(`.${VIEW_CLIENT_LINK_CLASS}`)) {
       return;
     }
 
-    const clientCell = findClientCellInRow(row);
-    if (!clientCell) {
-      return;
+    // Find the "Cliente" data span in the child row
+    const items = childRow.querySelectorAll(".dtr-details li");
+    for (const li of items) {
+      const title = li.querySelector(".dtr-title");
+      if (!title || !/^cliente$/i.test(title.textContent.trim())) {
+        continue;
+      }
+      const dataSpan = li.querySelector(".dtr-data");
+      if (!dataSpan || dataSpan.querySelector(`.${VIEW_CLIENT_LINK_CLASS}`)) {
+        break;
+      }
+      const username = extractUsernameFromRow(row);
+      const clientUrl = buildClientViewUrl(username);
+      if (clientUrl) {
+        dataSpan.appendChild(document.createTextNode(" "));
+        dataSpan.appendChild(createClientViewLink(clientUrl));
+        injected++;
+      }
+      break;
     }
-
-    const username = extractUsernameFromRow(row);
-    const clientUrl = buildClientViewUrl(username);
-    if (!clientUrl) {
-      return;
-    }
-
-    const link = createClientViewLink(clientUrl);
-    clientCell.appendChild(link);
-    injected++;
   });
 
   return injected;
@@ -407,7 +468,7 @@ function bindTicketCopyClickHandler(table) {
 
       copyToClipboard(payload).then((ok) => {
         if (ok) {
-          _notify(`Copiado: ${payload}`, "success", 2800);
+          showCopySuccess(button);
           log(`Ticket text copied: ${payload}`, `Texto copiado: ${payload}`);
           return;
         }

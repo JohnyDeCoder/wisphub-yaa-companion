@@ -65,7 +65,7 @@ export function setDateWatchSuppressed(val) {
   }
 }
 
-function getDaysInMonth(date) {
+export function getDaysInMonth(date) {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 }
 
@@ -128,7 +128,7 @@ function getInstallCostFromForm() {
   return isNaN(n) ? null : n;
 }
 
-function calculateProration(monthlyPrice, installDate) {
+export function calculateProration(monthlyPrice, installDate) {
   const day = installDate.getDate();
   const totalDays = getDaysInMonth(installDate);
   const isProrated = day > 5 && day < 26;
@@ -446,7 +446,6 @@ export function hasPriceLine(text) {
   return PRICE_LINE_RE.test(text) || INCOMPLETE_RE.test(text);
 }
 
-// Shared debounced recalculation — cancels any pending timer and schedules a new one.
 function scheduleRecalc(delay = 300) {
   if (!autoPriceCalcEnabled || dateWatchSuppressed) {
     return;
@@ -515,7 +514,6 @@ export function watchDateField() {
     return;
   }
 
-  // Watch "Fecha instalacion" — native events + Bootstrap datetimepicker
   if (dateField) {
     lastDateFieldValue = (dateField.value || "").trim();
     dateField.addEventListener("change", onDateFieldChange);
@@ -529,7 +527,6 @@ export function watchDateField() {
     }
   }
 
-  // Watch "Plan internet" selector (also via jQuery for Select2 compatibility)
   if (planSelect) {
     lastPlanValue = planSelect.value || "";
     planSelect.addEventListener("change", onPlanFieldChange);
@@ -538,7 +535,6 @@ export function watchDateField() {
     }
   }
 
-  // Watch "Costo instalacion" input
   if (costField) {
     lastCostValue = (costField.value || "").trim();
     costField.addEventListener("change", onCostFieldChange);
@@ -558,8 +554,6 @@ export function isAutoPriceCalcEnabled() {
   return autoPriceCalcEnabled;
 }
 
-// Returns calculated price data for the template button without modifying the editor.
-// Returns null if monthly price is unavailable.
 export function tryCalculateForTemplate() {
   const monthlyPrice = getMonthlyPriceFromForm();
   if (!monthlyPrice) {

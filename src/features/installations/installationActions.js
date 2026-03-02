@@ -5,6 +5,7 @@ import { applyHostTooltip } from "../../utils/hostTooltip.js";
 import { decorateActionButtonGroup } from "../../utils/actionButtons.js";
 import { getDomainKey } from "../../config/domains.js";
 import { copyToClipboard } from "../../utils/clipboard.js";
+import { showCopySuccess } from "../../utils/copyFeedback.js";
 import {
   normalizeText,
   findColumnIndex,
@@ -13,19 +14,18 @@ import {
 
 let _busy = false;
 
-const INSTALLS_PATH_RE = /^\/Instalaciones\/?$/i; // URL path matcher for installations list pages
-const STATUS_PROGRESS_RE = /^(En\s+)?Progreso$/i; // Status matcher used to detect rows pending migration to "Nueva"
-const ACTION_BAR_SELECTOR = ".btn-group.new-buttons"; // Container selector where the custom action button is injected
-const TABLE_SELECTOR = "#lista-instalaciones"; // DataTable selector for installations list
-const COPY_BUTTON_CLASS = "wisphub-yaa-install-copy-btn"; // CSS class for custom copy button in action cells
-const COPY_BUTTON_VARIANT_CLASS = "wisphub-yaa-action-btn-copy-install"; // CSS class for copy icon variant
+const INSTALLS_PATH_RE = /^\/Instalaciones\/?$/i;
+const STATUS_PROGRESS_RE = /^(En\s+)?Progreso$/i;
+const ACTION_BAR_SELECTOR = ".btn-group.new-buttons";
+const TABLE_SELECTOR = "#lista-instalaciones";
+const COPY_BUTTON_CLASS = "wisphub-yaa-install-copy-btn";
+const COPY_BUTTON_VARIANT_CLASS = "wisphub-yaa-action-btn-copy-install";
 const LOCALITY_KEYWORDS = [
   "barrio/localidad",
   "barrio",
   "localidad",
   "neighborhood",
-]; // Locality header aliases
-// Client header aliases — ordered from most specific to least specific
+];
 const CLIENT_KEYWORDS = [
   "nombre del cliente",
   "nombre",
@@ -432,7 +432,7 @@ function bindInstallCopyClickHandler(table) {
 
       copyToClipboard(payload).then((ok) => {
         if (ok) {
-          _notify(`Copiado: ${payload}`, "success", 2800);
+          showCopySuccess(button);
           log(`Install text copied: ${payload}`, `Texto copiado: ${payload}`);
           return;
         }

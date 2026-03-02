@@ -10,14 +10,23 @@ export function parseRegimenFiscal(text) {
 }
 
 export function parseInstallCost(text) {
-  const match = text.match(/\$\s*([\d,]+)/);
+  const match = text.match(
+    /(?:EQUIPO|COMODATO|INSTALACI[OÓ]N)[^\n]*\$\s*([\d,]+)/i,
+  );
   if (!match) {
     return null;
   }
   return match[1].replace(/,/g, "");
 }
 
-// Extract value after a label, stopping before the next keyword or delimiter
+export function parsePackagePrice(text) {
+  const match = text.match(/PAQUETE[^\n]*\$\s*([\d,]+)/i);
+  if (!match) {
+    return null;
+  }
+  return match[1].replace(/,/g, "");
+}
+
 function extractLabelValue(text, labelPattern) {
   const re = new RegExp(labelPattern + "\\s*([^\\n]*)", "i");
   const section = re.exec(text);
@@ -29,8 +38,8 @@ function extractLabelValue(text, labelPattern) {
   return content || null;
 }
 
-export function parseAsesor(text) {
-  const content = extractLabelValue(text, "ASESORA?:");
+function parseMentionField(text, labelPattern) {
+  const content = extractLabelValue(text, labelPattern);
   if (!content) {
     return null;
   }
@@ -48,23 +57,12 @@ export function parseAsesor(text) {
   return /^[a-z0-9._-]+$/i.test(plain) ? plain.toLowerCase() : null;
 }
 
+export function parseAsesor(text) {
+  return parseMentionField(text, "ASESORA?:");
+}
+
 export function parseTecnico(text) {
-  const content = extractLabelValue(text, "T[E\u00c9]CNICO(?:S)?:");
-  if (!content) {
-    return null;
-  }
-  const mentionMatch = content.match(/\(@?([^@\s)]+)@/);
-  if (mentionMatch) {
-    return mentionMatch[1].toLowerCase();
-  }
-
-  const atMatch = content.match(/\b([a-z0-9._-]+)@/i);
-  if (atMatch) {
-    return atMatch[1].toLowerCase();
-  }
-
-  const plain = content.trim();
-  return /^[a-z0-9._-]+$/i.test(plain) ? plain.toLowerCase() : null;
+  return parseMentionField(text, "T[E\u00c9]CNICO(?:S)?:");
 }
 
 export function parseInstallNumber() {
@@ -112,6 +110,7 @@ export function parseCommentData(text) {
   return {
     regimenFiscal,
     installCost: parseInstallCost(text),
+    packagePrice: parsePackagePrice(text),
     asesor: parseAsesor(text),
     tecnico: parseTecnico(text),
     installNumber: parseInstallNumber(),

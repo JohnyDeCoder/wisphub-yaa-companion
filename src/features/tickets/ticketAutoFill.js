@@ -1,4 +1,5 @@
 import { sendLogToPopup } from "../../utils/logger.js";
+import { getMexicoDateFormatted } from "../../utils/date.js";
 import { SPECIAL_TICKETS } from "./specialTickets.js";
 
 const ADD_TICKET_PATH_RE = /\/tickets\/agregar\/(\d+)\/?$/;
@@ -18,16 +19,6 @@ export function updateTicketAutoFillSettings(settings) {
 
 function log(consoleMsg, popupMsg, level = "info") {
   sendLogToPopup("TicketAutoFill", level, consoleMsg, popupMsg);
-}
-
-function getMexicoDateFormatted() {
-  const date = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }),
-  );
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
 }
 
 function findSpecialTicket(idServicio) {
@@ -110,10 +101,13 @@ function fillDepartment() {
 function fillSpecialTicketFields(specialTicket) {
   const subjectFilled = setSelect2Value("#id_asuntos_default", "otro asunto");
   const deptFilled = fillDepartment();
-  const descFilled = setCKEditorContent(
-    "id_descripcion",
-    `<strong>${specialTicket.description}</strong>`,
-  );
+  let descFilled = true;
+  if (specialTicket.description) {
+    descFilled = setCKEditorContent(
+      "id_descripcion",
+      `<strong>${specialTicket.description}</strong>`,
+    );
+  }
   const dateFilled = fillEstimatedDate();
 
   const allFilled = subjectFilled && deptFilled && descFilled && dateFilled;

@@ -1,5 +1,8 @@
+import { getCurrentUserName, isAdminUser } from "../../../utils/currentUser.js";
 import { MONTH_NAMES } from "../../../config/constants.js";
-import { getCurrentUserName } from "../../../utils/currentUser.js";
+import { getMexicoDate, getMexicoMonthName } from "../../../utils/date.js";
+import { formatPrice } from "../../../utils/formatting.js";
+import { parsePackagePrice } from "./commentParser.js";
 
 const INSTALL_EDITOR_PATHS = [
   /\/instalaciones\/editar\//i,
@@ -15,8 +18,14 @@ const INSTALL_COMMENT_HINT_RE =
   /(CLIENTE\s+NUEVO|EQUIPO|EQUIPOS|HORARIO|FORMA\s+DE\s+PAGO|PAGO:|T[ÉE]CNICO|ASESORA?:)/i;
 
 const HEADER_RE = /CLIENTE\s+NUEVO\b/i;
-const PRICE_LINE_RE =
-  /(?:[^\n]+\+\s*(?:RESTANTE|RESTO|MES\s+COMPLETO|MES)\b|CAMBIO\s+DE\s+COMPA[ÑN][IÍ]A)/i;
+const EQUIP_TYPES = "COMODATO|DATO|COMO\\s+DATO|PRESTADO|PROPIO|COMPRADO";
+const MONTH_LABELS = "RESTANTE|RESTO|MES\\s+COMPLETO|MES";
+const PRICE_LINE_RE = new RegExp(
+  `(?:EQUIPO\\S*\\s+(?:${EQUIP_TYPES})[^\\n]*\\+\\s*(?:${MONTH_LABELS})\\b` +
+    "|CAMBIO\\s+DE\\s+COMPA[ÑN][IÍ]A)",
+  "i",
+);
+const EQUIP_LINE_RE = new RegExp(`EQUIPO\\S*\\s+(${EQUIP_TYPES})`, "i");
 const HORARIO_RE = /HORARIO\b/i;
 const FORM_PAYMENT_RE = /FORMA\s+DE\s+PAGO\b/i;
 const ALT_PAYMENT_RE = /(M[ÉE]TODO\s+DE\s+PAGO|PAGO\s+EN\s+|PAGO)\s*:?/i;
@@ -25,17 +34,8 @@ const ASESOR_RE = /ASESORA?\s*:/i;
 const PRE_INSTALL_FORM_RE =
   /---+\s*HECHO CON (?:EL )?FORMULARIO DE PRE-INSTALACI[OÓ]N/i;
 
-const ADMIN_USER_NAMES = ["admin", "administrador"];
-
 function normalizeSpaces(value) {
   return (value || "").replace(/\s+/g, " ").trim();
-}
-
-function getMexicoMonthName() {
-  const now = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }),
-  );
-  return MONTH_NAMES[now.getMonth()];
 }
 
 function isInstallPath(pathname) {
@@ -77,11 +77,6 @@ function getPaymentValue(line) {
   return normalizeSpaces(line.slice(idx + 1));
 }
 
-function isAdminUser(name) {
-  const normalized = normalizeSpaces(name).toLowerCase();
-  return ADMIN_USER_NAMES.includes(normalized);
-}
-
 function getAsesorValueFromDom() {
   const groups = Array.from(document.querySelectorAll(".form-group"));
 
@@ -92,7 +87,9 @@ function getAsesorValueFromDom() {
     }
 
     const valueLabel = group.querySelector(".controls label");
-    const value = normalizeSpaces(valueLabel?.textContent || "");
+    const value = normalizeSpaces(valueLabel?.textContent || "")
+      .replace(/@.*$/i, "")
+      .trim();
     if (value && !isAdminUser(value)) {
       return value;
     }
@@ -120,6 +117,28 @@ function getAsesorValueFromDom() {
   return sidebarName;
 }
 
+function computeProration(monthlyPrice, date) {
+  const day = date.getDate();
+  const totalDays = new Date(
+    date.getFullYear(),
+    date.getMonth() + 1,
+    0,
+  ).getDate();
+  const isProrated = day > 5 && day < 26;
+
+  if (!isProrated) {
+    const target =
+      day > 25 ? new Date(date.getFullYear(), date.getMonth() + 1, 1) : date;
+    const name = MONTH_NAMES[target.getMonth()];
+    return { price: monthlyPrice, label: `MES ${name}` };
+  }
+
+  const name = MONTH_NAMES[date.getMonth()];
+  const remaining = totalDays - day;
+  const price = Math.round((monthlyPrice / totalDays) * remaining);
+  return { price, label: `RESTANTE DE MES ${name}` };
+}
+
 function truncateAtFormDelimiter(text) {
   const match = text.match(PRE_INSTALL_FORM_RE);
   if (!match) {
@@ -144,10 +163,57 @@ function ensureRequiredSections(lines, fullText) {
   }
 
   if (!textContains(fullText, PRICE_LINE_RE)) {
-    appendLine(
-      completed,
-      `EQUIPO COMODATO $ + RESTANTE DE MES ${monthName} $ = $`,
-    );
+    const equipMatch = fullText.match(EQUIP_LINE_RE);
+    const equipType = equipMatch
+      ? equipMatch[1].toUpperCase().replace(/\s+/g, " ")
+      : "COMODATO";
+    const pkgPrice = parsePackagePrice(fullText);
+    if (pkgPrice && parseInt(pkgPrice, 10) > 0) {
+      const proration = computeProration(
+        parseInt(pkgPrice, 10),
+        getMexicoDate(),
+      );
+
+      if (equipMatch) {
+        // Replace existing EQUIPO line with full price template
+        const idx = completed.findIndex((l) => EQUIP_LINE_RE.test(l));
+        if (idx !== -1) {
+          completed[idx] =
+            `EQUIPO ${equipType} $ + ` +
+            `${proration.label} ` +
+            `${formatPrice(proration.price)} = ` +
+            `${formatPrice(proration.price)} MXN`;
+        } else {
+          appendLine(
+            completed,
+            `EQUIPO ${equipType} $ + ` +
+              `${proration.label} ` +
+              `${formatPrice(proration.price)} = ` +
+              `${formatPrice(proration.price)} MXN`,
+          );
+        }
+      } else {
+        appendLine(
+          completed,
+          `EQUIPO ${equipType} $ + ` +
+            `${proration.label} ` +
+            `${formatPrice(proration.price)} = ` +
+            `${formatPrice(proration.price)} MXN`,
+        );
+      }
+    } else if (!equipMatch) {
+      appendLine(
+        completed,
+        `EQUIPO COMODATO $ + RESTANTE DE MES ${monthName} $ = $`,
+      );
+    } else {
+      // Has equipment line but no package price
+      const idx = completed.findIndex((l) => EQUIP_LINE_RE.test(l));
+      if (idx !== -1) {
+        completed[idx] =
+          `EQUIPO ${equipType} $ + ` + `RESTANTE DE MES ${monthName} $ = $`;
+      }
+    }
   }
 
   if (!textContains(fullText, HORARIO_RE)) {
@@ -168,7 +234,7 @@ function ensureRequiredSections(lines, fullText) {
   }
 
   if (!textContains(fullText, TECNICO_RE)) {
-    appendLine(completed, "TECNICO: POR CONFIRMAR");
+    appendLine(completed, "TECNICO: ");
   }
 
   if (!textContains(fullText, ASESOR_RE)) {

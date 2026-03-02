@@ -1,28 +1,42 @@
 import { sendLogToPopup } from "../../utils/logger.js";
-import { applyHostTooltip } from "../../utils/hostTooltip.js";
-import { decorateActionButtonGroup } from "../../utils/actionButtons.js";
-import { waitForElement } from "../../utils/polling.js";
 
 const SPECIAL_TICKETS = [
-  { id: 5059, label: "Mantenimiento General", description: "VALOR 3" },
-  { id: 8751, label: "Ir a Sitio", description: "VALOR 2,5" },
-  { id: 8752, label: "Sitio Día Completo", description: "VALOR 4" },
+  {
+    id: 5059,
+    label: "Mantenimiento General",
+    description: "VALOR 2.5",
+    domain: "wisphub.io",
+  },
+  {
+    id: 8751,
+    label: "Ir a Sitio",
+    description: "VALOR 1.5",
+    domain: "wisphub.io",
+  },
+  {
+    id: 8752,
+    label: "Sitio Día Completo",
+    description: "VALOR 4",
+    domain: "wisphub.io",
+  },
+  { id: 1000, label: "Mantenimiento AP Publicas", domain: "wisphub.app" },
+  { id: 760, label: "Mantenimiento Publicas", domain: "wisphub.app" },
 ];
 
-const BUTTON_CLASS = "wisphub-yaa-special-ticket-btn";
+const NAV_ITEM_CLASS = "wisphub-yaa-special-ticket-nav";
 const DROPDOWN_CLASS = "wisphub-yaa-special-ticket-dropdown";
 const BACKDROP_CLASS = "wisphub-yaa-special-ticket-backdrop";
-const ACTION_BAR_SELECTOR = ".btn-group.new-buttons";
-
-const TICKETS_PATH_RE = /\/tickets\/(ver\/\d+|(\d*\/?))$/i;
-const CLIENTS_PATH_RE = /\/clientes\/(ver\/[^/]+)?\/?$/i;
 
 function log(consoleMsg, popupMsg, level = "info") {
   sendLogToPopup("SpecialTickets", level, consoleMsg, popupMsg);
 }
 
-function buildSpecialTicketUrl(specialTicketId) {
-  return `/tickets/agregar/${specialTicketId}/`;
+function buildSpecialTicketUrl(ticket) {
+  const path = `/tickets/agregar/${ticket.id}/`;
+  if (ticket.domain) {
+    return `https://${ticket.domain}${path}`;
+  }
+  return path;
 }
 
 function closeDropdown() {
@@ -36,7 +50,7 @@ function closeDropdown() {
   }
 }
 
-function showDropdown(button) {
+function showDropdown(toggle) {
   closeDropdown();
 
   const backdrop = document.createElement("div");
@@ -45,16 +59,24 @@ function showDropdown(button) {
   document.body.appendChild(backdrop);
 
   const dropdown = document.createElement("ul");
-  dropdown.className = `${DROPDOWN_CLASS} dt-button-collection dropdown-menu`;
+  dropdown.className = `${DROPDOWN_CLASS} dropdown-menu`;
   dropdown.style.display = "block";
 
   SPECIAL_TICKETS.forEach((ticket) => {
     const li = document.createElement("li");
-    li.className = "dt-button";
 
     const link = document.createElement("a");
-    link.href = buildSpecialTicketUrl(ticket.id);
-    link.textContent = ticket.label.toUpperCase();
+    link.href = buildSpecialTicketUrl(ticket);
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = ticket.label;
+    if (ticket.description) {
+      const badge = document.createElement("span");
+      badge.className = "wisphub-yaa-ticket-badge";
+      badge.textContent = ticket.description;
+      link.appendChild(document.createTextNode(" "));
+      link.appendChild(badge);
+    }
 
     link.addEventListener("click", () => {
       closeDropdown();
@@ -68,50 +90,80 @@ function showDropdown(button) {
     dropdown.appendChild(li);
   });
 
-  const rect = button.getBoundingClientRect();
+  const rect = toggle.getBoundingClientRect();
   dropdown.style.position = "absolute";
   dropdown.style.top = `${rect.bottom + window.scrollY}px`;
   dropdown.style.left = `${rect.left + window.scrollX}px`;
   document.body.appendChild(dropdown);
 }
 
-function createSpecialTicketButton() {
-  const button = document.createElement("a");
-  button.className = `wisphub-yaa-action-btn wisphub-yaa-action-btn-special-ticket ${BUTTON_CLASS}`;
-  button.href = "";
-  button.setAttribute("role", "button");
-  applyHostTooltip(button, "Crear ticket especial", { placement: "top" });
-
-  button.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    showDropdown(button);
-  });
-
-  return button;
+function findNavbar() {
+  return (
+    document.querySelector(".menu-top ul.nav") ||
+    document.querySelector(".navbar-nav") ||
+    document.querySelector("ul.nav.navbar-nav")
+  );
 }
 
-function isSupportedPage() {
-  const path = window.location.pathname;
-  return TICKETS_PATH_RE.test(path) || CLIENTS_PATH_RE.test(path);
+function findAyudaItem(navbar) {
+  const items = navbar.querySelectorAll("li");
+  for (const li of items) {
+    const link = li.querySelector("#open-nav-ayuda, .open-nav-ayuda");
+    if (link) {
+      return li;
+    }
+  }
+  return null;
+}
+
+function createNavDropdown() {
+  const li = document.createElement("li");
+  li.className = NAV_ITEM_CLASS;
+
+  const toggle = document.createElement("a");
+  toggle.href = "#";
+  toggle.className = "wisphub-yaa-nav-special-tickets";
+
+  const iconSpan = document.createElement("span");
+  iconSpan.className = "wisphub-yaa-nav-icon";
+  toggle.appendChild(iconSpan);
+  toggle.appendChild(document.createTextNode(" Tickets Especiales"));
+
+  toggle.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    showDropdown(toggle);
+  });
+
+  li.appendChild(toggle);
+  return li;
 }
 
 export function initSpecialTickets() {
-  if (!isSupportedPage()) {
+  if (document.querySelector(`.${NAV_ITEM_CLASS}`)) {
     return;
   }
 
-  waitForElement(ACTION_BAR_SELECTOR).then((btnGroup) => {
-    if (!btnGroup || document.querySelector(`.${BUTTON_CLASS}`)) {
-      return;
-    }
+  const navbar = findNavbar();
+  if (!navbar) {
+    log(
+      "Navbar not found, skipping special tickets",
+      "Navbar no encontrado",
+      "warning",
+    );
+    return;
+  }
 
-    const button = createSpecialTicketButton();
-    btnGroup.appendChild(button);
-    decorateActionButtonGroup(btnGroup);
+  const navItem = createNavDropdown();
+  const ayudaLi = findAyudaItem(navbar);
 
-    log("Special ticket button added", "Botón de ticket especial añadido");
-  });
+  if (ayudaLi) {
+    navbar.insertBefore(navItem, ayudaLi);
+  } else {
+    navbar.appendChild(navItem);
+  }
+
+  log("Special ticket nav added", "Tickets especiales añadidos al navbar");
 }
 
 export { SPECIAL_TICKETS };

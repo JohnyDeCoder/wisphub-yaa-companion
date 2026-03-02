@@ -1,23 +1,11 @@
-import { ALLOWED_DOMAINS } from "../config/domains.js";
+import { isWispHubDomain } from "../config/domains.js";
 import { CACHE_TTL } from "../config/constants.js";
 
 const ICON_ACTIVE = { 48: "assets/icons/icon48_st_on.png" };
 const ICON_INACTIVE = { 48: "assets/icons/icon48_st_off.png" };
 
-function isWispHubUrl(url) {
-  if (!url) {
-    return false;
-  }
-  try {
-    const hostname = new URL(url).hostname;
-    return ALLOWED_DOMAINS.some((d) => hostname.includes(d));
-  } catch {
-    return false;
-  }
-}
-
 function updateIcon(tabId, url) {
-  const icons = isWispHubUrl(url) ? ICON_ACTIVE : ICON_INACTIVE;
+  const icons = isWispHubDomain(url) ? ICON_ACTIVE : ICON_INACTIVE;
   chrome.action.setIcon({ tabId, path: icons }).catch(() => {});
 }
 
@@ -34,7 +22,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-// Staff cache (in-memory, per service worker lifetime)
 const staffCache = {};
 
 async function fetchStaffFromApi(apiKey, apiBaseUrl) {
@@ -131,7 +118,6 @@ async function updateTicketsToNew(apiKey, apiBaseUrl, ticketIds) {
   return { success, failed, errors };
 }
 
-// Message router for content script / popup requests
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   const handlers = {
     FETCH_STAFF: () =>
