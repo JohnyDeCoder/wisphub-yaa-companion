@@ -3,15 +3,14 @@
     "version": "1.2.0",
     "date": "2026-03-02",
     "changes": [
-      "Tickets especiales: nueva opción para crear tickets de 'Mantenimiento Publicas' desde la barra de navegación.",
+      "Tickets especiales: nueva opción para crear tickets de 'Mantenimiento (AP) Publicas' desde la barra de navegación.",
       "Validación al guardar: si el tipo de equipo no es comodato, dato o propios, se muestra una confirmación antes de guardar. Lo mismo si el costo de instalación coincide con el precio del plan.",
       "Copiado de tickets de mantenimiento: al copiar tickets de 'Mantenimiento Publicas' o 'Mantenimiento AP Publicas', ahora incluye cliente, descripción y asunto.",
       "Indicador de campos formateados: ahora se muestra 'Campo formateado · Deshacer' debajo de cada campo que fue modificado al formatear (nombre, apellido, dirección, etc.).",
       "Tipo de equipo preservado: al formatear comentarios, el tipo de equipo original (DATO, COMO DATO, etc.) se mantiene en su posición correcta junto con el cálculo de precios.",
-      "Botón de copiar mejorado: al copiar exitosamente, el ícono cambia a una palomita por unos segundos en lugar de mostrar una notificación.",
+      "Botón de copiar mejorado: al copiar exitosamente, el ícono cambia a un check por unos segundos en lugar de mostrar una notificación.",
       "Ver cliente en vista comprimida: el enlace para ver la información del cliente ahora también aparece cuando la tabla está en vista responsiva (columnas colapsadas).",
       "Botones más rápidos: los botones de 'Ver archivos' y 'Ver cliente' ahora aparecen casi al instante en la tabla.",
-      "Sombras sutiles en los íconos de la extensión en las tablas para mayor visibilidad.",
       "Los íconos SVG de la extensión ahora se renderizan completamente desde CSS para mejor rendimiento."
     ]
   },
