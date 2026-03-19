@@ -1,33 +1,57 @@
-## Tipo de issue
+# Plantilla de Incidencia
 
-- [ ] Reporte de bug
-- [ ] Solicitud de feature
-- [ ] Pregunta
+## Tipo de Incidencia
 
-## Descripción
+- [ ] `feat` nueva funcionalidad
+- [ ] `fix` corrección de error
+- [ ] `refactor` mejora interna sin cambio funcional
+- [ ] `docs` documentación
+- [ ] `chore/ci` mantenimiento o automatización
 
-Descripción clara y concisa del problema o la solicitud de feature.
+## Resumen
 
-## Pasos para reproducir (para bugs)
+Describe el problema, necesidad o propuesta en 2-5 líneas.
 
-1. Ir a '...'
-2. Hacer clic en '...'
-3. Ver el error
+## Alcance y Contexto
 
-## Comportamiento esperado
+- Módulos afectados:
+- Qué queda dentro del alcance:
+- Qué queda fuera de alcance:
 
-Qué esperabas que pasara.
+## Comportamiento Actual (para errores)
 
-## Comportamiento actual
+¿Qué está pasando hoy?
 
-Qué pasó realmente.
+## Comportamiento Esperado
+
+¿Qué resultado se espera al cerrar esta incidencia?
+
+## Pasos para Reproducir (si aplica)
+
+1.
+2.
+3.
+
+## Propuesta Técnica
+
+Explica la idea técnica sugerida (archivos candidatos, compensaciones, riesgos, compatibilidad con Chrome/Firefox).
+
+## Criterios de Aceptación
+
+- [ ] El comportamiento esperado está implementado.
+- [ ] Se agregaron/ajustaron validaciones o pruebas según impacto.
+- [ ] Los mensajes UI reutilizables se centralizaron en `src/config/messages.js` cuando aplica.
+- [ ] Si hay funcionalidad nueva visible para usuario, se documentó en `README.md` (sección `Funcionalidades`).
+- [ ] El cambio pasó `npm run lint`.
+- [ ] Se actualizó documentación impactada.
 
 ## Entorno
 
-- Navegador: [ej. Chrome 120, Edge 120, Firefox 121]
-- Versión de la extensión: [ej. 1.0.0]
-- URL de WispHub: [ej. wisphub.app]
+- Navegador:
+- Versión de la extensión:
+- URL (wisphub.io / wisphub.app):
+- Evidencia (registros/capturas):
 
-## Capturas de pantalla
+## Referencias
 
-Si aplica, agrega capturas de pantalla para explicar el problema.
+Enlaces a conversaciones, solicitudes de cambio, capturas o documentación relacionada.

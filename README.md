@@ -1,13 +1,13 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
+<!-- Compatibilidad mejorada del enlace "volver arriba": ver https://github.com/othneildrew/Best-README-Template/pull/73 -->
 
 <a id="readme-top"></a>
 
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![AGPL License][license-shield]][license-url]
-[![Version][version-shield]][release-url]
-[![Manifest V3][manifest-shield]][manifest-url]
+[![Bifurcaciones][forks-shield]][forks-url]
+[![Estrellas][stars-shield]][stars-url]
+[![Incidencias][issues-shield]][issues-url]
+[![Licencia AGPL][license-shield]][license-url]
+[![Versión][version-shield]][release-url]
+[![Manifiesto V3][manifest-shield]][manifest-url]
 
 <br />
 <div align="center">
@@ -20,7 +20,7 @@
   <p align="center">
     Extensión de navegador que acelera y simplifica las tareas del día a día dentro de WispHub.
     <br />
-    <a href="https://github.com/JohnyDeCoder/wisphub-yaa-companion/issues">Reportar bug</a>
+    <a href="https://github.com/JohnyDeCoder/wisphub-yaa-companion/issues">Reportar error</a>
     ·
     <a href="https://github.com/JohnyDeCoder/wisphub-yaa-companion/issues">Solicitar mejora</a>
   </p>
@@ -34,8 +34,7 @@
     <li>
       <a href="#primeros-pasos">Primeros pasos</a>
       <ul>
-        <li><a href="#requisitos">Requisitos</a></li>
-        <li><a href="#instalación">Instalación</a></li>
+        <li><a href="#referencia-rápida">Referencia rápida</a></li>
       </ul>
     </li>
     <li>
@@ -45,24 +44,25 @@
         <li><a href="#-calculadora-de-precios-y-prorrateo">Calculadora de precios y prorrateo</a></li>
         <li><a href="#-plantilla-rápida-de-instalación">Plantilla rápida de instalación</a></li>
         <li><a href="#-auto-rellenado-de-plantilla">Auto-rellenado de plantilla</a></li>
-        <li><a href="#-calculadora-de-precios-en-popup">Calculadora de precios en popup</a></li>
+        <li><a href="#-calculadora-de-precios-en-panel-emergente">Calculadora de precios en panel emergente</a></li>
         <li><a href="#-gestión-masiva-de-tickets">Gestión masiva de tickets</a></li>
         <li><a href="#-copiado-rápido-de-ticket">Copiado rápido de ticket</a></li>
         <li><a href="#-gestión-masiva-de-instalaciones">Gestión masiva de instalaciones</a></li>
         <li><a href="#-copiado-rápido-de-instalación">Copiado rápido de instalación</a></li>
         <li><a href="#-enlaces-whatsapp-teléfonos">Enlaces WhatsApp (teléfonos)</a></li>
+        <li><a href="#-coordenadas-y-google-maps">Coordenadas y Google Maps</a></li>
         <li><a href="#-botones-de-acción-rápida-en-clientes">Botones de acción rápida en clientes</a></li>
         <li><a href="#-botón-flotante-subir-archivos">Botón flotante "Subir Archivos"</a></li>
         <li><a href="#-reemplazo-de-avatar-por-defecto">Reemplazo de avatar por defecto</a></li>
         <li><a href="#-botón-ir-arriba">Botón "Ir arriba"</a></li>
         <li><a href="#-inyección-de-ids-de-staff">Inyección de IDs de staff</a></li>
-        <li><a href="#-popup-panel-de-control">Popup (panel de control)</a></li>
+        <li><a href="#-panel-emergente-panel-de-control">Panel emergente (panel de control)</a></li>
         <li><a href="#-notificaciones-en-página">Notificaciones en página</a></li>
       </ul>
     </li>
+    <li><a href="#lanzamientos">Lanzamientos</a></li>
     <li><a href="#atajos-de-teclado">Atajos de teclado</a></li>
     <li><a href="#estructura-del-proyecto">Estructura del proyecto</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#seguridad-y-permisos">Seguridad y permisos</a></li>
     <li><a href="#licencia">Licencia</a></li>
     <li><a href="#contacto">Contacto</a></li>
@@ -84,7 +84,7 @@ Su objetivo es simple: **reducir clics, automatizar tareas repetitivas y facilit
 | Chrome    | ✅                                    |
 | Edge      | ✅                                    |
 | Opera     | ✅                                    |
-| Firefox   | ✅ (validar manualmente cada release) |
+| Firefox   | ✅ (validar manualmente cada lanzamiento) |
 
 > Funciona en ambos dominios: `wisphub.io` (antenas) y `wisphub.app` (fibra óptica).
 
@@ -98,9 +98,10 @@ Su objetivo es simple: **reducir clics, automatizar tareas repetitivas y facilit
 | ----------------------- | ------------------------------------------------------------ |
 | JavaScript (ES Modules) | Lenguaje principal, sin frameworks externos                  |
 | Webpack 5               | Empaquetado y compilación del código                         |
-| Manifest V3             | Formato moderno de extensiones de navegador                  |
+| Manifiesto V3           | Formato moderno de extensiones de navegador                  |
 | CKEditor                | Editor de texto enriquecido de WispHub (integración directa) |
 | ESLint                  | Linting y calidad de código                                  |
+| Vitest + JSDOM          | Pruebas unitarias y de regresión                             |
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
@@ -108,42 +109,65 @@ Su objetivo es simple: **reducir clics, automatizar tareas repetitivas y facilit
 
 ## Primeros pasos
 
-### Requisitos
+### Referencia rápida
 
-- **Node.js** >= 18
-- **npm** >= 9
+- Requisitos: `Node.js >= 18` y `npm >= 9`.
+- Dependencias: `npm install`.
+- Validación recomendada:
 
-### Instalación
+  ```sh
+  npm run check
+  ```
 
-1. **Clonar** el repositorio:
+- Compilación de producción:
 
-   ```sh
-   git clone https://github.com/JohnyDeCoder/wisphub-yaa-companion.git
-   ```
+  ```sh
+  npm run build
+  npm run build:firefox
+  ```
 
-2. **Instalar** dependencias:
+- Desarrollo:
 
-   ```sh
-   npm install
-   ```
+  ```sh
+  npm run dev
+  npm run dev:firefox
+  ```
 
-3. **Compilar** para producción:
+- Carga local:
+  - Chrome / Edge / Opera: `chrome://extensions`
+  - Firefox: `about:debugging`
 
-   ```sh
-   npm run build          # Chrome / Edge / Opera
-   npm run build:firefox  # Firefox
-   ```
+<p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
-4. **Cargar** la carpeta `dist/chrome/` (o `dist/firefox/`) como extensión en tu navegador:
-   - **Chrome / Edge / Opera**: ve a `chrome://extensions` → activa "Modo desarrollador" → "Cargar extensión descomprimida" → selecciona la carpeta.
-   - **Firefox**: ve a `about:debugging` → "Este Firefox" → "Cargar complemento temporal" → selecciona `manifest.json`.
+---
 
-5. **Desarrollo** (recompila automáticamente al guardar cambios):
+## Lanzamientos
 
-   ```sh
-   npm run dev            # Chrome
-   npm run dev:firefox    # Firefox
-   ```
+El proyecto incluye un conjunto pequeño de comandos para versionado, validación y empaquetado.
+
+**Resumen**
+
+- Flujo recomendado de Firefox privado: `npm run build:dev`, `npm run build:prod`, `npm run release:prepare` y `npm run release:publish:firefox`.
+- Ya está soportada la publicación privada de Firefox mediante `.xpi` firmado + `updates.json` autoalojado.
+- `build:dev` genera salida de desarrollo (Firefox por defecto).
+- `build:prod` ejecuta lint y genera paquetes de producción (Chrome + Firefox autoalojado).
+- `check` ejecuta validación completa (`lint + tests + build + build:firefox`).
+- `release:prepare` cubre versionado opcional, documentación derivada y artefactos.
+- `release:publish:firefox` cubre `updates.json` + publicación remota del `.xpi` firmado.
+- Alias compatibles: `update:prepare` y `update:publish`.
+- Variables operativas: ver `.env.example`.
+
+**Referencia**
+
+- Uso de scripts: [scripts/README.md](scripts/README.md)
+
+**Ayuda externa**
+
+- https://extensionworkshop.com/documentation/manage/updating-your-extension/
+- https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/
+- https://extensionworkshop.com/documentation/publish/distribute-pre-release-versions/
+- https://extensionworkshop.com/documentation/develop/build-a-secure-extension/
+- https://extensionworkshop.com/documentation/develop/web-ext-command-reference/
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
@@ -155,19 +179,25 @@ Su objetivo es simple: **reducir clics, automatizar tareas repetitivas y facilit
 
 **Dónde funciona:** Páginas de edición de instalaciones, preinstalaciones y clientes — cualquier página que tenga el editor de texto (CKEditor).
 
-**Qué hace:** Toma el texto que escribiste en el editor y lo organiza automáticamente: le pone negritas donde corresponde, convierte a mayúsculas los títulos, agrega saltos de línea y deja todo con una estructura limpia y uniforme. Si te equivocaste o no te gusta el resultado, puedes **restaurar** el texto original con un clic.
+**Qué hace:** Toma el texto del editor y lo reorganiza automáticamente: aplica negritas donde corresponde, convierte a mayúsculas los títulos, agrega saltos de línea y deja una estructura uniforme. También incluye restauración del contenido original.
 
-**Cómo se usa:**
+**Puntos de entrada:**
 
 - Botón en la barra del editor (aparece junto a los botones de CKEditor).
-- Atajo rápido: `Ctrl+Shift+F`.
-- Desde el popup de la extensión (botón "Usar" / "Restaurar").
+- Acceso por teclado: `Ctrl+Shift+F`.
+- Integración con el panel emergente de la extensión.
 
 **Extras:**
 
-- **Auto-formato al cargar:** Si activas esta opción en los ajustes, el comentario se formatea solo al abrir la página, sin que tengas que hacer nada.
+- **Auto-formato al cargar:** Cuando la opción está habilitada en ajustes, el comentario se formatea al abrir la página.
 - **Auto-llenado de campos:** Al formatear, la extensión detecta datos como datos fiscales, costo de instalación y técnico, y los rellena automáticamente en los campos del formulario de WispHub.
 - **Limpieza de datos fiscales:** Si los datos fiscales ya están en los campos del formulario, se eliminan del comentario para no repetir la información.
+- **Forma de contratación automática en pre-instalación:** Si el comentario contiene `--- HECHO CON EL FORMULARIO DE PRE-INSTALACIÓN` y está activo el ajuste **Auto-rellenar campos**, la extensión selecciona `Página Internet` en `Forma de contratación` (solo si el campo está vacío).
+- **Validaciones antes de guardar:** En páginas de instalación/preinstalación/clientes del flujo soportado, se muestran confirmaciones preventivas cuando:
+  - el costo de instalación coincide con el precio del plan/paquete,
+  - el precio detectado en `PAQUETE/PLAN` no coincide con el `Plan internet` seleccionado,
+  - el costo de instalación es menor al precio del plan/paquete (para evitar capturas accidentales; permite continuar si fue descuento).
+  - Si el formulario tiene errores visibles de WispHub (`has-error`, `aria-invalid`, etc.), estas confirmaciones no se muestran hasta corregirlos.
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
@@ -175,22 +205,24 @@ Su objetivo es simple: **reducir clics, automatizar tareas repetitivas y facilit
 
 **Dónde funciona:** Páginas de edición de instalaciones y preinstalaciones.
 
-**Qué hace:** Calcula automáticamente el precio que debe pagar el cliente, incluyendo el **prorrateo** — es decir, si la instalación se hace a mitad de mes, calcula solo los días que quedan y cobra la parte proporcional.
+**Qué hace:** Calcula automáticamente el precio que corresponde al cliente, incluyendo el **prorrateo** según los días restantes del mes.
 
-**Cómo funciona:**
+**Comportamiento:**
 
-1. Lee la **fecha de instalación** del formulario.
-2. Toma el **precio del paquete** del plan seleccionado o del texto del comentario.
-3. Calcula cuántos días quedan del mes y el prorrateo correspondiente.
-4. Actualiza la línea de precios en el comentario (ej: `EQUIPO PRESTADO $1,000 + RESTANTE DE MES FEBRERO $225 = $1,225 MXN`).
+- Lee la **fecha de instalación** del formulario.
+- Toma el **precio del paquete** del plan seleccionado o del texto del comentario.
+- Calcula cuántos días quedan del mes y el prorrateo correspondiente.
+- Actualiza la línea de precios en el comentario (ej: `EQUIPO PRESTADO $1,000 + RESTANTE DE MES FEBRERO $225 = $1,225 MXN`).
 
-**Cómo se usa:**
+**Puntos de entrada:**
 
 - Botón "Calcular" en la barra del editor.
-- Atajo rápido: `Ctrl+Shift+Alt+P`.
+- Acceso por teclado: `Ctrl+Shift+Alt+P`.
 - **Se recalcula solo** al cambiar la fecha de instalación (si la opción está activada en ajustes).
 
 > Si la línea de precios aún no está completa (por ejemplo `EQUIPO PRESTADO $ + RESTANTE DE MES $ = $`), la extensión la completa automáticamente con los valores correctos.
+>
+> Si el costo de instalación es `0`, la línea se normaliza como **`CORTESÍA`** (manteniendo valor numérico interno de `0` para cálculos).
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
@@ -198,9 +230,9 @@ Su objetivo es simple: **reducir clics, automatizar tareas repetitivas y facilit
 
 **Dónde funciona:** Páginas de edición de instalaciones y preinstalaciones.
 
-**Qué hace:** Con un solo clic genera una **plantilla lista para pegar** con toda la estructura que necesita un comentario de instalación nueva: tipo de equipo, línea de precios con el mes actual, horario, forma de pago, técnico y asesor.
+**Qué hace:** Genera una **plantilla lista para pegar** con la estructura habitual de un comentario de instalación nueva: tipo de equipo, línea de precios con el mes actual, horario, forma de pago, técnico y asesor.
 
-**Cómo se usa:** Clic en el botón "Plantilla" en la barra del editor → se copia al portapapeles → pégala con `Ctrl+V`.
+**Interacción:** Se activa desde el botón "Plantilla" de la barra del editor y deja el contenido listo en el portapapeles para pegarlo en el comentario.
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
@@ -208,28 +240,26 @@ Su objetivo es simple: **reducir clics, automatizar tareas repetitivas y facilit
 
 **Dónde funciona:** Páginas de edición/creación de instalaciones, preinstalaciones, solicitar instalación y agregar clientes.
 
-**Qué hace:** Si el editor de comentarios está **vacío** y activas el formateador (manual o automático), la extensión inserta automáticamente la plantilla de instalación completa, ya formateada y con los precios calculados si los datos del formulario están disponibles. Si no hay datos de paquete o fecha, inserta la plantilla en blanco pero con el mes correcto según la fecha actual.
+**Qué hace:** Si el editor de comentarios está **vacío**, la extensión inserta automáticamente la plantilla de instalación completa, ya formateada y con los precios calculados cuando los datos del formulario están disponibles. Si no hay datos de paquete o fecha, inserta la plantilla en blanco con el mes correspondiente.
 
-**Cómo se activa:** Ajuste "Auto-rellenar plantilla" en el popup (activado por defecto). Funciona junto con el auto-formato o al hacer clic en el botón del formateador.
+**Activación:** Depende del ajuste "Auto-rellenar plantilla" del panel emergente. Se integra con el auto-formato y con la activación manual del formateador.
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
-### 🔢 Calculadora de precios en popup
+### 🔢 Calculadora de precios en panel emergente
 
-**Dónde funciona:** Desde el popup de la extensión (disponible en cualquier página).
+**Dónde funciona:** Desde el panel emergente de la extensión (disponible en cualquier página).
 
-**Qué hace:** Permite calcular manualmente el precio de una instalación con prorrateo, sin necesidad de estar en una página con editor. Ingresas el precio de instalación (comodato), el precio del paquete mensual y la fecha, y la extensión calcula el resultado con la misma lógica de prorrateo que usa el calculador del editor. Los valores se guardan automáticamente y se restauran al reabrir el popup.
+**Qué hace:** Permite calcular manualmente el precio de una instalación con prorrateo sin depender de una página con editor. Usa la misma lógica del calculador integrado y conserva los valores entre aperturas del panel emergente.
 
-**Cómo se usa:**
+**Interacción:**
 
-1. Abre el popup de la extensión.
-2. En la tarjeta **"Calculadora de precios"**, haz clic en **Usar**.
-3. Llena los campos (fecha por defecto: hoy, con selector de fecha nativo).
-4. Clic en **Calcular** → aparece la línea de resultado (ej: `COMODATO $900 + MES MARZO $200 = $1,100 MXN`).
-5. Clic en **Copiar línea** → se copia al portapapeles para pegarla donde necesites.
-6. **Limpiar** reinicia todos los valores.
+- Se expone desde la tarjeta **"Calculadora de precios"** del panel emergente.
+- Admite precio de instalación, precio mensual y fecha.
+- Genera una línea calculada que puede copiarse al portapapeles.
+- La acción **Limpiar** reinicia los valores cargados.
 
-> Los valores persisten entre sesiones del popup. La calculadora siempre está disponible, incluso fuera de WispHub.
+> Los valores persisten entre sesiones del panel emergente. La calculadora siempre está disponible, incluso fuera de WispHub.
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
@@ -237,13 +267,13 @@ Su objetivo es simple: **reducir clics, automatizar tareas repetitivas y facilit
 
 **Dónde funciona:** Listas de tickets (`/tickets/`, `/tickets/1/`, `/tickets/2/`, etc.).
 
-**Qué hace:** Agrega una nueva opción al menú de acciones masivas que permite **cambiar varios tickets a "Nuevos" al mismo tiempo**. En WispHub solo puedes cerrar tickets de forma masiva, pero con esta extensión también puedes regresarlos al estado "Nuevo" sin entrar a cada uno.
+**Qué hace:** Agrega una nueva opción al menú de acciones masivas que permite **cambiar varios tickets a "Nuevos" al mismo tiempo**. Complementa la operación masiva nativa de WispHub con una transición inversa hacia el estado "Nuevo".
 
-**Cómo se usa:**
+**Interacción:**
 
-1. Marca los tickets con las casillas de verificación.
-2. En el selector de acciones, elige **"Marcar Tickets Como Nuevos"**.
-3. Clic en ejecutar → confirma.
+- Opera sobre tickets seleccionados desde las casillas de verificación.
+- Se expone como una opción adicional dentro del menú de acciones masivas.
+- La ejecución requiere confirmación antes de aplicar los cambios.
 
 > La tabla se configura automáticamente para mostrar **500 registros por página**, así no tienes que cambiar la paginación manualmente.
 
@@ -253,13 +283,13 @@ Su objetivo es simple: **reducir clics, automatizar tareas repetitivas y facilit
 
 **Dónde funciona:** Listas de tickets.
 
-**Qué hace:** Agrega un **botón de copiado** en la columna de acciones de cada fila de ticket. Al hacer clic, copia al portapapeles un texto con el formato:
+**Qué hace:** Agrega un **botón de copiado** en la columna de acciones de cada fila de ticket. El texto copiado usa el formato:
 
 ```
 Barrio/Localidad - Cliente - Asunto
 ```
 
-**¿Cómo encuentra las columnas?** La extensión busca cada columna por su **nombre** en el encabezado de la tabla (por ejemplo, "Barrio/Localidad", "Cliente", "Asunto"), no por la posición. Esto significa que funciona aunque hayas **reordenado las columnas, ocultado algunas, o las tengas en diferente orden** que otros usuarios. Además, cada columna se identifica de forma independiente, así que nunca se confunde una con otra.
+**Resolución de columnas:** La extensión busca cada columna por su **nombre** en el encabezado de la tabla, no por la posición. Esto permite que funcione aunque el orden cambie o algunas columnas estén ocultas.
 
 > Del asunto solo se copia la primera parte (antes del guion), para que el texto quede limpio.
 
@@ -271,17 +301,17 @@ Barrio/Localidad - Cliente - Asunto
 
 **Qué hace:** Agrega un botón que busca todas las instalaciones con estado **"En Progreso"** y las cambia a **"Nueva"** de forma masiva. Muy útil cuando hay muchas instalaciones pendientes de reasignar.
 
-**Cómo funciona por dentro:** La extensión abre el formulario de edición de cada instalación en segundo plano, cambia el estado a "Nueva" y envía el formulario — igual que si lo hicieras tú manualmente, pero en automático y para todas las filas a la vez.
+**Comportamiento interno:** La extensión abre el formulario de edición de cada instalación en segundo plano, cambia el estado a "Nueva" y envía el formulario de forma automatizada sobre cada fila aplicable.
 
 > La tabla se configura para **mostrar todos los registros** automáticamente al cargar la página.
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
-### � Copiado rápido de instalación
+### 🔧 Copiado rápido de instalación
 
 **Dónde funciona:** Lista de instalaciones (`/Instalaciones/`).
 
-**Qué hace:** Agrega un **botón de copiado** en la columna de acciones de cada fila de instalación. Al hacer clic, copia al portapapeles un texto con el formato:
+**Qué hace:** Agrega un **botón de copiado** en la columna de acciones de cada fila de instalación. El texto copiado usa el formato:
 
 ```
 Barrio/Localidad - Nombre del Cliente - Inst. Antena
@@ -298,14 +328,14 @@ Al igual que en los tickets, la extensión busca las columnas por su nombre, no 
 
 ### 📱 Enlaces WhatsApp (teléfonos)
 
-**Dónde funciona:** Lista de clientes (`/clientes/`) y lista de instalaciones (`/Instalaciones/`).
+**Dónde funciona:** Lista de clientes (`/clientes/`), lista de instalaciones (`/Instalaciones/`) y lista de preinstalaciones (`/preinstalaciones/`).
 
-**Qué hace:** Convierte cada número de teléfono en la tabla en un **enlace directo a WhatsApp**. Con un clic se abre WhatsApp con ese número. Si hay varios teléfonos separados por comas, cada uno se convierte en su propio enlace.
+**Qué hace:** Convierte cada número de teléfono en la tabla en un **enlace directo a WhatsApp**. Si hay varios teléfonos separados por comas, cada uno se transforma de forma independiente.
 
-**Atajos:**
+**Interacción:**
 
-- **Clic** en un teléfono → abre WhatsApp directamente.
-- **Ctrl+Clic** en un teléfono → copia el número al portapapeles (sin abrir WhatsApp).
+- **Clic** en un teléfono → abre WhatsApp.
+- **Ctrl+Clic** en un teléfono → copia el número al portapapeles.
 
 **Detalles:**
 
@@ -316,14 +346,60 @@ Al igual que en los tickets, la extensión busca las columnas por su nombre, no 
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
+### 🗺️ Coordenadas y Google Maps
+
+**Dónde funciona:** Cualquier página de WispHub que tenga el campo `#id_cliente-coordenadas` (bloque `Coordenadas`), lista de clientes (`/clientes/`), lista de instalaciones (`/Instalaciones/`) y lista de preinstalaciones (`/preinstalaciones/`).
+
+**Qué hace:**
+
+- Agrega un botón con icono (sin texto) junto al campo `Coordenadas` para abrir Google Maps directo al punto detectado.
+- Si el campo contiene una URL de Google Maps (incluyendo `maps.app.goo.gl`), la conserva tal cual; no reescribe enlaces durante el formateo/auto-formateo.
+- Si el campo contiene un enlace corto (`maps.app.goo.gl`) sin coordenadas explícitas, el botón abre ese enlace directamente.
+- En la lista de clientes, convierte valores de `Coordenadas` en enlace directo de mapa y agrega icono de apertura externa.
+- El botón de acción de mapa en tablas usa solo fuentes válidas de ubicación para evitar falsos positivos por montos como `$1,020`.
+- En instalaciones y preinstalaciones, la prioridad de búsqueda de ubicación para el botón es: **Dirección -> Comentarios** (si no hay datos válidos, no se agrega el botón de mapa).
+
+**Compatibilidad de columnas ocultas en `/clientes/`:**
+
+- Cuando la columna `Coordenadas` existe pero está oculta, la extensión intenta leer el dato para habilitar el botón de mapa en acciones.
+- Si la tabla no incluye ese dato en absoluto, no se puede construir el enlace automáticamente para esa fila.
+
+<p align="right">(<a href="#readme-top">ir arriba</a>)</p>
+
 ### ⚡ Botones de acción rápida en clientes
 
-**Dónde funciona:** Lista de clientes (`/clientes/`).
+**Dónde funciona:** Lista de clientes (`/clientes/`), instalaciones (`/Instalaciones/`) y preinstalaciones (`/preinstalaciones/`).
 
-**Qué hace:** Agrega dos botones extra en la columna de acciones de cada fila:
+**Qué hace:** Agrega botones extra en la columna de acciones de cada fila:
 
-- **Ver cliente** → te lleva directo al perfil del cliente.
-- **Ver archivos** → te lleva directo a la pestaña de archivos del cliente.
+- **Ver cliente** → acceso directo al perfil del cliente (solo en `/clientes/`).
+- **Ver archivos** → acceso directo a la pestaña de archivos del cliente.
+- **Ver ubicación en Google Maps** → acceso directo al mapa cuando hay coordenadas detectables.
+- **Copiar plantilla de aprovisionamiento** → genera y copia en un clic una plantilla multilinea para operación:
+
+  ```text
+  MIGRACION|CLIENTE NUEVO
+  NOMBRE_CLIENTE
+  ID_SERVICIO
+  SERVICE_PASSWORD
+  ROUTER
+  LOCALIDAD
+  IP
+  ESTADO
+  PLAN
+  EQUIPOS ...
+  ```
+
+  Si faltan datos clave, usa placeholders automáticos:
+  - `SERVICE_PASSWORD` → `{{POR LLENAR / PASSWORD HOTSPOT }}`
+  - línea de equipos → `{{POR LLENAR / EQUIPOS }}`
+  - cuando sí detecta una línea de equipos con importes, recorta el texto y deja solo el tipo (`EQUIPO COMODATO`, `EQUIPO COMPRADO`, `EQUIPOS PRESTADOS`, etc.).
+  - al copiar, si la plantilla queda con datos pendientes, muestra una notificación `warning` con los campos faltantes para evitar omisiones operativas.
+
+- **Copiar nombre para aprovisionamiento** (icono junto al nombre del cliente):
+  - Clic normal: copia con formato por defecto `MAYÚSCULAS + "_"` (ej. `FEDRA_ALEJANDRA_MARTINEZ_CRUZ`).
+  - `Ctrl+Clic`: abre configuración rápida para cambiar el formato (`upper/lower/title`) y el separador entre palabras.
+  - La configuración se guarda para siguientes copias.
 
 Aparecen junto a los botones de acción que ya tiene WispHub, con separador e iconos propios.
 
@@ -333,7 +409,7 @@ Aparecen junto a los botones de acción que ya tiene WispHub, con separador e ic
 
 **Dónde funciona:** Página de detalle de un cliente (`/clientes/ver/...`).
 
-**Qué hace:** Muestra un **botón flotante** que te lleva directamente a la pestaña "Subir Archivos" del cliente, sin tener que buscarla entre todas las pestañas.
+**Qué hace:** Muestra un **botón flotante** con acceso directo a la pestaña "Subir Archivos" del cliente.
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
@@ -351,7 +427,7 @@ Aparecen junto a los botones de acción que ya tiene WispHub, con separador e ic
 
 **Dónde funciona:** Todas las páginas de WispHub.
 
-**Qué hace:** Agrega un **botón flotante** en la esquina inferior que aparece cuando bajas en la página. Al hacer clic, sube suavemente al inicio. Se oculta solo cuando ya estás arriba.
+**Qué hace:** Agrega un **botón flotante** en la esquina inferior que permite volver suavemente al inicio de la página. Se oculta cuando la vista ya está en la parte superior.
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
@@ -361,17 +437,17 @@ Aparecen junto a los botones de acción que ya tiene WispHub, con separador e ic
 
 **Qué hace:** Agrega una **columna "ID"** al inicio de la tabla de personal, mostrando el número de ID de cada miembro del equipo. Este ID se obtiene de la API de WispHub.
 
-> Requiere tener configurada una API Key en los ajustes del popup.
+> Requiere una clave API configurada en los ajustes del panel emergente.
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
-### ⚙️ Popup (panel de control)
+### ⚙️ Panel emergente (panel de control)
 
 El icono de la extensión en la barra del navegador abre un **panel de control** con estas secciones:
 
 - **Estado de conexión:** Muestra si estás en WispHub y si el editor está disponible.
-- **Info de staff:** Tu nombre de usuario y tu ID (se puede copiar con un clic).
-- **Formateador:** Botón para formatear o restaurar el comentario desde el popup.
+- **Info de staff:** Nombre de usuario e ID, con opción de copiado.
+- **Formateador:** Botón para formatear o restaurar el comentario desde el panel emergente.
 - **Calculadora:** Calculadora independiente de precios con prorrateo (siempre disponible, sin necesidad de editor ni dominio específico).
 - **Ajustes:**
   - Activar/desactivar notificaciones en página.
@@ -379,8 +455,8 @@ El icono de la extensión en la barra del navegador abre un **panel de control**
   - Activar/desactivar auto-cálculo de precios al cargar.
   - Activar/desactivar auto-rellenado de plantilla en editor vacío.
   - Guardar API Keys para `wisphub.io` y `wisphub.app`.
-- **Registros (logs):** Historial de acciones de la extensión (máximo 50, se borran después de 24 horas).
-- **Changelog:** Lista de cambios por versión.
+- **Registros:** Historial de acciones de la extensión (máximo 50, se borran después de 24 horas).
+- **Historial de cambios:** Lista de cambios por versión.
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
@@ -390,7 +466,7 @@ El icono de la extensión en la barra del navegador abre un **panel de control**
 
 **Qué hace:** Muestra mensajes temporales (éxito, advertencia, error, info) cuando la extensión completa una acción. Las notificaciones desaparecen solas y se pueden apilar si hay varias al mismo tiempo.
 
-> Se pueden desactivar desde los ajustes del popup.
+> Se pueden desactivar desde los ajustes del panel emergente.
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
@@ -428,12 +504,13 @@ wisphub-yaa-companion/
 │   └── app/                 # Puntos de entrada
 │       ├── page.js          #   └── Script principal (acceso directo al editor)
 │       ├── content.js       #   └── Puente de mensajes, staff, avatar
-│       ├── background.js    #   └── Service worker (API, caché, iconos)
-│       ├── popup/           #   └── Panel de control (HTML, CSS, JS, changelog)
+│       ├── background.js    #   └── Trabajador de servicio (API, caché, iconos)
+│       ├── popup/           #   └── Panel de control (HTML, CSS, JS, historial de cambios)
 │       └── pages/           #   └── Páginas estáticas (novedades)
-├── scripts/                 # Utilidades de desarrollo (generador de changelog)
+├── scripts/                 # Utilidades de compilación, release y publicación privada de Firefox
+├── tests/                   # Pruebas unitarias y de regresión (Vitest + JSDOM)
 ├── assets/                  # Iconos y recursos estáticos
-├── manifest.json            # Configuración de la extensión (Manifest V3)
+├── manifest.json            # Configuración de la extensión (Manifiesto V3)
 ├── webpack.config.js        # Configuración de Webpack (Chrome + Firefox)
 └── package.json             # Dependencias y scripts npm
 ```
@@ -443,17 +520,6 @@ wisphub-yaa-companion/
 ```text
 config → utils → lib → features → app (page.js / content.js / background.js)
 ```
-
-<p align="right">(<a href="#readme-top">ir arriba</a>)</p>
-
----
-
-## Roadmap
-
-- [x] **v1.0.1** — Primera versión completa: formateador, calculadora de precios, plantilla, auto-rellenado, gestión masiva, copiado rápido, WhatsApp, popup con ajustes y logs.
-- [x] **v1.0.2** — Auto-rellenado independiente, detección dinámica de URLs, página de novedades automática, indicador de actualización.
-- [ ] Publicación estable en Chrome Web Store.
-- [ ] Paquete dedicado para Firefox Add-ons.
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
@@ -506,7 +572,7 @@ Consulta el archivo [LICENSE](LICENSE) para el texto completo.
 [issues-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/issues
 [license-shield]: https://img.shields.io/github/license/JohnyDeCoder/wisphub-yaa-companion.svg?style=for-the-badge
 [license-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/blob/master/LICENSE
-[version-shield]: https://img.shields.io/badge/version-1.0.2-blue?style=for-the-badge
+[version-shield]: https://img.shields.io/badge/version-1.2.0-blue?style=for-the-badge
 [release-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/releases
 [manifest-shield]: https://img.shields.io/badge/manifest-v3-orange?style=for-the-badge
 [manifest-url]: https://developer.chrome.com/docs/extensions/mv3/intro/

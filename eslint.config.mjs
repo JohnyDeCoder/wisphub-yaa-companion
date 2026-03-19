@@ -12,6 +12,15 @@ export default [
       "webpack.config.js",
     ],
   },
+  {
+    files: ["*.config.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
   js.configs.recommended,
   {
     plugins: { boundaries },
@@ -50,19 +59,42 @@ export default [
       "no-var": "error",
       "prefer-const": "error",
 
-      "boundaries/element-types": [
+      "boundaries/dependencies": [
         "error",
         {
           default: "disallow",
           rules: [
-            { from: "config", allow: [] },
-            { from: "utils", allow: ["config"] },
-            { from: "lib", allow: ["config", "utils"] },
-            { from: "features", allow: ["config", "utils", "lib"] },
-            { from: "app", allow: ["config", "utils", "lib", "features"] },
+            {
+              from: { type: "utils" },
+              allow: { to: { type: "config" } },
+            },
+            {
+              from: { type: "lib" },
+              allow: { to: { type: ["config", "utils"] } },
+            },
+            {
+              from: { type: "features" },
+              allow: { to: { type: ["config", "utils", "lib"] } },
+            },
+            {
+              from: { type: "app" },
+              allow: { to: { type: ["config", "utils", "lib", "features"] } },
+            },
           ],
         },
       ],
+    },
+  },
+  {
+    files: ["tests/**/*.js"],
+    languageOptions: {
+      globals: {
+        ...globals.vitest,
+      },
+    },
+    rules: {
+      "max-len": "off",
+      "boundaries/dependencies": "off",
     },
   },
 ];

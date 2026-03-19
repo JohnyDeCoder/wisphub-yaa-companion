@@ -6,6 +6,13 @@ import {
 } from "../config/messages.js";
 import { isWispHubDomain } from "../config/domains.js";
 import {
+  CLIENT_ADD_PATH_RE,
+  CLIENT_EDIT_PATH_RE,
+  CLIENT_SERVICE_EDIT_PATH_RE,
+  INSTALLATION_FLOW_PATH_RE,
+  TICKETS_EDITOR_PATH_RE,
+} from "../config/pagePatterns.js";
+import {
   isCKEditorAvailable,
   getEditorInstance,
   getEditorText,
@@ -53,6 +60,7 @@ import {
 } from "../features/installations/installationActions.js";
 import { initClientPhoneLinks } from "../features/clients/clientPhoneLinks.js";
 import { initClientUploadButton } from "../features/clients/clientUploadButton.js";
+import { initCoordinateMapButton } from "../features/coordinates/coordinateMapButton.js";
 import { initScrollTopButton } from "../features/navigation/scrollTopButton.js";
 import { initSpecialTickets } from "../features/tickets/specialTickets.js";
 import { initFormGuards } from "../features/formatter/utils/formGuards.js";
@@ -61,6 +69,15 @@ import {
   initTicketAutoFillNotify,
   updateTicketAutoFillSettings,
 } from "../features/tickets/ticketAutoFill.js";
+import {
+  BRIDGE_META,
+  clearBridgeToken,
+  getBridgeToken,
+  isBridgeMessage,
+  isMessageTokenValid,
+  postBridgeMessage,
+  setBridgeToken,
+} from "../utils/pageBridge.js";
 
 if (window.__WISPHUB_TOOLS_LOADED__) {
   throw new Error(`[${EXTENSION_NAME}] Already loaded — skipping duplicate.`);
@@ -77,24 +94,23 @@ setFormatterTemplateFn(() => generateTemplate(tryCalculateForTemplate));
 
 const PAGE_RULES = [
   {
-    match: /\/tickets\/(editar|agregar)/i,
+    match: TICKETS_EDITOR_PATH_RE,
     features: { formatter: false, priceCalc: false, template: false },
   },
   {
-    match: /\/clientes\/editar\/servicio/i,
+    match: CLIENT_SERVICE_EDIT_PATH_RE,
     features: { formatter: false, priceCalc: false, template: false },
   },
   {
-    match: /\/clientes\/editar/i,
+    match: CLIENT_EDIT_PATH_RE,
     features: { formatter: true, priceCalc: false, template: false },
   },
   {
-    match:
-      /\/(instalaciones\/(editar|agregar|nuevo)|preinstalacion\/(activar|editar)|solicitar-instalacion)/i,
+    match: INSTALLATION_FLOW_PATH_RE,
     features: { formatter: true, priceCalc: true, template: true },
   },
   {
-    match: /\/clientes\/agregar/i,
+    match: CLIENT_ADD_PATH_RE,
     features: { formatter: true, priceCalc: false, template: true },
   },
 ];
@@ -108,6 +124,17 @@ function getPageFeatures() {
 
 const pageFeatures = getPageFeatures();
 let autoPriceCalcDone = false;
+
+function requestBridgeInit() {
+  if (getBridgeToken()) {
+    return;
+  }
+  postBridgeMessage(MESSAGE_TYPES.CHANNEL_HELLO, {}, { includeToken: false });
+}
+
+function postToBridge(type, payload = {}) {
+  return postBridgeMessage(type, payload, { requireToken: true });
+}
 
 setOnAutoFormatComplete((formatResult) => {
   if (formatResult?.success && !formatResult.templateFilled) {
@@ -162,7 +189,25 @@ function setupMessageListener() {
       return;
     }
 
-    const { type, settings } = event.data || {};
+    const data = event.data || {};
+    if (!isBridgeMessage(data)) {
+      return;
+    }
+
+    const { type, settings } = data;
+
+    if (type === MESSAGE_TYPES.CHANNEL_INIT) {
+      if (setBridgeToken(data[BRIDGE_META.TOKEN_FIELD])) {
+        return;
+      }
+      clearBridgeToken();
+      return;
+    }
+
+    const token = getBridgeToken();
+    if (!token || !isMessageTokenValid(data, token)) {
+      return;
+    }
 
     if (
       type === MESSAGE_TYPES.SETTINGS_UPDATE ||
@@ -179,27 +224,26 @@ function setupMessageListener() {
 
     if (type === MESSAGE_TYPES.FORMAT_REQUEST && pageFeatures.formatter) {
       const result = applyFormatting({
-        silent: !!event.data.fromPopup,
-        fillFields: !!event.data.fromPopup,
+        silent: !!data.fromPopup,
+        fillFields: !!data.fromPopup,
       });
-      window.postMessage({ type: MESSAGE_TYPES.FORMAT_RESPONSE, result }, "*");
+      postToBridge(MESSAGE_TYPES.FORMAT_RESPONSE, { result });
     }
 
     if (type === MESSAGE_TYPES.RESTORE_REQUEST && pageFeatures.formatter) {
       const result = restoreFormatting();
-      window.postMessage({ type: MESSAGE_TYPES.RESTORE_RESPONSE, result }, "*");
+      postToBridge(MESSAGE_TYPES.RESTORE_RESPONSE, { result });
     }
 
     if (type === MESSAGE_TYPES.PING_REQUEST) {
       const editor = getEditorInstance();
-      window.postMessage(
+      postToBridge(
+        MESSAGE_TYPES.PING_RESPONSE,
         {
-          type: MESSAGE_TYPES.PING_RESPONSE,
           editorReady: isEditorReady(editor),
           isWispHub: isWispHubDomain(window.location.href),
           formatterEnabled: pageFeatures.formatter,
         },
-        "*",
       );
     }
   });
@@ -267,12 +311,17 @@ function init() {
   }
 
   console.log(`[${EXTENSION_NAME}] Page script loaded`);
+  clearBridgeToken();
   setupMessageListener();
+  requestBridgeInit();
+  setTimeout(requestBridgeInit, TIMING.CHECK_INTERVAL);
+  setTimeout(requestBridgeInit, TIMING.RETRY_DELAY);
   waitForEditor();
   initTicketActions();
   initInstallationActions();
   initClientPhoneLinks(showNotification);
   initClientUploadButton();
+  initCoordinateMapButton(showNotification);
   initScrollTopButton();
   initSpecialTickets();
   initTicketAutoFill();

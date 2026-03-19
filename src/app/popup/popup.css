@@ -414,17 +414,19 @@ body {
 
   transition: transform 0.4s ease;
 
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
 
   border-radius: var(--radius);
 }
 
 .flip-card:hover .flip-card-inner {
   transform: rotateY(180deg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .flip-card.disabled .flip-card-inner {
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .flip-card.disabled:hover .flip-card-inner {

@@ -1,70 +1,59 @@
-# Build Instructions — Wisphub Yaa Companion v1.1.0
+# Build Instructions - Wisphub Yaa Companion
 
-## System Requirements
+This document describes the Firefox-focused private update flow.
 
-- **OS:** Windows 10+, macOS 12+, or Linux (Ubuntu 20.04+)
-- **Node.js:** >= 18 (tested with v22.x)
-- **npm:** >= 9 (bundled with Node.js)
+## Recommended Commands
 
-## Step-by-step Build
+The operational flow is split into four commands:
 
-1. **Clone the repository:**
+1. `npm run build:dev`
+2. `npm run build:prod`
+3. `npm run release:prepare`
+4. `npm run release:publish:firefox`
 
-   ```sh
-   git clone https://github.com/JohnyDeCoder/wisphub-yaa-companion.git
-   cd wisphub-yaa-companion
-   ```
+`build:dev` builds local development output (Firefox target by default).
 
-2. **Checkout the release tag:**
+`build:prod` runs lint and generates production bundles (Chrome + Firefox self-hosted).
 
-   ```sh
-   git checkout v1.1.0
-   ```
+`release:prepare` handles version sync/bump (optional), docs refresh, and release artifacts generation from existing build outputs.
 
-3. **Install dependencies:**
+`release:publish:firefox` generates `updates.json` from a Mozilla-signed `.xpi` and uploads both files to the remote host using SCP.
 
-   ```sh
-   npm install
-   ```
+Compatibility aliases:
 
-4. **Build for Firefox:**
+- `npm run update:prepare` -> `npm run release:prepare`
+- `npm run update:publish` -> `npm run release:publish:firefox`
 
-   ```sh
-   npm run build:firefox
-   ```
+## Required Environment Variables
 
-5. **Output:** The built extension is in `dist/firefox/`. This directory contains the exact same code as the submitted `.zip` file.
+Suggested template: `.env.example`
 
-## Dependencies
+- `FIREFOX_UPDATE_URL=https://<public-host>/<path>/updates.json`
+- `FIREFOX_UPDATES_BASE_URL=https://<public-host>/<path>`
+- `UPDATE_REMOTE_SSH=<user@host>`
+- `UPDATE_REMOTE_DIR=<remote-directory>`
 
-All dependencies are listed in `package.json` and installed via `npm install`:
+Optional:
 
-| Package               | Purpose                               |
-| --------------------- | ------------------------------------- |
-| webpack               | Module bundler                        |
-| webpack-cli           | CLI for webpack                       |
-| copy-webpack-plugin   | Copies static assets to dist          |
-| terser-webpack-plugin | JavaScript minifier (production only) |
-| css-loader            | Resolves CSS imports                  |
-| style-loader          | Injects CSS into the page             |
-| eslint                | Code linting (dev only, not in build) |
+- `UPDATE_SSH_KEY=<private-key-path>`
+- `UPDATE_SSH_PORT=<port>`
 
-No third-party runtime libraries are used. The extension is 100% vanilla JavaScript (ES Modules).
+No user, host, IP, password, or key values are hardcoded in repository scripts.
 
-## Source Code Structure
+## Expected Output
 
-```
-src/
-├── config/       # Constants, allowed domains, messages
-├── utils/        # Reusable utilities (logger, DOM helpers)
-├── lib/          # Intermediate layers (editor, messaging, storage)
-├── features/     # Independent feature modules
-├── styles/       # CSS (variables + injected styles)
-└── app/          # Entry points (page.js, content.js, background.js, popup/)
-```
+- `dist/firefox/`
+- `dist/wyac-firefox-vX.Y.Z.zip`
+- `dist/release-notes-vX.Y.Z.md`
+- `dist/BUILD_INSTRUCTIONS.md`
+- `dist/firefox/updates.json`
 
-## Notes
+`dist/wyac-firefox-vX.Y.Z.zip` is the internal package used for validation and signing. End users should install the Mozilla-signed `.xpi`.
 
-- No transpilation (no Babel, no TypeScript). Source is plain ES2020+ JavaScript.
-- Webpack only bundles modules and minifies in production. No code transformation.
-- The `manifest.json` transform in webpack only adjusts the `background` key for Firefox compatibility (`service_worker` → `scripts`).
+## External References
+
+- https://extensionworkshop.com/documentation/manage/updating-your-extension/
+- https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/
+- https://extensionworkshop.com/documentation/publish/distribute-pre-release-versions/
+- https://extensionworkshop.com/documentation/develop/build-a-secure-extension/
+- https://extensionworkshop.com/documentation/develop/web-ext-command-reference/

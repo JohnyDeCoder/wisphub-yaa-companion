@@ -7,47 +7,60 @@
     "url": "https://github.com/JohnyDeCoder/wisphub-yaa-companion/issues"
   },
   "scripts": {
+    "prepare": "husky",
     "dev": "webpack --watch --mode=development",
     "dev:firefox": "webpack --watch --mode=development --env target=firefox",
+    "build:dev": "node scripts/build-dev.js",
+    "build:prod": "node scripts/build-production.js",
     "build": "webpack --mode=production",
     "build:firefox": "webpack --mode=production --env target=firefox",
-    "zip:chrome": "node -e \"const v=require('./package.json').version; require('child_process').execSync(`cd dist/chrome && tar -acf ../wyac-chrome-v${v}.zip *`, {stdio:'inherit'})\"",
-    "zip:firefox": "node -e \"const v=require('./package.json').version; require('child_process').execSync(`cd dist/firefox && tar -acf ../wyac-firefox-v${v}.zip *`, {stdio:'inherit'})\"",
-    "zip:source": "node -e \"const v=require('./package.json').version;const fs=require('fs');fs.copyFileSync('dist/BUILD_INSTRUCTIONS.md','BUILD_INSTRUCTIONS.md');try{require('child_process').execSync('tar -acf dist/wyac-source-v'+v+'.zip src package.json package-lock.json webpack.config.js manifest.json eslint.config.mjs BUILD_INSTRUCTIONS.md',{stdio:'inherit'})}finally{try{fs.unlinkSync('BUILD_INSTRUCTIONS.md')}catch(e){}}\"",
-    "package": "npm run build && npm run build:firefox && npm run zip:chrome && npm run zip:firefox && npm run zip:source",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "check": "npm run lint && npm run test:run && npm run build && npm run build:firefox",
+    "security:audit": "npm audit --audit-level=high",
+    "commitlint": "commitlint --edit",
     "clean": "rimraf dist",
-    "changelog": "node scripts/generate-changelog.js"
+    "release:prepare": "node scripts/prepare-release.js",
+    "release:publish:firefox": "node scripts/publish-firefox-update.js",
+    "update:prepare": "node scripts/prepare-release.js",
+    "update:publish": "node scripts/publish-firefox-update.js"
   },
   "keywords": [
     "wisphub",
+    "yaa internet",
     "browser-extension",
     "chrome-extension",
     "edge-extension",
     "firefox-addon",
     "opera-extension",
     "manifest-v3",
-    "comment-formatter",
-    "ckeditor"
+    "formatter",
+    "productivity"
   ],
-  "author": "YAA Internet by VW",
+  "author": "JohnyDeCoder",
   "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
     "url": "https://github.com/JohnyDeCoder/wisphub-yaa-companion.git"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@eslint/js": "^10.0.1",
-    "copy-webpack-plugin": "^13.0.1",
-    "css-loader": "^7.1.3",
-    "eslint": "^10.0.0",
-    "eslint-plugin-boundaries": "^5.4.0",
-    "globals": "^17.3.0",
-    "rimraf": "^6.1.2",
+    "copy-webpack-plugin": "^14.0.0",
+    "css-loader": "^7.1.4",
+    "eslint": "^10.0.3",
+    "eslint-plugin-boundaries": "^6.0.0",
+    "globals": "^17.4.0",
+    "husky": "^9.1.7",
+    "jsdom": "^29.0.0",
+    "rimraf": "^6.1.3",
     "style-loader": "^4.0.0",
-    "webpack": "^5.105.2",
-    "webpack-cli": "^6.0.1"
+    "vitest": "^4.1.0",
+    "webpack": "^5.105.4",
+    "webpack-cli": "^7.0.2"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -7,11 +7,12 @@ const UPPERCASE_FIELD_IDS = [
   "id_perfil-direccion",
   "id_perfil-localidad",
   "id_perfil-ciudad",
-  "id_cliente-coordenadas",
   "id_perfil-razon_social",
   "id_perfil-rfc",
   "id_perfil-cedula_facturacion",
 ];
+const URL_RE = /https?:\/\/[^\s<>"')]+/gi;
+const REFERENCE_RE = /\(Ref:[^)]*\)/gi;
 
 function triggerChange(element) {
   element.dispatchEvent(new Event("change", { bubbles: true }));
@@ -60,6 +61,25 @@ function selectByUsername(selectId, username) {
   }
 }
 
+function selectByValueIfEmpty(selectId, value) {
+  const select = document.getElementById(selectId);
+  if (!select || !value) {
+    return;
+  }
+
+  if (select.value && select.value !== "") {
+    return;
+  }
+
+  const option = Array.from(select.options).find((opt) => opt.value === value);
+  if (!option) {
+    return;
+  }
+
+  select.value = option.value;
+  triggerChange(select);
+}
+
 // Preserve "(Ref: ...)" parts in the address field
 export function uppercaseFormFields() {
   for (const id of UPPERCASE_FIELD_IDS) {
@@ -69,21 +89,38 @@ export function uppercaseFormFields() {
     }
 
     const original = field.value;
+    const refParts = [];
+    const urlParts = [];
+
+    let val = field.value;
 
     if (id === "id_perfil-direccion") {
-      const refParts = [];
-      let val = field.value.replace(/\(Ref:[^)]*\)/gi, (m) => {
-        refParts.push(m);
-        return `__REF_${refParts.length - 1}__`;
+      REFERENCE_RE.lastIndex = 0;
+      val = val.replace(REFERENCE_RE, (match) => {
+        refParts.push(match);
+        return `__WISPHUB_REF_${refParts.length - 1}__`;
       });
-      val = val.toUpperCase();
-      refParts.forEach((ref, i) => {
-        val = val.replace(`__REF_${i}__`, ref);
-      });
-      field.value = val;
-    } else {
-      field.value = field.value.toUpperCase();
     }
+
+    URL_RE.lastIndex = 0;
+    val = val.replace(URL_RE, (match) => {
+      urlParts.push(match);
+      return `__WISPHUB_URL_${urlParts.length - 1}__`;
+    });
+
+    val = val.toUpperCase();
+
+    urlParts.forEach((url, index) => {
+      val = val.replace(`__WISPHUB_URL_${index}__`, url);
+    });
+
+    if (id === "id_perfil-direccion") {
+      refParts.forEach((ref, index) => {
+        val = val.replace(`__WISPHUB_REF_${index}__`, ref);
+      });
+    }
+
+    field.value = val;
 
     if (field.value !== original) {
       markFieldAsFormatted(field, original);
@@ -105,7 +142,7 @@ function markFieldAsFormatted(field, originalValue) {
   const indicator = document.createElement("span");
   indicator.className = "wisphub-yaa-field-indicator";
 
-  const label = document.createTextNode("Campo formateado \u00B7 ");
+  const label = document.createTextNode("Campo formateado ");
   const undoLink = document.createElement("a");
   undoLink.textContent = "Deshacer";
   undoLink.addEventListener("click", (e) => {
@@ -169,10 +206,12 @@ function fillRegimenFiscal(data) {
   setFieldValue("id_perfil-informacion_adicional", data.description);
 }
 
-export function autoFillFormFields(parsedData) {
+export function autoFillFormFields(parsedData, options = {}) {
   if (!parsedData) {
     return;
   }
+
+  const autoFillEnabled = options.autoFillEnabled !== false;
 
   uppercaseFormFields();
 
@@ -194,6 +233,10 @@ export function autoFillFormFields(parsedData) {
   selectByUsername("id_cliente-creado_por", parsedData.asesor);
 
   selectByUsername("id_cliente-tecnico", parsedData.tecnico);
+
+  if (autoFillEnabled && parsedData.isPreInstallFormComment) {
+    selectByValueIfEmpty("id_cliente-forma_contratacion", "pagina_internet");
+  }
 
   fillRegimenFiscal(parsedData.regimenFiscal);
 }

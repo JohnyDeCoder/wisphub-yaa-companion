@@ -1,6 +1,6 @@
 # Privacy Policy — Wisphub Yaa Companion
 
-**Last updated:** February 17, 2026
+**Last updated:** March 17, 2026
 
 ## Overview
 
@@ -14,9 +14,11 @@ This extension collects and stores the following data **locally on your browser*
 
 - **API Keys**: Provided manually by the user to authenticate with the WispHub API. These keys are stored locally and are only sent to the official WispHub API endpoints listed below.
 - **User preferences**: Settings such as notification toggles, auto-format, and auto-price calculation preferences.
-- **Staff info cache**: Cached staff identification data (username, name, ID) retrieved from the WispHub API to reduce redundant network requests. This cache expires automatically after 24 hours.
+- **Staff info cache (background)**: Cached staff list data retrieved from the WispHub API to reduce redundant network requests. This cache expires automatically after 24 hours.
+- **Staff info cache (popup)**: Cached staff identification data (username, name, ID) shown in the popup per domain. This cache expires automatically after 7 days.
 - **Activity logs**: Local logs of extension actions (formatting, price calculations, etc.) stored only in your browser. A maximum of 50 log entries are retained.
 - **Connection state cache**: A short-lived cache (30 seconds) of the last connection check result to avoid redundant pings.
+- **Bridge security token**: A temporary in-page channel token used to validate internal extension message flow. It is kept in memory and is not persisted in storage.
 
 **No personal data is collected beyond what is described above. No analytics, telemetry, or tracking of any kind is performed.**
 
@@ -39,7 +41,8 @@ This extension does **not**:
 ## Data Retention
 
 - **User preferences** are stored indefinitely until the user clears browser data or uninstalls the extension.
-- **Staff info cache** expires automatically after 24 hours.
+- **Staff info cache (background)** expires automatically after 24 hours.
+- **Staff info cache (popup)** expires automatically after 7 days.
 - **Activity logs** are limited to the 50 most recent entries and can be manually cleared by the user from the extension popup.
 - **All stored data** is removed automatically when the extension is uninstalled.
 

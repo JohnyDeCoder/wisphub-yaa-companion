@@ -34,6 +34,7 @@ import {
   resetToggleState,
   updateButtonVisual,
 } from "./stores/toggleState.js";
+import { postBridgeMessage } from "../../utils/pageBridge.js";
 
 let autoFormatEnabled = false;
 let autoFormatExecuted = false;
@@ -87,7 +88,9 @@ export function handleToggle(shouldFormat, options = {}) {
       setEditorContent(editor, formattedHtml);
 
       if (options.fillFields !== false) {
-        autoFillFormFields(parsedData);
+        autoFillFormFields(parsedData, {
+          autoFillEnabled: autoFillTemplateEnabled,
+        });
       }
 
       notify(UI_MESSAGES.FORMAT_SUCCESS, NOTIFICATION_TYPES.SUCCESS);
@@ -198,12 +201,12 @@ export function initFormatter(editor) {
   if (success) {
     console.log(`[${EXTENSION_NAME}] Formatter ready`);
 
-    window.postMessage(
+    postBridgeMessage(
+      MESSAGE_TYPES.EDITOR_READY,
       {
-        type: MESSAGE_TYPES.EDITOR_READY,
         editorName: editor.name,
       },
-      "*",
+      { requireToken: false },
     );
 
     setTimeout(tryAutoFormat, TIMING.CHECK_INTERVAL);

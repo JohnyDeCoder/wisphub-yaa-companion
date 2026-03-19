@@ -94,6 +94,21 @@ a.cke_button.wisphub-toolbar-btn.cke_button_on:hover {
   background: linear-gradient(135deg, #c3e6cb 0%, #b1dfbb 100%) !important;
 }
 
+/* ── Shared disabled palette for copy controls ─────────────────── */
+:root {
+  --wisphub-yaa-copy-disabled-bg: #d6dbe1;
+  --wisphub-yaa-copy-disabled-border: #c2c8d0;
+  --wisphub-yaa-copy-disabled-fg: #717b88;
+  --wisphub-yaa-copy-disabled-icon: #717b88;
+}
+
+html[data-darkreader-scheme="dark"] {
+  --wisphub-yaa-copy-disabled-bg: #2d3641;
+  --wisphub-yaa-copy-disabled-border: #475362;
+  --wisphub-yaa-copy-disabled-fg: #9aa7b7;
+  --wisphub-yaa-copy-disabled-icon: #9aa7b7;
+}
+
 /* ── Universal action buttons (clients + installations) ───────── */
 a.wisphub-yaa-action-btn,
 button.wisphub-yaa-action-btn {
@@ -173,6 +188,20 @@ button.wisphub-yaa-action-btn {
     no-repeat center / contain;
 }
 
+.wisphub-yaa-action-btn-map::before {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17.413 17.5q.562-.5.587-1.5q.025-.85-.562-1.425T16 14t-1.425.575T14 16t.575 1.425T16 18t1.413-.5M16 20q-1.65 0-2.825-1.175T12 16t1.175-2.825T16 12t2.825 1.175T20 16q0 .575-.137 1.088t-.413.962l1.85 1.85q.275.275.275.7t-.275.7t-.7.275t-.7-.275l-1.85-1.85q-.45.275-.962.413T16 20m-11.65.7q-.5.2-.925-.112T3 19.75v-14q0-.325.188-.575T3.7 4.8l4.65-1.575Q8.675 3.1 9 3.1t.65.125L15 5.1l4.65-1.8q.5-.2.925.113T21 4.25V11q0 .425-.4.575t-.725-.15q-.825-.7-1.812-1.063T16 10h-.425q-.225 0-.425.05q-.45.05-.8-.213T14 9.15v-2.3l-4-1.4v12.025q0 .475-.262.85t-.688.55z'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17.413 17.5q.562-.5.587-1.5q.025-.85-.562-1.425T16 14t-1.425.575T14 16t.575 1.425T16 18t1.413-.5M16 20q-1.65 0-2.825-1.175T12 16t1.175-2.825T16 12t2.825 1.175T20 16q0 .575-.137 1.088t-.413.962l1.85 1.85q.275.275.275.7t-.275.7t-.7.275t-.7-.275l-1.85-1.85q-.45.275-.962.413T16 20m-11.65.7q-.5.2-.925-.112T3 19.75v-14q0-.325.188-.575T3.7 4.8l4.65-1.575Q8.675 3.1 9 3.1t.65.125L15 5.1l4.65-1.8q.5-.2.925.113T21 4.25V11q0 .425-.4.575t-.725-.15q-.825-.7-1.812-1.063T16 10h-.425q-.225 0-.425.05q-.45.05-.8-.213T14 9.15v-2.3l-4-1.4v12.025q0 .475-.262.85t-.688.55z'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+}
+
+.wisphub-yaa-action-btn-copy-client-template::before {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20zm2-3h12q.425 0 .713-.288T19 16t-.288-.712T18 15H6q-.425 0-.712.288T5 16t.288.713T6 17m0-4h12q.425 0 .713-.288T19 12t-.288-.712T18 11H6q-.425 0-.712.288T5 12t.288.713T6 13m0-4h8q.425 0 .713-.288T15 8t-.288-.712T14 7H6q-.425 0-.712.288T5 8t.288.713T6 9'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20zm2-3h12q.425 0 .713-.288T19 16t-.288-.712T18 15H6q-.425 0-.712.288T5 16t.288.713T6 17m0-4h12q.425 0 .713-.288T19 12t-.288-.712T18 11H6q-.425 0-.712.288T5 12t.288.713T6 13m0-4h8q.425 0 .713-.288T15 8t-.288-.712T14 7H6q-.425 0-.712.288T5 8t.288.713T6 9'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+}
+
 .wisphub-yaa-action-btn-mark-new::before {
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m12 12.625l1.275.775q.275.175.538-.025T14 12.85l-.325-1.45l1.1-.95q.25-.225.163-.525t-.438-.35l-1.45-.125l-.6-1.375q-.125-.3-.45-.3t-.45.3l-.6 1.375l-1.45.125q-.35.05-.437.35t.162.525l1.1.95L10 12.85q-.075.325.188.525t.537.025zM12 18l-4.2 1.8q-1 .425-1.9-.162T5 17.975V5q0-.825.588-1.412T7 3h10q.825 0 1.413.588T19 5v12.975q0 1.075-.9 1.663t-1.9.162z'/%3E%3C/svg%3E")
     no-repeat center / contain;
@@ -215,6 +244,7 @@ button.wisphub-yaa-action-btn {
 /* ── Subtle shadow on table/nav SVG icons (not editor buttons) ── */
 td .wisphub-yaa-action-btn::before,
 .wisphub-yaa-view-client-link::before,
+.wisphub-yaa-client-name-copy-link::before,
 .wisphub-yaa-nav-icon {
   filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.2));
 }
@@ -253,6 +283,113 @@ td .wisphub-yaa-action-btn::before,
 
 .wisphub-yaa-view-client-link:active {
   transform: scale(0.95);
+}
+
+/* ── Clients: Copy provisioning name link (inline icon) ───────────────── */
+.wisphub-yaa-client-name-copy-link {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-left: 5px;
+  vertical-align: middle;
+  cursor: pointer;
+  opacity: 0.65;
+  transition:
+    opacity 0.2s ease,
+    transform 0.15s ease;
+  text-decoration: none !important;
+}
+
+.wisphub-yaa-client-name-text-host {
+  display: inline-block !important;
+  vertical-align: middle;
+}
+
+.wisphub-yaa-client-name-copy-link::before {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: #218838;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='currentColor' d='M8.246 2a.75.75 0 0 1 .695.467l5.11 12.543a2.24 2.24 0 0 0-1.688-.168l-.954-2.342H5.084L3.44 16.533a.75.75 0 1 1-1.39-.566l5.5-13.5A.75.75 0 0 1 8.247 2M13 15.75a1.25 1.25 0 0 1 1.237 1.067q.013.09.013.183A1.25 1.25 0 1 1 13 15.75M5.695 11h5.103L8.246 4.738zm4.555 6a1.25 1.25 0 1 1-2.5 0a1.25 1.25 0 0 1 2.5 0M17 18.25a1.25 1.25 0 1 0 0-2.5a1.25 1.25 0 0 0 0 2.5'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='currentColor' d='M8.246 2a.75.75 0 0 1 .695.467l5.11 12.543a2.24 2.24 0 0 0-1.688-.168l-.954-2.342H5.084L3.44 16.533a.75.75 0 1 1-1.39-.566l5.5-13.5A.75.75 0 0 1 8.247 2M13 15.75a1.25 1.25 0 0 1 1.237 1.067q.013.09.013.183A1.25 1.25 0 1 1 13 15.75M5.695 11h5.103L8.246 4.738zm4.555 6a1.25 1.25 0 1 1-2.5 0a1.25 1.25 0 0 1 2.5 0M17 18.25a1.25 1.25 0 1 0 0-2.5a1.25 1.25 0 0 0 0 2.5'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+}
+
+.wisphub-yaa-client-name-copy-link:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.wisphub-yaa-client-name-copy-link:active {
+  transform: scale(0.95);
+}
+
+/* ── Global disabled state for extension copy controls ─────────── */
+.wisphub-yaa-action-btn.wisphub-yaa-copy-control[disabled],
+.wisphub-yaa-action-btn.wisphub-yaa-copy-control[aria-disabled="true"],
+.wisphub-yaa-action-btn.wisphub-yaa-copy-control[data-disabled="true"],
+.wisphub-yaa-action-btn.wisphub-yaa-copy-control.disabled {
+  background-color: var(--wisphub-yaa-copy-disabled-bg) !important;
+  background-image: none !important;
+  border-color: var(--wisphub-yaa-copy-disabled-border) !important;
+  color: var(--wisphub-yaa-copy-disabled-fg) !important;
+  box-shadow: none !important;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.wisphub-yaa-action-btn.wisphub-yaa-copy-control[disabled]:hover,
+.wisphub-yaa-action-btn.wisphub-yaa-copy-control[aria-disabled="true"]:hover,
+.wisphub-yaa-action-btn.wisphub-yaa-copy-control[data-disabled="true"]:hover,
+.wisphub-yaa-action-btn.wisphub-yaa-copy-control.disabled:hover,
+.wisphub-yaa-action-btn.wisphub-yaa-copy-control[disabled]:active,
+.wisphub-yaa-action-btn.wisphub-yaa-copy-control[aria-disabled="true"]:active,
+.wisphub-yaa-action-btn.wisphub-yaa-copy-control[data-disabled="true"]:active,
+.wisphub-yaa-action-btn.wisphub-yaa-copy-control.disabled:active {
+  background-color: var(--wisphub-yaa-copy-disabled-bg) !important;
+  background-image: none !important;
+  border-color: var(--wisphub-yaa-copy-disabled-border) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.wisphub-yaa-copy-control:not(.wisphub-yaa-action-btn)[disabled],
+.wisphub-yaa-copy-control:not(.wisphub-yaa-action-btn)[aria-disabled="true"],
+.wisphub-yaa-copy-control:not(.wisphub-yaa-action-btn)[data-disabled="true"],
+.wisphub-yaa-copy-control:not(.wisphub-yaa-action-btn).disabled,
+.wisphub-yaa-copy-control.cke_button_disabled {
+  color: var(--wisphub-yaa-copy-disabled-fg) !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  pointer-events: none;
+  transform: none !important;
+}
+
+.wisphub-yaa-copy-control:not(.wisphub-yaa-action-btn)[disabled]::before,
+.wisphub-yaa-copy-control:not(.wisphub-yaa-action-btn)[aria-disabled="true"]::before,
+.wisphub-yaa-copy-control:not(.wisphub-yaa-action-btn)[data-disabled="true"]::before,
+.wisphub-yaa-copy-control:not(.wisphub-yaa-action-btn).disabled::before {
+  background-color: var(--wisphub-yaa-copy-disabled-icon) !important;
+}
+
+.wisphub-toolbar-btn.wisphub-yaa-copy-control.cke_button_disabled
+  .cke_button_icon::before,
+.wisphub-toolbar-btn.wisphub-yaa-copy-control[aria-disabled="true"]
+  .cke_button_icon::before,
+.wisphub-toolbar-btn.wisphub-yaa-copy-control[data-disabled="true"]
+  .cke_button_icon::before,
+.wisphub-toolbar-btn.wisphub-yaa-copy-control.disabled .cke_button_icon::before {
+  filter: grayscale(1) opacity(0.6) !important;
+}
+
+a.cke_button.wisphub-toolbar-btn.wisphub-yaa-copy-control.cke_button_disabled:hover,
+a.cke_button.wisphub-toolbar-btn.wisphub-yaa-copy-control[aria-disabled="true"]:hover,
+a.cke_button.wisphub-toolbar-btn.wisphub-yaa-copy-control[data-disabled="true"]:hover,
+a.cke_button.wisphub-toolbar-btn.wisphub-yaa-copy-control.disabled:hover {
+  background: transparent !important;
 }
 
 /* ── Tickets: Special ticket navbar dropdown ──────────────────── */
@@ -368,6 +505,27 @@ td .wisphub-yaa-action-btn::before,
   margin-left: 4px;
 }
 
+/* ── Coordinates field map button ─────────────────────────────── */
+.wisphub-yaa-coordinates-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wisphub-yaa-coordinates-inline > input.form-control {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.wisphub-yaa-coordinates-open-btn {
+  margin: 0 !important;
+  min-width: 30px;
+  width: 30px;
+  min-height: 30px;
+  height: 30px;
+  flex-shrink: 0;
+}
+
 /* ── Clients: WhatsApp phone links ──────────────────────────────── */
 .wisphub-yaa-wa-link {
   display: inline;
@@ -386,6 +544,10 @@ td .wisphub-yaa-action-btn::before,
 .wisphub-yaa-wa-separator {
   margin: 0 4px;
   color: #999;
+}
+
+.wisphub-yaa-map-link-icon {
+  margin-left: 6px;
 }
 
 /* ── Clients: Dark Reader compat for action btns & WA links ───── */

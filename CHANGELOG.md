@@ -1,4 +1,4 @@
-# Changelog — Wisphub Yaa Companion
+# Historial de Cambios — Wisphub Yaa Companion
 
 Todos los cambios notables de este proyecto se documentan aquí.
 
@@ -31,7 +31,7 @@ Todos los cambios notables de este proyecto se documentan aquí.
 - Caracteres especiales: se corrigió el cálculo de precios en comentarios con Ñ, acentos y otros caracteres especiales.
 - Caché de staff: los IDs de staff se guardan localmente para cargar más rápido.
 - Plantilla más limpia: texto simplificado y sin usuarios admin en el campo ASESOR.
-- Ajustes del popup: la configuración de auto-rellenado ahora cubre tanto tickets como instalaciones.
+- Ajustes del panel emergente: la configuración de auto-rellenado ahora cubre tanto tickets como instalaciones.
 
 ## v1.0.2 — 2026-02-17
 
@@ -47,7 +47,7 @@ Todos los cambios notables de este proyecto se documentan aquí.
 - Calculadora de precios: recalcula automáticamente los precios según la fecha de instalación y el paquete del cliente. Acepta cualquier texto antes del "+" (migración, cortesía, equipos, etc.). Usa Ctrl+Shift+Alt+P.
 - Plantilla con cálculo: al copiar la plantilla, incluye los precios calculados si hay un plan y fecha disponibles. Si no, copia la plantilla vacía.
 - Auto-rellenado de plantilla: si el editor está vacío al formatear, se inserta automáticamente la plantilla completa con precios (si están disponibles) o con el mes actual.
-- Calculadora de precios en herramientas: calcula precios de instalación con prorrateo desde el popup, siempre disponible sin importar la página. Los valores se guardan automáticamente al cerrar el popup.
+- Calculadora de precios en herramientas: calcula precios de instalación con prorrateo desde el panel emergente, siempre disponible sin importar la página. Los valores se guardan automáticamente al cerrar el panel emergente.
 - Auto-llenado de formularios: al formatear, la extensión detecta secciones como datos fiscales, costo de instalación y staff automáticamente.
 - Gestión masiva de tickets: selecciona varios tickets y márcalos todos como "Nuevos" con un solo clic.
 - Gestión masiva de instalaciones: cambia instalaciones "En Progreso" a "Nuevas" de forma masiva desde la tabla.
@@ -56,8 +56,8 @@ Todos los cambios notables de este proyecto se documentan aquí.
 - Enlace rápido a WhatsApp: cada teléfono en la lista de clientes e instalaciones abre WhatsApp directamente. Ctrl+Clic copia el número.
 - Acceso rápido a "Subir Archivos": botón que te lleva directo a la pestaña de archivos del cliente.
 - Notificaciones en página: mensajes visuales al completar acciones que desaparecen automáticamente.
-- Panel de control (popup): estado de conexión, configuraciones, registros de actividad y changelog.
-- Detección automática de staff: identifica tu usuario de WispHub y muestra tu ID de staff en el popup.
+- Panel de control (panel emergente): estado de conexión, configuraciones, registros de actividad e historial de cambios.
+- Detección automática de staff: identifica tu usuario de WispHub y muestra tu ID de staff en el panel emergente.
 - Inyección de IDs de staff: columna automática con el ID numérico de cada miembro en la tabla de personal.
 - Avatar por defecto reemplazado en toda la UI.
 - Compatible con Chrome, Edge y Firefox. Funciona SÓLO en wisphub.io y wisphub.app.

@@ -90,8 +90,28 @@ export function getDataTableCellText(tableSelector, row, colIndex, logTag) {
   try {
     const dt = tableEl.DataTable();
     const raw = dt.cell(row, colIndex).data();
-    return normalizeText(raw);
+    const normalized = normalizeText(raw);
+    if (normalized) {
+      return normalized;
+    }
+
+    const rowData = dt.row(row).data();
+    if (Array.isArray(rowData)) {
+      return normalizeText(rowData[colIndex]);
+    }
+
+    return "";
   } catch (err) {
+    try {
+      const dt = tableEl.DataTable();
+      const rowData = dt.row(row).data();
+      if (Array.isArray(rowData)) {
+        return normalizeText(rowData[colIndex]);
+      }
+    } catch {
+      // noop: keep original warning below
+    }
+
     console.warn(
       `[${tag}] DataTable cell read error (col ${colIndex}):`,
       err?.message,

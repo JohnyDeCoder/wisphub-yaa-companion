@@ -1,3 +1,5 @@
+import { PRE_INSTALL_FORM_PATTERN } from "./patterns.js";
+
 export function parseRegimenFiscal(text) {
   const match = text.match(/R[EÉ]GIMEN\s+FISCAL:\s*(\d{3})\s*[-–—]\s*(.+?)(?:\n|===|$)/i);
   if (!match) {
@@ -9,22 +11,54 @@ export function parseRegimenFiscal(text) {
   };
 }
 
+function normalizePrice(rawValue) {
+  return String(rawValue || "")
+    .replace(/,/g, "")
+    .replace(/\.(?=\d{3}(?:\D|$))/g, "")
+    .trim();
+}
+
 export function parseInstallCost(text) {
+  const normalized = String(text || "");
+  const courtesyCost = normalized.match(
+    /(?:EQUIPO(?:\s+[A-ZÁÉÍÓÚÑÜ]+){0,6}|COMODATO)[^\n]*CORTES[IÍ]A/i,
+  );
+  if (courtesyCost) {
+    return "0";
+  }
+
+  const explicitCost = normalized.match(
+    /COSTO(?:\s+DE)?\s+INSTALACI[OÓ]N[^\n$]*\$\s*([\d,.]+)/i,
+  );
+  if (explicitCost) {
+    return normalizePrice(explicitCost[1]);
+  }
+
+  const installSegment = normalized.match(
+    /(?:EQUIPO(?:\s+[A-ZÁÉÍÓÚÑÜ]+){0,6}|COMODATO)[^$]*?\$\s*([\d,.]+)/i,
+  );
+  if (installSegment) {
+    return normalizePrice(installSegment[1]);
+  }
+
+  const installKeyword = normalized.match(
+    /(?:^|\n)\s*INSTALACI[OÓ]N[^$\n]*?\$\s*([\d,.]+)/i,
+  );
+  if (installKeyword) {
+    return normalizePrice(installKeyword[1]);
+  }
+
+  return null;
+}
+
+export function parsePackagePrice(text) {
   const match = text.match(
-    /(?:EQUIPO|COMODATO|INSTALACI[OÓ]N)[^\n]*\$\s*([\d,]+)/i,
+    /(?:PAQUETE|PLAN)(?:\s+INTERNET)?[^\n]*?\$\s*([\d,.]+)/i,
   );
   if (!match) {
     return null;
   }
-  return match[1].replace(/,/g, "");
-}
-
-export function parsePackagePrice(text) {
-  const match = text.match(/PAQUETE[^\n]*\$\s*([\d,]+)/i);
-  if (!match) {
-    return null;
-  }
-  return match[1].replace(/,/g, "");
+  return normalizePrice(match[1]);
 }
 
 function extractLabelValue(text, labelPattern) {
@@ -63,6 +97,10 @@ export function parseAsesor(text) {
 
 export function parseTecnico(text) {
   return parseMentionField(text, "T[E\u00c9]CNICO(?:S)?:");
+}
+
+export function isPreInstallFormComment(text) {
+  return PRE_INSTALL_FORM_PATTERN.test(String(text || ""));
 }
 
 export function parseInstallNumber() {
@@ -113,6 +151,7 @@ export function parseCommentData(text) {
     packagePrice: parsePackagePrice(text),
     asesor: parseAsesor(text),
     tecnico: parseTecnico(text),
+    isPreInstallFormComment: isPreInstallFormComment(text),
     installNumber: parseInstallNumber(),
     canRemoveFiscalSection: regimenFiscal ? canRemoveDatosFiscalesSection(text) : false,
   };

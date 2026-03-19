@@ -46,7 +46,7 @@ const INCOMPLETE_RE = new RegExp(
 
 // Matches package price: "PAQUETE: 20M X $350" or "20 MBPS X $350"
 const PACKAGE_PRICE_RE = new RegExp(
-  `(?:PAQUETE:?${S})?\\d+${S_OPT}M(?:BPS?)?${S_OPT}[Xx×]?${S_OPT}\\$([\\d.,]+)`,
+  `(?:(?:PAQUETE|PLAN):?${S})?\\d+${S_OPT}M(?:BPS?)?${S_OPT}[Xx×]?${S_OPT}\\$([\\d.,]+)`,
   "i",
 );
 
@@ -83,6 +83,33 @@ function getInstallDate() {
 
 function parsePrice(str) {
   return parseInt(str.replace(/[$,.\s]/g, ""), 10);
+}
+
+function getInstallCostLabel(value) {
+  return value === 0 ? "CORTESÍA" : formatPrice(value);
+}
+
+function extractInstallPriceFromInstallPart(installPart) {
+  if (/CORTES[IÍ]A/i.test(installPart)) {
+    return 0;
+  }
+  const installPriceMatch = installPart.match(/\$([\d.,]+)/);
+  return installPriceMatch ? parsePrice(installPriceMatch[1]) : null;
+}
+
+function replaceInstallCostText(installPart, installCost) {
+  const costLabel = getInstallCostLabel(installCost);
+
+  if (/CORTES[IÍ]A/i.test(installPart)) {
+    return installPart.replace(/CORTES[IÍ]A/gi, costLabel);
+  }
+  if (/\$[\d.,]+/.test(installPart)) {
+    return installPart.replace(/\$[\d.,]+/, costLabel);
+  }
+  if (/\$\s*$/.test(installPart)) {
+    return installPart.replace(/\$\s*$/, costLabel);
+  }
+  return `${installPart} ${costLabel}`.trim();
 }
 
 function extractPriceFromPlanText(text) {
@@ -255,10 +282,8 @@ export function calculatePrices(options = {}) {
 
 function updateExistingPriceLine(editor, match, proration, notify) {
   const installPart = match[1].trim();
-  const installPriceMatch = installPart.match(/\$([\d.,]+)/);
-  const textInstallPrice = installPriceMatch
-    ? parsePrice(installPriceMatch[1])
-    : 0;
+  const parsedInstallPrice = extractInstallPriceFromInstallPart(installPart);
+  const textInstallPrice = parsedInstallPrice ?? 0;
 
   const formCost = getInstallCostFromForm();
   const installPrice = formCost !== null ? formCost : textInstallPrice;
@@ -273,17 +298,13 @@ function updateExistingPriceLine(editor, match, proration, notify) {
     : `${match[2].trim()} ${match[3].trim()}`;
   const newTotal = installPrice + newMonthPrice;
 
-  const installChanged = formCost !== null && formCost !== textInstallPrice;
+  const installChanged =
+    formCost !== null &&
+    (formCost !== textInstallPrice ||
+      (formCost === 0 && !/CORTES[IÍ]A/i.test(installPart)));
   let newInstallPart = installPart;
   if (installChanged) {
-    if (installPriceMatch) {
-      newInstallPart = installPart.replace(
-        /\$[\d.,]+/,
-        formatPrice(formCost),
-      );
-    } else if (/\$\s*$/.test(installPart)) {
-      newInstallPart = installPart.replace(/\$\s*$/, formatPrice(formCost));
-    }
+    newInstallPart = replaceInstallCostText(installPart, formCost);
   }
 
   const oldLabelText = `${match[2].trim()} ${match[3].trim()}`;
@@ -341,24 +362,26 @@ function buildPriceLine(editor, text, proration, notify) {
   let html = getEditorContent(editor);
   const oldText = incompleteMatch[0];
   const installPart = oldText.split("+")[0].trim();
-  const textPriceMatch = installPart.match(/\$([\d.,]+)/);
+  const textInstallPrice = extractInstallPriceFromInstallPart(installPart);
 
   // Priority: price already in comment text, then form field
-  const textPrice = textPriceMatch ? parsePrice(textPriceMatch[1]) : 0;
   const formCost = getInstallCostFromForm();
-  const installPrice = textPrice || formCost || 0;
+  const installPrice = formCost !== null ? formCost : (textInstallPrice ?? 0);
   const newMonthPrice = proration.price;
   const total = installPrice + newMonthPrice;
 
   let equipLabel;
-  if (textPriceMatch) {
-    // Text already has a price (e.g. "CAMBIO DE COMPAÑIA $350") — keep as-is
+  if (formCost !== null) {
+    // Use form value as source of truth when available
+    equipLabel = replaceInstallCostText(installPart, formCost);
+  } else if (textInstallPrice === 0) {
+    // Normalize "$0" to courtesy label for consistent output
+    equipLabel = replaceInstallCostText(installPart, 0);
+  } else if (textInstallPrice !== null) {
+    // Text already has a non-zero explicit price
     equipLabel = installPart;
   } else if (installPrice > 0) {
-    // No price in text but we have one from the form — fill the placeholder
-    equipLabel = /\$\s*$/.test(installPart)
-      ? installPart.replace(/\$\s*$/, formatPrice(installPrice))
-      : `${installPart} ${formatPrice(installPrice)}`;
+    equipLabel = replaceInstallCostText(installPart, installPrice);
   } else {
     equipLabel = installPart;
   }
@@ -406,21 +429,17 @@ function fillCostInIncomplete(editor, text, formCost, notify) {
   const installPart = oldText.substring(0, plusIdx).trim();
   const restPart = oldText.substring(plusIdx);
 
-  const textPriceMatch = installPart.match(/\$([\d.,]+)/);
-  const existingPrice = textPriceMatch ? parsePrice(textPriceMatch[1]) : null;
+  const existingPrice = extractInstallPriceFromInstallPart(installPart);
 
-  if (existingPrice === formCost) {
+  const needsCourtesyText =
+    formCost === 0 &&
+    !/CORTES[IÍ]A/i.test(installPart);
+
+  if (existingPrice === formCost && !needsCourtesyText) {
     return { success: true, noChange: true };
   }
 
-  let newInstallPart;
-  if (textPriceMatch) {
-    newInstallPart = installPart.replace(/\$[\d.,]+/, formatPrice(formCost));
-  } else if (/\$\s*$/.test(installPart)) {
-    newInstallPart = installPart.replace(/\$\s*$/, formatPrice(formCost));
-  } else {
-    newInstallPart = `${installPart} ${formatPrice(formCost)}`;
-  }
+  const newInstallPart = replaceInstallCostText(installPart, formCost);
 
   const newText = `${newInstallPart} ${restPart}`;
 

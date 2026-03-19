@@ -1,4 +1,4 @@
-import { TEMPLATE_BUTTON_ID } from "../../config/constants.js";
+import { COPY_CONTROL_CLASS, TEMPLATE_BUTTON_ID } from "../../config/constants.js";
 import { NOTIFICATION_TYPES } from "../../config/messages.js";
 import { createToolbarButton, injectIntoToolbar } from "../../utils/toolbar.js";
 import { copyToClipboard } from "../../utils/clipboard.js";
@@ -32,6 +32,7 @@ export function injectTemplateButton(editor) {
     title: "Generar y copiar plantilla",
     onClick: copyTemplate,
   });
+  btn.classList.add(COPY_CONTROL_CLASS);
 
   return injectIntoToolbar(
     editor,

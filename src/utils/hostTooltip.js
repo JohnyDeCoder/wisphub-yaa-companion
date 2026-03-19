@@ -1,5 +1,7 @@
 import { EXTENSION_NAME } from "../config/constants.js";
 
+const TOOLTIP_DISMISS_BOUND_ATTR = "data-wisphub-tooltip-dismiss-bound";
+
 export function formatBrandedTitle(baseText) {
   const normalized = String(baseText || "").trim();
   if (!normalized) {
@@ -11,6 +13,42 @@ export function formatBrandedTitle(baseText) {
   }
 
   return `${normalized} — ${EXTENSION_NAME}`;
+}
+
+function hideTooltip(element) {
+  const $ = window.jQuery;
+  if (!$ || !$.fn || typeof $.fn.tooltip !== "function") {
+    return;
+  }
+
+  try {
+    $(element).tooltip("hide");
+  } catch {
+    // Ignore hide failures to avoid breaking interactions.
+  }
+}
+
+function bindTooltipDismissHandlers(element) {
+  if (element.getAttribute(TOOLTIP_DISMISS_BOUND_ATTR) === "1") {
+    return;
+  }
+
+  const dismiss = () => {
+    hideTooltip(element);
+  };
+
+  const dismissAndBlur = () => {
+    hideTooltip(element);
+    if (typeof element.blur === "function") {
+      element.blur();
+    }
+  };
+
+  element.addEventListener("click", dismissAndBlur);
+  element.addEventListener("mouseleave", dismiss);
+  element.addEventListener("blur", dismiss);
+  element.addEventListener("touchend", dismiss, { passive: true });
+  element.setAttribute(TOOLTIP_DISMISS_BOUND_ATTR, "1");
 }
 
 export function applyHostTooltip(element, baseText, options = {}) {
@@ -26,6 +64,7 @@ export function applyHostTooltip(element, baseText, options = {}) {
   element.setAttribute("data-toggle", "tooltip");
   element.setAttribute("data-placement", placement);
   element.setAttribute("data-container", "body");
+  bindTooltipDismissHandlers(element);
 
   const $ = window.jQuery;
   if (!$ || !$.fn || typeof $.fn.tooltip !== "function") {

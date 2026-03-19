@@ -1,4 +1,5 @@
 import { MESSAGE_TYPES } from "../config/messages.js";
+import { postBridgeMessage } from "./pageBridge.js";
 
 const FEATURE_LABELS = {
   PriceCalc: "Precios",
@@ -26,12 +27,12 @@ function buildPopupMessage(tag, popupMsg, consoleMsg) {
 // consoleMsg: English (dev console), popupMsg: Spanish (popup logs)
 export function sendLogToPopup(tag, level, consoleMsg, popupMsg) {
   console.log(`[${tag}][${level}]`, consoleMsg);
-  window.postMessage(
+  postBridgeMessage(
+    MESSAGE_TYPES.LOG_ENTRY,
     {
-      type: MESSAGE_TYPES.LOG_ENTRY,
       level,
       message: buildPopupMessage(tag, popupMsg, consoleMsg),
     },
-    "*",
+    { requireToken: false },
   );
 }

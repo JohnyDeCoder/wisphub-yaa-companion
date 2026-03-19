@@ -2,6 +2,12 @@ import { EXTENSION_NAME } from "../../config/constants.js";
 import { getDomainKey, getApiBaseUrl } from "../../config/domains.js";
 import { MESSAGE_TYPES, ACTIONS } from "../../config/messages.js";
 import { browserAPI } from "../../utils/browser.js";
+import {
+  generateBridgeToken,
+  isBridgeMessage,
+  isMessageTokenValid,
+  postBridgeMessage,
+} from "../../utils/pageBridge.js";
 
 const LOG_STORAGE_KEY = "wisphubYaaLogs"; // chrome.storage key for popup log entries
 const API_KEY_STORAGE_KEY = "wisphubYaaApiKeys"; // chrome.storage key for API keys per domain
@@ -10,7 +16,27 @@ const LOG_TTL = 24 * 60 * 60 * 1000; // Log entry lifetime in ms (default: 24h)
 
 let editorReady = false;
 let formatterEnabled = false;
-let userSettings = { notificationsEnabled: true, autoFormatEnabled: false, autoPriceCalcEnabled: false };
+let bridgeToken = "";
+let userSettings = {
+  notificationsEnabled: true,
+  autoFormatEnabled: false,
+  autoPriceCalcEnabled: false,
+};
+
+function ensureBridgeToken() {
+  if (!bridgeToken) {
+    bridgeToken = generateBridgeToken();
+  }
+  return bridgeToken;
+}
+
+function postToPage(type, payload = {}, options = {}) {
+  return postBridgeMessage(type, payload, {
+    token: ensureBridgeToken(),
+    includeToken: options.includeToken !== false,
+    requireToken: options.requireToken === true,
+  });
+}
 
 function pruneExpiredLogs(logs) {
   const now = Date.now();
@@ -30,7 +56,12 @@ function persistLogEntry(data) {
           second: "2-digit",
           hour12: false,
         });
-        logs.push({ time, level: data.level || "info", message: data.message || "", ts });
+        logs.push({
+          time,
+          level: data.level || "info",
+          message: data.message || "",
+          ts,
+        });
         if (logs.length > MAX_LOG_ENTRIES) {
           logs.splice(0, logs.length - MAX_LOG_ENTRIES);
         }
@@ -49,51 +80,91 @@ async function getApiKeyForCurrentDomain() {
   if (!domainKey) {
     return { domainKey: null, apiKey: null };
   }
+
   const result = await browserAPI.storage.local.get(API_KEY_STORAGE_KEY);
   const keys = result[API_KEY_STORAGE_KEY] || {};
   return { domainKey, apiKey: keys[domainKey] || null };
 }
 
+function shouldSkipTokenValidation(type) {
+  return type === MESSAGE_TYPES.CHANNEL_HELLO;
+}
+
 export function listenToPageMessages() {
+  ensureBridgeToken();
+
   window.addEventListener("message", (event) => {
     if (event.source !== window) {
       return;
     }
 
-    const { type, editorReady: isReady, result } = event.data || {};
+    const data = event.data || {};
+    if (!isBridgeMessage(data)) {
+      return;
+    }
+
+    const { type, editorReady: isReady, result } = data;
+
+    if (type === MESSAGE_TYPES.CHANNEL_HELLO) {
+      postToPage(MESSAGE_TYPES.CHANNEL_INIT, {}, { includeToken: true });
+      // Ensure page world receives current settings after each handshake.
+      postToPage(MESSAGE_TYPES.SETTINGS_UPDATE, { settings: userSettings });
+      return;
+    }
+
+    if (!shouldSkipTokenValidation(type) && !isMessageTokenValid(data, ensureBridgeToken())) {
+      return;
+    }
 
     if (type === MESSAGE_TYPES.EDITOR_READY) {
       editorReady = true;
       formatterEnabled = true;
+      return;
     }
 
     if (type === MESSAGE_TYPES.PING_RESPONSE) {
       editorReady = isReady;
-      formatterEnabled = !!event.data.formatterEnabled;
+      formatterEnabled = !!data.formatterEnabled;
+      return;
     }
 
     if (type === MESSAGE_TYPES.FORMAT_RESPONSE) {
       window.__WISPHUB_LAST_FORMAT_RESULT__ = result;
+      return;
     }
 
     if (type === MESSAGE_TYPES.RESTORE_RESPONSE) {
       window.__WISPHUB_LAST_RESTORE_RESULT__ = result;
+      return;
     }
 
     if (type === MESSAGE_TYPES.LOG_ENTRY) {
-      persistLogEntry(event.data);
+      persistLogEntry(data);
+      return;
     }
 
     if (type === MESSAGE_TYPES.UPDATE_TICKETS_REQUEST) {
-      relayTicketUpdate(event.data.ticketIds || []);
+      relayTicketUpdate(data.ticketIds || []);
+      return;
     }
+
   });
 }
 
 async function relayTicketUpdate(ticketIds) {
-  const sendResult = (results) => window.postMessage({ type: MESSAGE_TYPES.UPDATE_TICKETS_RESPONSE, results }, "*");
+  const safeIds = Array.isArray(ticketIds) ? ticketIds : [];
 
-  const failAll = (msg) => sendResult({ success: 0, failed: ticketIds.length, errors: [{ id: "all", error: msg }] });
+  const sendResult = (results) => {
+    postToPage(MESSAGE_TYPES.UPDATE_TICKETS_RESPONSE, { results });
+  };
+
+  const failAll = (msg) =>
+    sendResult({
+      success: 0,
+      failed: safeIds.length,
+      errors: [{ id: "all", error: msg }],
+      updatedIds: [],
+    });
 
   try {
     const { domainKey, apiKey } = await getApiKeyForCurrentDomain();
@@ -109,14 +180,15 @@ async function relayTicketUpdate(ticketIds) {
       action: ACTIONS.UPDATE_TICKETS,
       apiKey,
       apiBaseUrl: getApiBaseUrl(domainKey),
-      ticketIds,
+      ticketIds: safeIds,
     });
 
     sendResult(
       response?.results || {
         success: 0,
-        failed: ticketIds.length,
+        failed: safeIds.length,
         errors: [{ id: "all", error: response?.error || "Unknown error" }],
+        updatedIds: [],
       },
     );
   } catch (err) {
@@ -129,8 +201,11 @@ export function listenToExtensionMessages() {
     const { action } = message;
 
     if (action === ACTIONS.PING) {
-      window.postMessage({ type: MESSAGE_TYPES.PING_REQUEST }, "*");
-      setTimeout(() => sendResponse({ status: "OK", editorReady, formatterEnabled }), 100);
+      postToPage(MESSAGE_TYPES.PING_REQUEST);
+      setTimeout(
+        () => sendResponse({ status: "OK", editorReady, formatterEnabled }),
+        100,
+      );
       return true;
     }
 
@@ -139,25 +214,33 @@ export function listenToExtensionMessages() {
         userSettings = { ...userSettings, ...message.settings };
       }
       window.__WISPHUB_LAST_FORMAT_RESULT__ = null;
-      window.postMessage(
-        {
-          type: MESSAGE_TYPES.FORMAT_REQUEST,
-          settings: userSettings,
-          fromPopup: !!message.fromPopup,
-        },
-        "*",
-      );
+
+      postToPage(MESSAGE_TYPES.FORMAT_REQUEST, {
+        settings: userSettings,
+        fromPopup: !!message.fromPopup,
+      });
+
       setTimeout(() => {
-        sendResponse(window.__WISPHUB_LAST_FORMAT_RESULT__ || { success: false, error: "No editor response" });
+        sendResponse(
+          window.__WISPHUB_LAST_FORMAT_RESULT__ || {
+            success: false,
+            error: "No editor response",
+          },
+        );
       }, 200);
       return true;
     }
 
     if (action === ACTIONS.RESTORE_COMMENTS) {
       window.__WISPHUB_LAST_RESTORE_RESULT__ = null;
-      window.postMessage({ type: MESSAGE_TYPES.RESTORE_REQUEST }, "*");
+      postToPage(MESSAGE_TYPES.RESTORE_REQUEST);
       setTimeout(() => {
-        sendResponse(window.__WISPHUB_LAST_RESTORE_RESULT__ || { success: false, error: "No editor response" });
+        sendResponse(
+          window.__WISPHUB_LAST_RESTORE_RESULT__ || {
+            success: false,
+            error: "No editor response",
+          },
+        );
       }, 200);
       return true;
     }
@@ -170,7 +253,7 @@ export function listenToExtensionMessages() {
     if (action === ACTIONS.UPDATE_SETTINGS) {
       if (message.settings) {
         userSettings = { ...userSettings, ...message.settings };
-        window.postMessage({ type: MESSAGE_TYPES.SETTINGS_UPDATE, settings: userSettings }, "*");
+        postToPage(MESSAGE_TYPES.SETTINGS_UPDATE, { settings: userSettings });
       }
       sendResponse({ success: true });
       return true;
@@ -196,7 +279,11 @@ async function handleGetStaffInfo(sendResponse) {
       return;
     }
     if (!apiKey) {
-      sendResponse({ staff: null, error: `No API key for ${domainKey}`, username });
+      sendResponse({
+        staff: null,
+        error: `No API key for ${domainKey}`,
+        username,
+      });
       return;
     }
 
@@ -207,22 +294,30 @@ async function handleGetStaffInfo(sendResponse) {
     });
 
     if (!fetchResult?.success) {
-      sendResponse({ staff: null, error: fetchResult?.error || "API error", username });
+      sendResponse({
+        staff: null,
+        error: fetchResult?.error || "API error",
+        username,
+      });
       return;
     }
 
     const needle = username.toLowerCase();
     const match = (fetchResult.data || []).find(
-      (s) => (s.username || "").toLowerCase() === needle || (s.nombre || "").toLowerCase() === needle,
+      (staff) =>
+        (staff.username || "").toLowerCase() === needle ||
+        (staff.nombre || "").toLowerCase() === needle,
     );
 
     if (match) {
-      sendResponse({ staff: { id: match.id, nombre: match.nombre, username: match.username } });
+      sendResponse({
+        staff: { id: match.id, nombre: match.nombre, username: match.username },
+      });
     } else {
       sendResponse({ staff: null, error: "Staff not found", username });
     }
-  } catch (e) {
-    sendResponse({ staff: null, error: e.message });
+  } catch (error) {
+    sendResponse({ staff: null, error: error.message });
   }
 }
 
@@ -231,9 +326,9 @@ export async function loadAndSyncSettings() {
     const result = await browserAPI.storage.local.get("userSettings");
     if (result.userSettings) {
       userSettings = { ...userSettings, ...result.userSettings };
-      window.postMessage({ type: MESSAGE_TYPES.SETTINGS_UPDATE, settings: userSettings }, "*");
+      postToPage(MESSAGE_TYPES.SETTINGS_UPDATE, { settings: userSettings });
     }
-  } catch (e) {
-    console.error(`[${EXTENSION_NAME}] Settings load error:`, e);
+  } catch (error) {
+    console.error(`[${EXTENSION_NAME}] Settings load error:`, error);
   }
 }

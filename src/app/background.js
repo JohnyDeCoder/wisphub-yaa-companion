@@ -98,9 +98,11 @@ async function updateTicketStatus(apiKey, apiBaseUrl, ticketId, headers) {
   console.log(`[Background] PUT #${ticketId} attempt 2 → OK`);
 }
 
+
 async function updateTicketsToNew(apiKey, apiBaseUrl, ticketIds) {
   let success = 0;
   let failed = 0;
+  const updatedIds = [];
   const errors = [];
   const headers = { Authorization: `Api-Key ${apiKey}` };
 
@@ -108,6 +110,7 @@ async function updateTicketsToNew(apiKey, apiBaseUrl, ticketIds) {
     try {
       await updateTicketStatus(apiKey, apiBaseUrl, id, headers);
       success++;
+      updatedIds.push(id);
     } catch (err) {
       console.warn(`[Background] Ticket #${id} update failed:`, err.message);
       failed++;
@@ -115,7 +118,7 @@ async function updateTicketsToNew(apiKey, apiBaseUrl, ticketIds) {
     }
   }
 
-  return { success, failed, errors };
+  return { success, failed, errors, updatedIds };
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -129,6 +132,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       updateTicketsToNew(message.apiKey, message.apiBaseUrl, message.ticketIds)
         .then((results) => sendResponse({ success: true, results }))
         .catch((err) => sendResponse({ success: false, error: err.message })),
+
   };
 
   const handler = handlers[message.action];

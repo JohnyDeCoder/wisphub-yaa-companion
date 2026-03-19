@@ -19,6 +19,11 @@ const SPECIAL_TICKETS = [
     description: "VALOR 4",
     domain: "wisphub.io",
   },
+  {
+    id: 8712,
+    label: "Servicio Antena Publica Claves",
+    domain: "wisphub.io",
+  },
   { id: 1000, label: "Mantenimiento AP Publicas", domain: "wisphub.app" },
   { id: 760, label: "Mantenimiento Publicas", domain: "wisphub.app" },
 ];

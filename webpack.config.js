@@ -14,6 +14,8 @@ const STATIC_ASSETS = [
 module.exports = (env, argv) => {
   const isProd = argv.mode === "production";
   const isFirefox = env?.target === "firefox";
+  const firefoxUpdateUrl =
+    env?.firefoxUpdateUrl || process.env.FIREFOX_UPDATE_URL || "";
   const outDir = path.resolve(
     __dirname,
     "dist",
@@ -54,6 +56,12 @@ module.exports = (env, argv) => {
                 if (sw) {
                   manifest.background = { scripts: [sw] };
                 }
+                if (firefoxUpdateUrl) {
+                  manifest.browser_specific_settings.gecko.update_url =
+                    firefoxUpdateUrl;
+                } else if (manifest.browser_specific_settings?.gecko?.update_url) {
+                  delete manifest.browser_specific_settings.gecko.update_url;
+                }
               } else {
                 delete manifest.browser_specific_settings;
               }
@@ -71,6 +79,8 @@ module.exports = (env, argv) => {
     optimization: {
       minimize: isProd,
       usedExports: true,
+      moduleIds: isProd ? "deterministic" : "named",
+      chunkIds: isProd ? "deterministic" : "named",
       minimizer: isProd
         ? [
             new TerserPlugin({
@@ -80,8 +90,9 @@ module.exports = (env, argv) => {
                 format: { comments: false },
                 compress: {
                   drop_console: false,
+                  drop_debugger: true,
                   pure_funcs: ["console.log", "console.info"],
-                  passes: 2,
+                  passes: 3,
                 },
                 mangle: { safari10: true },
               },

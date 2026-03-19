@@ -1,5 +1,6 @@
 import { browserAPI } from "../../utils/browser.js";
 import { getDomainKey, isWispHubDomain } from "../../config/domains.js";
+import { POPUP_UI_MESSAGES } from "../../config/messages.js";
 import { getTodayISO } from "../../utils/date.js";
 import { formatPrice } from "../../utils/formatting.js";
 import { calculateProration } from "../../features/price-calculator/priceCalculator.js";
@@ -13,6 +14,7 @@ import { showToast } from "./components/toast.js";
 import { checkConnection } from "./components/connection.js";
 import { renderChangelog } from "./components/changelog.js";
 import { addLog, getLogs, clearLogs, renderLogs } from "./components/logs.js";
+import { setApiKeyWarningVisible } from "./components/apiKeyWarning.js";
 
 const STAFF_CACHE_KEY = "wisphubStaffInfoCache";
 const STAFF_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -155,7 +157,7 @@ async function formatComment() {
       currentWindow: true,
     });
     if (!tab) {
-      showToast(elements.toast, "Sin pestaña activa", "error");
+      showToast(elements.toast, POPUP_UI_MESSAGES.NO_ACTIVE_TAB, "error");
       return;
     }
 
@@ -169,11 +171,13 @@ async function formatComment() {
     if (response?.success) {
       isFormatted = !isFormatted;
       elements.btnFormatComment.textContent = isFormatted
-        ? "Restaurar"
-        : "Usar";
+        ? POPUP_UI_MESSAGES.FORMAT_BUTTON_RESTORE
+        : POPUP_UI_MESSAGES.FORMAT_BUTTON_USE;
       showToast(
         elements.toast,
-        isFormatted ? "¡Formateado!" : "Texto restaurado",
+        isFormatted
+          ? POPUP_UI_MESSAGES.FORMAT_SUCCESS
+          : POPUP_UI_MESSAGES.RESTORE_SUCCESS,
         isFormatted ? "success" : "info",
       );
       writeLog(
@@ -186,10 +190,10 @@ async function formatComment() {
       showToast(elements.toast, response.error, "error");
       writeLog("error", `Formateador: ${response.error}`);
     } else {
-      showToast(elements.toast, "Usa el botón en el editor", "warning");
+      showToast(elements.toast, POPUP_UI_MESSAGES.USE_EDITOR_BUTTON, "warning");
     }
   } catch {
-    showToast(elements.toast, "Abre una página con el editor", "warning");
+    showToast(elements.toast, POPUP_UI_MESSAGES.OPEN_EDITOR_PAGE, "warning");
   }
 }
 
@@ -219,17 +223,27 @@ function setupEventListeners() {
   elements.btnSaveApiKeys?.addEventListener("click", async () => {
     const keyIo = elements.settingsApiKeyIo?.value?.trim() || "";
     const keyApp = elements.settingsApiKeyApp?.value?.trim() || "";
-    if (!keyIo && !keyApp) {
-      showToast(elements.toast, "Ingresa al menos una API Key", "warning");
+    const hasAnyApiKey = !!(keyIo || keyApp);
+
+    await saveAllApiKeys({ "wisphub.io": keyIo, "wisphub.app": keyApp });
+    setApiKeyWarningVisible(
+      elements.staffInfo,
+      !hasAnyApiKey,
+      POPUP_UI_MESSAGES.API_KEYS_MISSING_BADGE,
+    );
+
+    if (hasAnyApiKey) {
+      showToast(
+        elements.toast,
+        POPUP_UI_MESSAGES.API_KEYS_SAVED,
+        "success",
+      );
+      writeLog("success", "API Keys actualizadas");
       return;
     }
-    await saveAllApiKeys({ "wisphub.io": keyIo, "wisphub.app": keyApp });
-    showToast(
-      elements.toast,
-      "API Keys guardadas, reinicia la página para que surtan efecto",
-      "success",
-    );
-    writeLog("success", "API Keys actualizadas");
+
+    showToast(elements.toast, POPUP_UI_MESSAGES.API_KEYS_REMOVED, "info");
+    writeLog("info", "API Keys eliminadas");
   });
 
   elements.staffIdBadge?.addEventListener("click", () => {
@@ -238,7 +252,7 @@ function setupEventListeners() {
     }
     navigator.clipboard.writeText(currentStaffId);
     elements.staffIdBadge.classList.add("copied");
-    elements.staffIdBadge.textContent = "¡Copiado!";
+    elements.staffIdBadge.textContent = POPUP_UI_MESSAGES.STAFF_ID_COPIED;
     setTimeout(() => {
       elements.staffIdBadge.textContent = `ID: ${currentStaffId}`;
       elements.staffIdBadge.classList.remove("copied");
@@ -343,13 +357,13 @@ function runCalculator() {
   const packagePrice = parseInt(elements.calcPackagePrice?.value, 10) || 0;
 
   if (packagePrice <= 0) {
-    showToast(elements.toast, "Ingresa el precio del paquete", "warning");
+    showToast(elements.toast, POPUP_UI_MESSAGES.PACKAGE_PRICE_REQUIRED, "warning");
     return;
   }
 
   const dateStr = elements.calcDate?.value;
   if (!dateStr) {
-    showToast(elements.toast, "Selecciona una fecha de instalación", "warning");
+    showToast(elements.toast, POPUP_UI_MESSAGES.INSTALL_DATE_REQUIRED, "warning");
     return;
   }
 
@@ -360,7 +374,9 @@ function runCalculator() {
   const total = installPrice + proration.price;
 
   const installPart =
-    installPrice > 0 ? `COMODATO ${formatPrice(installPrice)}` : "COMODATO $0";
+    installPrice > 0
+      ? `COMODATO ${formatPrice(installPrice)}`
+      : "COMODATO CORTESÍA";
   const line = `${installPart} + ${proration.label} ${formatPrice(proration.price)} = ${formatPrice(total)} MXN`;
 
   if (elements.calcResultLine) {
@@ -378,28 +394,11 @@ function copyCalcResult() {
   navigator.clipboard
     .writeText(text)
     .then(() => {
-      showToast(elements.toast, "Línea copiada al portapapeles", "success");
+      showToast(elements.toast, POPUP_UI_MESSAGES.RESULT_LINE_COPIED, "success");
     })
     .catch(() => {
-      showToast(elements.toast, "Error al copiar", "error");
+      showToast(elements.toast, POPUP_UI_MESSAGES.COPY_ERROR, "error");
     });
-}
-
-function showApiKeyWarning() {
-  if (!elements.staffInfo) {
-    return;
-  }
-  const existing = elements.staffInfo.querySelector(".wisphub-yaa-api-warning");
-  if (existing) {
-    return;
-  }
-  const badge = document.createElement("span");
-  badge.className = "wisphub-yaa-api-warning";
-  badge.textContent = "API Keys no configuradas";
-  elements.staffInfo.parentElement?.insertBefore(
-    badge,
-    elements.staffInfo.nextSibling,
-  );
 }
 
 async function loadApiKeysToUI() {
@@ -410,9 +409,12 @@ async function loadApiKeysToUI() {
   if (keys["wisphub.app"] && elements.settingsApiKeyApp) {
     elements.settingsApiKeyApp.value = keys["wisphub.app"];
   }
-  if (!keys["wisphub.io"] && !keys["wisphub.app"]) {
-    showApiKeyWarning();
-  }
+
+  setApiKeyWarningVisible(
+    elements.staffInfo,
+    !keys["wisphub.io"] && !keys["wisphub.app"],
+    POPUP_UI_MESSAGES.API_KEYS_MISSING_BADGE,
+  );
 }
 
 async function loadCachedStaffInfo(domainKey) {

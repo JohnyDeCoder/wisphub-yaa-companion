@@ -1,18 +1,9 @@
 import { getCurrentUserName, isAdminUser } from "../../../utils/currentUser.js";
 import { MONTH_NAMES } from "../../../config/constants.js";
+import { isCommentCompleterPath } from "../../../config/pagePatterns.js";
 import { getMexicoDate, getMexicoMonthName } from "../../../utils/date.js";
 import { formatPrice } from "../../../utils/formatting.js";
 import { parsePackagePrice } from "./commentParser.js";
-
-const INSTALL_EDITOR_PATHS = [
-  /\/instalaciones\/editar\//i,
-  /\/instalaciones\/agregar\//i,
-  /\/instalaciones\/nuevo\//i,
-  /\/preinstalacion\/activar\//i,
-  /\/preinstalacion\/editar\//i,
-  /\/solicitar-instalacion\//i,
-  /\/clientes\/agregar\//i,
-];
 
 const INSTALL_COMMENT_HINT_RE =
   /(CLIENTE\s+NUEVO|EQUIPO|EQUIPOS|HORARIO|FORMA\s+DE\s+PAGO|PAGO:|T[ÉE]CNICO|ASESORA?:)/i;
@@ -39,7 +30,7 @@ function normalizeSpaces(value) {
 }
 
 function isInstallPath(pathname) {
-  return INSTALL_EDITOR_PATHS.some((re) => re.test(pathname || ""));
+  return isCommentCompleterPath(pathname || "");
 }
 
 function shouldCompleteComment(text) {

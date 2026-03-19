@@ -1,4 +1,8 @@
-import { EXTENSION_NAME, INSTALL_BUTTON_ID } from "../../config/constants.js";
+import {
+  COPY_CONTROL_CLASS,
+  EXTENSION_NAME,
+  INSTALL_BUTTON_ID,
+} from "../../config/constants.js";
 import { sendLogToPopup } from "../../utils/logger.js";
 import { waitForElement } from "../../utils/polling.js";
 import { applyHostTooltip } from "../../utils/hostTooltip.js";
@@ -352,7 +356,12 @@ function buildInstallCopyText(row, table) {
 function createCopyActionButton() {
   const button = document.createElement("a");
   button.href = "#";
-  button.className = `wisphub-yaa-action-btn ${COPY_BUTTON_VARIANT_CLASS} ${COPY_BUTTON_CLASS}`;
+  button.className = [
+    "wisphub-yaa-action-btn",
+    COPY_BUTTON_VARIANT_CLASS,
+    COPY_BUTTON_CLASS,
+    COPY_CONTROL_CLASS,
+  ].join(" ");
   button.setAttribute("role", "button");
   button.setAttribute(
     "aria-label",
@@ -384,7 +393,13 @@ function injectInstallCopyButtons() {
       return;
     }
 
-    container.append(" ", createCopyActionButton());
+    const copyBtn = createCopyActionButton();
+    const mapBtn = container.querySelector(".wisphub-yaa-action-btn-map");
+    if (mapBtn) {
+      container.insertBefore(copyBtn, mapBtn);
+    } else {
+      container.append(copyBtn);
+    }
     injected++;
   });
 

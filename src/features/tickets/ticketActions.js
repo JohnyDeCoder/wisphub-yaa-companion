@@ -1,15 +1,26 @@
-import { EXTENSION_NAME } from "../../config/constants.js";
-import { MESSAGE_TYPES } from "../../config/messages.js";
+import { COPY_CONTROL_CLASS, EXTENSION_NAME } from "../../config/constants.js";
+import { MESSAGE_TYPES, TICKETS_UI_MESSAGES } from "../../config/messages.js";
 import { sendLogToPopup } from "../../utils/logger.js";
 import { applyHostTooltip } from "../../utils/hostTooltip.js";
 import { waitForElement } from "../../utils/polling.js";
 import { copyToClipboard } from "../../utils/clipboard.js";
 import { showCopySuccess } from "../../utils/copyFeedback.js";
 import {
+  getBridgeToken,
+  isBridgeMessage,
+  isMessageTokenValid,
+  postBridgeMessage,
+} from "../../utils/pageBridge.js";
+import {
   normalizeText,
   findColumnIndex,
   getDataTableCellText,
 } from "../../utils/tableHelpers.js";
+import {
+  buildClientMapUrlFromServiceSlug,
+  extractServiceIdFromServiceSlug,
+  getGoogleMapsDestination,
+} from "../../utils/maps.js";
 
 const CUSTOM_ACTION = "new_selected_wisphub";
 const OPTION_LABEL = `Marcar Tickets Como Nuevos — ${EXTENSION_NAME}`;
@@ -17,8 +28,19 @@ const TICKETS_PATH_RE = /\/tickets\/\d*\/?$/;
 const TABLE_SELECTOR = "#data-table-tickets";
 const COPY_BUTTON_CLASS = "wisphub-yaa-ticket-copy-btn";
 const COPY_BUTTON_VARIANT_CLASS = "wisphub-yaa-action-btn-copy-ticket";
+const MAP_BUTTON_CLASS = "wisphub-yaa-ticket-map-btn";
 const VIEW_CLIENT_LINK_CLASS = "wisphub-yaa-view-client-link";
 const USER_KEYWORDS = ["usuario", "user"];
+const ADDRESS_KEYWORDS = [
+  "dirección",
+  "direccion",
+  "domicilio",
+  "address",
+  "ubicación",
+  "ubicacion",
+  "mapa",
+  "maps",
+];
 const LOCALITY_KEYWORDS = [
   "barrio/localidad",
   "barrio",
@@ -32,6 +54,7 @@ const MAINTENANCE_CLIENTS = [
   "mantenimiento publicas",
   "mantenimiento ap publicas",
 ];
+const TICKET_UPDATE_TIMEOUT_MS = 120000;
 let _copyObserver = null;
 let _copyDebounceTimer = 0;
 let _copyClickBound = false;
@@ -277,12 +300,30 @@ function buildTicketCopyText(row, table) {
 function createCopyActionButton() {
   const button = document.createElement("a");
   button.href = "#";
-  button.className = `wisphub-yaa-action-btn ${COPY_BUTTON_VARIANT_CLASS} ${COPY_BUTTON_CLASS}`;
+  button.className = [
+    "wisphub-yaa-action-btn",
+    COPY_BUTTON_VARIANT_CLASS,
+    COPY_BUTTON_CLASS,
+    COPY_CONTROL_CLASS,
+  ].join(" ");
   button.setAttribute("role", "button");
   button.setAttribute("aria-label", "Copiar localidad, cliente y asunto");
   applyHostTooltip(button, "Copiar localidad, cliente y asunto", {
     placement: "top",
   });
+  return button;
+}
+
+function createMapActionButton(mapUrl) {
+  const button = document.createElement("a");
+  button.href = mapUrl;
+  button.className = `wisphub-yaa-action-btn wisphub-yaa-action-btn-map ${MAP_BUTTON_CLASS}`;
+  button.setAttribute("role", "button");
+  button.setAttribute("aria-label", "Ver ubicación en Google Maps");
+  applyHostTooltip(button, "Ver ubicación en Google Maps", {
+    placement: "top",
+  });
+  button.addEventListener("click", (event) => event.stopImmediatePropagation());
   return button;
 }
 
@@ -315,6 +356,58 @@ function extractUsernameFromRow(row) {
   }
 
   return "";
+}
+
+function extractServiceIdFromUsername(username) {
+  return extractServiceIdFromServiceSlug(normalizeText(username));
+}
+
+function buildClientMapUrlFromUsername(username) {
+  const normalized = normalizeText(username);
+  const serviceId = extractServiceIdFromUsername(normalized);
+  if (!normalized || !serviceId) {
+    return "";
+  }
+  return buildClientMapUrlFromServiceSlug(normalized);
+}
+
+function resolveTicketMapUrl(row, table) {
+  if (!row || !table) {
+    return "";
+  }
+
+  const rowIndex = getDataTableRowIndex(row);
+  const addressCol = findColumnIndex(table, ADDRESS_KEYWORDS, [], "Tickets");
+  const descriptionCol = findColumnIndex(
+    table,
+    DESCRIPTION_KEYWORDS,
+    [addressCol].filter((idx) => idx !== -1),
+    "Tickets",
+  );
+
+  const addressText =
+    getDataTableCellText(TABLE_SELECTOR, row, addressCol, "Tickets") ||
+    getCellTextBySelectors(
+      row,
+      'td.cliente__perfilusuario__direccion, td.direccion, td[class*="direccion"], td[class*="dirección"]',
+    ) ||
+    getValueFromResponsiveRows(row, rowIndex, ADDRESS_KEYWORDS);
+  const fromAddress = getGoogleMapsDestination(addressText);
+  if (fromAddress) {
+    return fromAddress;
+  }
+
+  const descriptionText =
+    getDataTableCellText(TABLE_SELECTOR, row, descriptionCol, "Tickets") ||
+    getCellTextBySelectors(row, 'td.descripcion, td[class*="descripcion"]') ||
+    getValueFromResponsiveRows(row, rowIndex, DESCRIPTION_KEYWORDS);
+  const fromDescription = getGoogleMapsDestination(descriptionText);
+  if (fromDescription) {
+    return fromDescription;
+  }
+
+  const username = extractUsernameFromRow(row);
+  return buildClientMapUrlFromUsername(username);
 }
 
 function buildClientViewUrl(username) {
@@ -415,23 +508,48 @@ function injectClientViewLinks() {
 function injectTicketCopyButtons() {
   const table = document.querySelector(TABLE_SELECTOR);
   if (!table) {
-    return 0;
+    return { copyCount: 0, mapCount: 0 };
   }
 
-  let injected = 0;
+  let copyCount = 0;
+  let mapCount = 0;
   const actionCells = table.querySelectorAll(
     "tbody tr:not(.child) td.accion, tbody tr:not(.child) td.acciones",
   );
 
   actionCells.forEach((cell) => {
-    if (cell.querySelector(`.${COPY_BUTTON_CLASS}`)) {
+    const row = cell.closest("tr");
+    if (!row) {
       return;
     }
-    cell.append(" ", createCopyActionButton());
-    injected++;
+
+    if (cell.querySelector(`.${COPY_BUTTON_CLASS}`)) {
+      // Continue: map button may still be missing.
+    } else {
+      cell.append(" ", createCopyActionButton());
+      copyCount++;
+    }
+
+    if (cell.querySelector(`.${MAP_BUTTON_CLASS}`)) {
+      return;
+    }
+
+    const mapUrl = resolveTicketMapUrl(row, table);
+    if (!mapUrl) {
+      return;
+    }
+
+    const mapButton = createMapActionButton(mapUrl);
+    const copyButton = cell.querySelector(`.${COPY_BUTTON_CLASS}`);
+    if (copyButton) {
+      copyButton.after(" ", mapButton);
+    } else {
+      cell.append(" ", mapButton);
+    }
+    mapCount++;
   });
 
-  return injected;
+  return { copyCount, mapCount };
 }
 
 function scheduleTicketButtonsInjection() {
@@ -462,7 +580,7 @@ function bindTicketCopyClickHandler(table) {
       const row = button.closest("tr");
       const payload = buildTicketCopyText(row, table);
       if (!payload) {
-        _notify("No se pudo construir el texto del ticket", "warning", 3000);
+        _notify(TICKETS_UI_MESSAGES.COPY_TEXT_BUILD_FAILED, "warning", 3000);
         return;
       }
 
@@ -472,7 +590,7 @@ function bindTicketCopyClickHandler(table) {
           log(`Ticket text copied: ${payload}`, `Texto copiado: ${payload}`);
           return;
         }
-        _notify("No se pudo copiar el texto del ticket", "error", 4000);
+        _notify(TICKETS_UI_MESSAGES.COPY_TEXT_FAILED, "error", 4000);
       });
     },
     true,
@@ -499,11 +617,17 @@ function initTicketActionButtons() {
       return;
     }
 
-    const copyCount = injectTicketCopyButtons();
+    const { copyCount, mapCount } = injectTicketCopyButtons();
     if (copyCount > 0) {
       log(
         `Copy button added to ${copyCount} ticket(s)`,
         `Botón de copiado agregado en ${copyCount} ticket(s)`,
+      );
+    }
+    if (mapCount > 0) {
+      log(
+        `Map button added to ${mapCount} ticket(s)`,
+        `Botón de mapa agregado en ${mapCount} ticket(s)`,
       );
     }
 
@@ -551,13 +675,18 @@ function interceptSubmit() {
 
 function handleMarkAsNew() {
   const ticketIds = getSelectedTicketIds();
+  const bridgeToken = getBridgeToken();
 
   if (ticketIds.length === 0) {
-    _notify("Selecciona al menos un ticket", "warning");
+    _notify(TICKETS_UI_MESSAGES.SELECT_AT_LEAST_ONE, "warning");
+    return;
+  }
+  if (!bridgeToken) {
+    _notify(TICKETS_UI_MESSAGES.CHANNEL_NOT_READY, "warning");
     return;
   }
 
-  if (!confirm(`¿Marcar ${ticketIds.length} ticket(s) como Nuevos?`)) {
+  if (!confirm(TICKETS_UI_MESSAGES.CONFIRM_MARK_AS_NEW(ticketIds.length))) {
     return;
   }
 
@@ -568,36 +697,69 @@ function handleMarkAsNew() {
   console.log("[Tickets] Selected IDs:", ticketIds);
 
   const dismissLoading = _notify(
-    `Procesando ${ticketIds.length} ticket(s)...`,
+    TICKETS_UI_MESSAGES.PROCESSING(ticketIds.length),
     "loading",
     120000,
   );
+  let timeoutId = 0;
+
+  const cleanup = () => {
+    window.removeEventListener("message", handler);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = 0;
+    }
+    if (typeof dismissLoading === "function") {
+      dismissLoading();
+    }
+  };
 
   const handler = (event) => {
     if (event.source !== window) {
       return;
     }
-    const { type, results } = event.data || {};
-    if (type !== MESSAGE_TYPES.UPDATE_TICKETS_RESPONSE) {
+
+    const data = event.data || {};
+    if (!isBridgeMessage(data)) {
       return;
     }
-    window.removeEventListener("message", handler);
-    if (typeof dismissLoading === "function") {
-      dismissLoading();
+    if (
+      data.type !== MESSAGE_TYPES.UPDATE_TICKETS_RESPONSE ||
+      !isMessageTokenValid(data, bridgeToken)
+    ) {
+      return;
     }
-    processResults(results, ticketIds);
+
+    cleanup();
+    processResults(data.results, ticketIds);
   };
 
   window.addEventListener("message", handler);
-  window.postMessage(
-    { type: MESSAGE_TYPES.UPDATE_TICKETS_REQUEST, ticketIds },
-    "*",
+  timeoutId = window.setTimeout(() => {
+    cleanup();
+    _notify(TICKETS_UI_MESSAGES.UPDATE_TIMEOUT, "error", 7000);
+    log(
+      "Ticket mass update timed out waiting for response",
+      "Tiempo de espera agotado en actualización masiva de tickets",
+      "error",
+    );
+  }, TICKET_UPDATE_TIMEOUT_MS);
+
+  const posted = postBridgeMessage(
+    MESSAGE_TYPES.UPDATE_TICKETS_REQUEST,
+    { ticketIds },
+    { requireToken: true },
   );
+
+  if (!posted) {
+    cleanup();
+    _notify(TICKETS_UI_MESSAGES.UPDATE_SEND_FAILED, "error");
+  }
 }
 
 function processResults(results, ticketIds) {
   if (!results) {
-    _notify("Error: sin respuesta del servidor", "error");
+    _notify(TICKETS_UI_MESSAGES.NO_SERVER_RESPONSE, "error");
     log("No server response", "Sin respuesta del servidor", "error");
     return;
   }
@@ -606,20 +768,20 @@ function processResults(results, ticketIds) {
   console.log("[Tickets] API result:", JSON.stringify(results));
 
   if (failed === 0) {
-    _notify(`${success} ticket(s) marcados como Nuevos`, "success", 5000);
+    _notify(TICKETS_UI_MESSAGES.SUCCESS_MARKED(success), "success", 5000);
     log(
       `${success} of ${ticketIds.length} ticket(s) marked as New`,
       `${success} de ${ticketIds.length} ticket(s) marcados como Nuevos`,
     );
   } else if (success > 0) {
-    _notify(`${success} OK, ${failed} con error`, "warning", 7000);
+    _notify(TICKETS_UI_MESSAGES.PARTIAL_SUCCESS(success, failed), "warning", 7000);
     log(
       `${success} succeeded, ${failed} failed`,
       `${success} exitosos, ${failed} con error`,
       "warning",
     );
   } else {
-    _notify(`Error al actualizar ${failed} ticket(s)`, "error", 7000);
+    _notify(TICKETS_UI_MESSAGES.TOTAL_FAILURE(failed), "error", 7000);
     log(
       `${failed} ticket(s) failed to update`,
       `${failed} ticket(s) fallaron al actualizar`,
@@ -638,18 +800,44 @@ function processResults(results, ticketIds) {
   }
 
   if (success > 0) {
-    removeTicketRows(ticketIds);
+    const successfulIds = resolveSuccessfulTicketIds(ticketIds, results);
+    if (successfulIds.length > 0) {
+      removeTicketRows(successfulIds);
+    }
   }
 }
 
-function removeTicketRows(ticketIds) {
+function resolveSuccessfulTicketIds(requestedIds, results) {
+  const requested = (requestedIds || []).map((id) => String(id));
+  if (requested.length === 0) {
+    return [];
+  }
+
+  const updatedIds = Array.isArray(results?.updatedIds)
+    ? results.updatedIds.map((id) => String(id))
+    : [];
+  if (updatedIds.length > 0) {
+    const requestedSet = new Set(requested);
+    return updatedIds.filter((id) => requestedSet.has(id));
+  }
+
+  const failedSet = new Set(
+    (results?.errors || [])
+      .map((entry) => String(entry?.id || ""))
+      .filter((id) => id && id !== "all"),
+  );
+
+  return requested.filter((id) => !failedSet.has(id));
+}
+
+function removeTicketRows(successfulIds) {
   try {
     const $ = window.jQuery;
     const tableEl = $ ? $(TABLE_SELECTOR) : null;
     const hasDT =
       tableEl && $.fn.DataTable && $.fn.DataTable.isDataTable(tableEl);
 
-    ticketIds.forEach((id) => {
+    successfulIds.forEach((id) => {
       const cb = document.querySelector(`input.editor-active[value="${id}"]`);
       const tr = cb?.closest("tr");
       if (!tr) {
@@ -672,8 +860,8 @@ function removeTicketRows(ticketIds) {
     }
 
     log(
-      `${ticketIds.length} row(s) removed from table`,
-      `${ticketIds.length} fila(s) eliminadas de la tabla`,
+      `${successfulIds.length} row(s) removed from table`,
+      `${successfulIds.length} fila(s) eliminadas de la tabla`,
     );
   } catch (err) {
     console.error("[Tickets] Row removal failed:", err);
@@ -699,3 +887,9 @@ export function initTicketActions() {
     log('"Mark as New" option added', 'Opción "Marcar como Nuevos" añadida');
   });
 }
+
+export const __testables__ = {
+  buildClientMapUrlFromUsername,
+  resolveTicketMapUrl,
+  injectTicketCopyButtons,
+};

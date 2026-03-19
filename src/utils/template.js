@@ -19,7 +19,7 @@ export function generateTemplate(calcFn) {
     const installPart =
       calc.installCost > 0
         ? `EQUIPO COMODATO ${formatPrice(calc.installCost)}`
-        : "EQUIPO COMODATO $";
+        : "EQUIPO COMODATO CORTESÍA";
     priceLine = `${installPart} + ${calc.monthLabel} ${formatPrice(calc.monthPrice)} = ${formatPrice(calc.total)} MXN`;
   } else {
     priceLine = `EQUIPO COMODATO $ + ${monthLabel} $ = $`;
