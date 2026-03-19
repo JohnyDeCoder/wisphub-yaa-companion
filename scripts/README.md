@@ -79,6 +79,9 @@ npm run build:dev -- --target all
 # Compilación de producción (chrome + firefox autoalojado)
 npm run build:prod -- --target all --firefox-update-url https://<host>/<path>/updates.json
 
+# Regenerar CHANGELOG.md desde src/app/popup/changelog.json
+npm run changelog:generate
+
 # Preparación de lanzamiento (metadatos + artefactos)
 npm run release:prepare
 
@@ -119,7 +122,7 @@ Artefactos esperados en `dist/`:
 Trazabilidad mínima por lanzamiento:
 
 - versión en `package.json` y `manifest.json`,
-- entrada en historial de cambios,
+- entrada en `src/app/popup/changelog.json` y regeneración de `CHANGELOG.md`,
 - artefactos versionados consistentes.
 
 ## Controles de Seguridad y Riesgo

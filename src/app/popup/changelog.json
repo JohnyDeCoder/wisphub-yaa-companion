@@ -1,5 +1,25 @@
 [
   {
+    "version": "1.3.0",
+    "date": "2026-03-19",
+    "changes": [
+      "Clientes: nuevo botón para copiar la plantilla de aprovisionamiento en un solo clic.",
+      "La plantilla se entrega en líneas ordenadas con los datos clave del cliente y del servicio.",
+      "Ahora se detecta automáticamente si el caso es MIGRACION o CLIENTE NUEVO para colocarlo como primera línea.",
+      "Si faltan datos importantes, se agregan campos por llenar con texto claro para que el técnico los complete rápido.",
+      "Al copiar una plantilla con datos pendientes, se muestra una advertencia para evitar omisiones.",
+      "Clientes: nuevo botón junto al nombre para copiarlo en formato de aprovisionamiento.",
+      "El copiado del nombre permite configuración rápida con Ctrl+Click (formato de texto y separador).",
+      "La configuración del copiado ahora usa alertas en español, más claras y fáciles de seguir.",
+      "La opción de separador ahora reconoce vacío o espacio en distintas formas (por ejemplo: vacio, vacío, espacio o \" \").",
+      "También puedes escribir reset para volver a la configuración predeterminada rápidamente.",
+      "Los tooltips ahora se ocultan correctamente al hacer clic en botones o enlaces.",
+      "Los botones de copiado muestran mejor su estado visual al deshabilitarse y volver a estar activos.",
+      "Se mejoró la visualización en listas de clientes de wisphub.io y wisphub.app para mantener botones bien alineados.",
+      "Mejoras generales de rendimiento y estabilidad en herramientas de clientes."
+    ]
+  },
+  {
     "version": "1.2.0",
     "date": "2026-03-02",
     "changes": [

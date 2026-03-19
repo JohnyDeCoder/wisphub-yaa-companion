@@ -572,7 +572,7 @@ Consulta el archivo [LICENSE](LICENSE) para el texto completo.
 [issues-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/issues
 [license-shield]: https://img.shields.io/github/license/JohnyDeCoder/wisphub-yaa-companion.svg?style=for-the-badge
 [license-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/blob/master/LICENSE
-[version-shield]: https://img.shields.io/badge/version-1.2.0-blue?style=for-the-badge
+[version-shield]: https://img.shields.io/badge/version-1.3.0-blue?style=for-the-badge
 [release-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/releases
 [manifest-shield]: https://img.shields.io/badge/manifest-v3-orange?style=for-the-badge
 [manifest-url]: https://developer.chrome.com/docs/extensions/mv3/intro/

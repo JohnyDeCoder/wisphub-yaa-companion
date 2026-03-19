@@ -1,8 +1,25 @@
-# Historial de Cambios — Wisphub Yaa Companion
+# Changelog - Wisphub Yaa Companion
 
-Todos los cambios notables de este proyecto se documentan aquí.
+Todos los cambios notables de este proyecto se documentan aqui.
 
-## v1.2.0 — 2026-03-02
+## v1.3.0 - 2026-03-19
+
+- Clientes: nuevo botón para copiar la plantilla de aprovisionamiento en un solo clic.
+- La plantilla se entrega en líneas ordenadas con los datos clave del cliente y del servicio.
+- Ahora se detecta automáticamente si el caso es MIGRACION o CLIENTE NUEVO para colocarlo como primera línea.
+- Si faltan datos importantes, se agregan campos por llenar con texto claro para que el técnico los complete rápido.
+- Al copiar una plantilla con datos pendientes, se muestra una advertencia para evitar omisiones.
+- Clientes: nuevo botón junto al nombre para copiarlo en formato de aprovisionamiento.
+- El copiado del nombre permite configuración rápida con Ctrl+Click (formato de texto y separador).
+- La configuración del copiado ahora usa alertas en español, más claras y fáciles de seguir.
+- La opción de separador ahora reconoce vacío o espacio en distintas formas (por ejemplo: vacio, vacío, espacio o " ").
+- También puedes escribir reset para volver a la configuración predeterminada rápidamente.
+- Los tooltips ahora se ocultan correctamente al hacer clic en botones o enlaces.
+- Los botones de copiado muestran mejor su estado visual al deshabilitarse y volver a estar activos.
+- Se mejoró la visualización en listas de clientes de wisphub.io y wisphub.app para mantener botones bien alineados.
+- Mejoras generales de rendimiento y estabilidad en herramientas de clientes.
+
+## v1.2.0 - 2026-03-02
 
 - Tickets especiales: nueva opción para crear tickets de 'Mantenimiento (AP) Publicas' desde la barra de navegación.
 - Validación al guardar: si el tipo de equipo no es comodato, dato o propios, se muestra una confirmación antes de guardar. Lo mismo si el costo de instalación coincide con el precio del plan.
@@ -14,13 +31,13 @@ Todos los cambios notables de este proyecto se documentan aquí.
 - Botones más rápidos: los botones de 'Ver archivos' y 'Ver cliente' ahora aparecen casi al instante en la tabla.
 - Los íconos SVG de la extensión ahora se renderizan completamente desde CSS para mejor rendimiento.
 
-## v1.1.1 — 2026-02-20
+## v1.1.1 - 2026-02-20
 
 - Se deshabilitó el formateador en las páginas de agregar tickets y editar servicio del cliente para evitar comportamiento incorrecto.
 - Cálculo de precios: se corrigió un error al actualizar precios dinámicamente cuando dos valores coincidían.
 - Cálculo de precios: ahora se puede actualizar el costo de instalación en comentarios sin necesidad de tener todos los campos.
 
-## v1.1.0 — 2026-02-20
+## v1.1.0 - 2026-02-20
 
 - Tickets especiales: nuevo botón para crear rápidamente tickets de Mantenimiento General, Ir a Sitio y Sitio Día Completo.
 - Auto-rellenado de tickets: al crear un ticket, se rellenan automáticamente el departamento, la fecha estimada y el asunto.
@@ -31,9 +48,9 @@ Todos los cambios notables de este proyecto se documentan aquí.
 - Caracteres especiales: se corrigió el cálculo de precios en comentarios con Ñ, acentos y otros caracteres especiales.
 - Caché de staff: los IDs de staff se guardan localmente para cargar más rápido.
 - Plantilla más limpia: texto simplificado y sin usuarios admin en el campo ASESOR.
-- Ajustes del panel emergente: la configuración de auto-rellenado ahora cubre tanto tickets como instalaciones.
+- Ajustes del popup: la configuración de auto-rellenado ahora cubre tanto tickets como instalaciones.
 
-## v1.0.2 — 2026-02-17
+## v1.0.2 - 2026-02-17
 
 - Auto-rellenado de plantilla: ahora funciona de forma independiente, sin depender de Auto-formato.
 - Plantilla con formato: la plantilla auto-rellenada se inserta con negritas en las claves automáticamente.
@@ -41,13 +58,13 @@ Todos los cambios notables de este proyecto se documentan aquí.
 - Página de novedades: al instalar o actualizar la extensión, se abre automáticamente una página con los cambios recientes.
 - Indicador de actualización: badge "UP" en el icono de la extensión cuando hay una nueva versión disponible.
 
-## v1.0.1 — 2026-02-16
+## v1.0.1 - 2026-02-16
 
 - Formateador de comentarios: limpia y organiza el texto del editor con negritas, mayúsculas y saltos de línea automáticos. Usa Ctrl+Shift+F.
 - Calculadora de precios: recalcula automáticamente los precios según la fecha de instalación y el paquete del cliente. Acepta cualquier texto antes del "+" (migración, cortesía, equipos, etc.). Usa Ctrl+Shift+Alt+P.
 - Plantilla con cálculo: al copiar la plantilla, incluye los precios calculados si hay un plan y fecha disponibles. Si no, copia la plantilla vacía.
 - Auto-rellenado de plantilla: si el editor está vacío al formatear, se inserta automáticamente la plantilla completa con precios (si están disponibles) o con el mes actual.
-- Calculadora de precios en herramientas: calcula precios de instalación con prorrateo desde el panel emergente, siempre disponible sin importar la página. Los valores se guardan automáticamente al cerrar el panel emergente.
+- Calculadora de precios en herramientas: calcula precios de instalación con prorrateo desde el popup, siempre disponible sin importar la página. Los valores se guardan automáticamente al cerrar el popup.
 - Auto-llenado de formularios: al formatear, la extensión detecta secciones como datos fiscales, costo de instalación y staff automáticamente.
 - Gestión masiva de tickets: selecciona varios tickets y márcalos todos como "Nuevos" con un solo clic.
 - Gestión masiva de instalaciones: cambia instalaciones "En Progreso" a "Nuevas" de forma masiva desde la tabla.
@@ -56,8 +73,8 @@ Todos los cambios notables de este proyecto se documentan aquí.
 - Enlace rápido a WhatsApp: cada teléfono en la lista de clientes e instalaciones abre WhatsApp directamente. Ctrl+Clic copia el número.
 - Acceso rápido a "Subir Archivos": botón que te lleva directo a la pestaña de archivos del cliente.
 - Notificaciones en página: mensajes visuales al completar acciones que desaparecen automáticamente.
-- Panel de control (panel emergente): estado de conexión, configuraciones, registros de actividad e historial de cambios.
-- Detección automática de staff: identifica tu usuario de WispHub y muestra tu ID de staff en el panel emergente.
+- Panel de control (popup): estado de conexión, configuraciones, registros de actividad y changelog.
+- Detección automática de staff: identifica tu usuario de WispHub y muestra tu ID de staff en el popup.
 - Inyección de IDs de staff: columna automática con el ID numérico de cada miembro en la tabla de personal.
 - Avatar por defecto reemplazado en toda la UI.
 - Compatible con Chrome, Edge y Firefox. Funciona SÓLO en wisphub.io y wisphub.app.

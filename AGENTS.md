@@ -13,6 +13,8 @@ Project-wide defaults for AI coding agents. Keep this file focused on always-fol
 - For every new feature or behavior change, add or update automated tests in the same change.
 - When improving/refactoring existing behavior, update related tests so they stay faithful to expected behavior.
 - For every new user-facing feature, update `README.md` under the `Funcionalidades` section in the same PR.
+- For every new release version, update the latest entry first in `src/app/popup/changelog.json` and then regenerate `CHANGELOG.md` from that source.
+- Keep release change lists clear and ordered by impact, using simple Spanish for end users (avoid unnecessary technical jargon).
 - Validate all boundary inputs (DOM, API payloads, URL data, cross-context messages).
 - Use safe DOM APIs (`textContent`) for user text; avoid unsafe HTML insertion.
 - Keep comments in English and only for non-obvious intent/complexity.
@@ -43,6 +45,7 @@ Project checks:
 - `npm run lint`
 - `npm run test:run`
 - `npm run test`
+- `npm run changelog:generate`
 - `npm run build:dev -- --target all`
 - `npm run build:prod -- --target all --firefox-update-url https://example.com/updates.json`
 - `npm run build`
