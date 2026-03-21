@@ -14,6 +14,11 @@ export const MESSAGE_TYPES = {
   UPDATE_TICKETS_RESPONSE: "WISPHUB_UPDATE_TICKETS_RESPONSE",
   UPDATE_INSTALLS_REQUEST: "WISPHUB_UPDATE_INSTALLS_REQUEST",
   UPDATE_INSTALLS_RESPONSE: "WISPHUB_UPDATE_INSTALLS_RESPONSE",
+  DIAGNOSTIC_RUN_REQUEST: "WISPHUB_DIAGNOSTIC_RUN_REQUEST",
+  DIAGNOSTIC_RUN_ACK: "WISPHUB_DIAGNOSTIC_RUN_ACK",
+  DIAGNOSTIC_RUN_RESPONSE: "WISPHUB_DIAGNOSTIC_RUN_RESPONSE",
+  PROFILE_SWITCH_REQUEST: "WISPHUB_PROFILE_SWITCH_REQUEST",
+  PROFILE_SWITCH_ACK: "WISPHUB_PROFILE_SWITCH_ACK",
 };
 
 export const ACTIONS = {
@@ -22,8 +27,14 @@ export const ACTIONS = {
   UPDATE_SETTINGS: "UPDATE_SETTINGS",
   RESTORE_COMMENTS: "RESTORE_COMMENTS",
   GET_STAFF_INFO: "GET_STAFF_INFO",
+  GET_SESSION_CONTEXT: "GET_SESSION_CONTEXT",
   UPDATE_TICKETS: "UPDATE_TICKETS",
   UPDATE_INSTALLS: "UPDATE_INSTALLS",
+  RUN_CLIENT_DIAGNOSTIC: "RUN_CLIENT_DIAGNOSTIC",
+  START_PROFILE_SWITCH: "START_PROFILE_SWITCH",
+  SESSION_CAPTURE_COOKIES: "SESSION_CAPTURE_COOKIES",
+  SESSION_HAS_COOKIES: "SESSION_HAS_COOKIES",
+  SESSION_SWITCH_COOKIES: "SESSION_SWITCH_COOKIES",
 };
 
 export const NOTIFICATION_TYPES = {
@@ -66,6 +77,21 @@ export const POPUP_UI_MESSAGES = Object.freeze({
   INSTALL_DATE_REQUIRED: "Selecciona una fecha de instalación",
   RESULT_LINE_COPIED: "Línea copiada al portapapeles",
   COPY_ERROR: "Error al copiar",
+  DIAGNOSTIC_STARTING: "Iniciando Diagnóstico Express en la página activa",
+  DIAGNOSTIC_UNAVAILABLE:
+    "Selecciona un cliente en /clientes/ o abre el detalle del cliente",
+  DIAGNOSTIC_STARTED: "Diagnóstico Express iniciado",
+  DIAGNOSTIC_START_FAILED: "No se pudo iniciar el diagnóstico",
+  SESSION_SWITCH_UNAVAILABLE:
+    "No se pudo detectar la sesión activa para cambiar de perfil",
+  SESSION_SWITCH_STARTING: "Iniciando cambio de perfil",
+  SESSION_SWITCH_STARTED: "Cambio de perfil en progreso",
+  SESSION_SWITCH_CANCELLED: "Cambio de perfil cancelado",
+  SESSION_SWITCH_FAILED: "No se pudo iniciar el cambio de perfil",
+  SESSION_SWITCH_TITLE: "Cambiar entre perfiles de sesión",
+  SESSION_SWITCH_API_KEYS_MISSING:
+    "Falta configurar API Keys. Click para abrir Configuración avanzada",
+  UPCOMING_TOOL: "Esta herramienta estará disponible próximamente",
   API_KEYS_MISSING_BADGE: "API Keys no configuradas",
   STAFF_ID_COPIED: "¡Copiado!",
 });
@@ -112,4 +138,32 @@ export const CLIENTS_UI_MESSAGES = Object.freeze({
     "Configuración inválida. Usa: upper, lower o title; o escribe reset",
   NAME_SETTINGS_SAVED: "Configuración guardada",
   NAME_SETTINGS_RESET: "Configuración restablecida",
+  DIAGNOSTIC_TOOLTIP: "Ejecutar Diagnóstico Express",
+  DIAGNOSTIC_OPEN_PING_TOOLTIP: "Abrir Ping del cliente",
+  DIAGNOSTIC_OPEN_TORCH_TOOLTIP: "Abrir Torch del cliente",
+  DIAGNOSTIC_OPEN_TRAFFIC_TOOLTIP: "Abrir Tráfico semanal del cliente",
+  DIAGNOSTIC_OPEN_CLIENT_INFO_TOOLTIP: "Abrir información del cliente",
+  DIAGNOSTIC_RUNNING: "Ejecutando Diagnóstico Express...",
+  DIAGNOSTIC_COMPLETED: "Diagnóstico Express finalizado",
+  DIAGNOSTIC_COMPLETED_PARTIAL:
+    "Diagnóstico Express finalizado con datos parciales",
+  DIAGNOSTIC_COMPLETED_ERROR: "Diagnóstico Express finalizado con errores",
+  DIAGNOSTIC_COPIED: "Diagnóstico Express copiado",
+  DIAGNOSTIC_COPIED_PARTIAL: "Diagnóstico Express parcial copiado",
+  DIAGNOSTIC_COPIED_ERROR: "Diagnóstico Express con errores copiado",
+  DIAGNOSTIC_COPY_FAILED: "Diagnóstico generado, pero no se pudo copiar",
+  DIAGNOSTIC_ALREADY_RUNNING:
+    "Ya existe un Diagnóstico Express ejecutándose en esta página",
+  DIAGNOSTIC_CONTEXT_MISSING: "No se pudo obtener el contexto del cliente",
+  DIAGNOSTIC_AUTH_REQUIRED:
+    "Sesión no autorizada (401). Inicia sesión y vuelve a intentar",
+  DIAGNOSTIC_FORBIDDEN:
+    "Sin permisos para ejecutar diagnóstico (403) en esta cuenta",
+  DIAGNOSTIC_CANCELLED: "Diagnóstico cancelado por el usuario",
+  DIAGNOSTIC_TIMEOUT: "Tiempo de espera agotado durante el diagnóstico",
+  DIAGNOSTIC_TASK_FAILED:
+    "La tarea interna de WispHub falló durante el diagnóstico",
+  DIAGNOSTIC_PARSE_FAILED:
+    "No se pudo interpretar la respuesta de WispHub para el diagnóstico",
+  DIAGNOSTIC_RUN_FAILED: "No se pudo ejecutar Diagnóstico Express",
 });

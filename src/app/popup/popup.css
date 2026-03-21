@@ -68,6 +68,8 @@ body {
 }
 
 .dashboard-header {
+  position: relative;
+
   background: linear-gradient(
     135deg,
     var(--color-primary) 0%,
@@ -263,7 +265,7 @@ body {
   display: none;
 }
 
-.staff-info svg {
+.staff-info > svg {
   opacity: 0.8;
 
   flex-shrink: 0;
@@ -275,8 +277,6 @@ body {
   align-items: center;
 
   gap: 4px;
-
-  margin-left: auto;
 
   background: rgba(255, 255, 255, 0.2);
 
@@ -303,20 +303,55 @@ body {
   line-height: 1.5;
 }
 
-.wisphub-yaa-api-warning {
-  display: block;
-  margin-bottom: 8px;
-  padding: 6px 12px;
-  background: rgba(255, 239, 16, 0.2);
-  border-radius: var(--radius);
-  font-size: 11px;
-  font-weight: 600;
-  color: #fff5c2;
-  text-align: center;
+.header-badge-push {
+  margin-left: auto;
 }
 
 .header-badge:hover {
   background: rgba(255, 255, 255, 0.35);
+}
+
+.header-badge.header-badge-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 999px;
+  line-height: 0;
+}
+
+.header-badge.header-badge-icon svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+  margin: 0;
+  opacity: 1;
+}
+
+.header-badge-warning {
+  background: rgba(255, 225, 86, 0.26);
+  color: #fff0bf;
+  border: 1px solid rgba(255, 232, 116, 0.45);
+}
+
+.header-badge-warning:hover {
+  background: rgba(255, 225, 86, 0.36);
+}
+
+.header-badge-warning-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  line-height: 0;
+}
+
+.header-badge-warning-icon svg {
+  width: 12px;
+  height: 12px;
 }
 
 .header-badge.copied {
@@ -543,6 +578,34 @@ body {
   text-align: center;
 }
 
+.tool-beta-ghost {
+  position: absolute;
+  top: -4px;
+  right: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: rgba(30, 41, 59, 0.4);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.tool-beta-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.35px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
 .flip-card-front {
   transform: rotateY(180deg);
 
@@ -607,6 +670,10 @@ body {
 
 .flip-card.disabled .flip-back-content strong {
   color: var(--color-text-muted);
+}
+
+.flip-card.disabled .tool-beta-ghost {
+  color: rgba(100, 116, 139, 0.5);
 }
 
 /* ======================================== BUTTONS ======================================== */

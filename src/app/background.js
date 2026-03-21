@@ -1,8 +1,17 @@
-import { isWispHubDomain } from "../config/domains.js";
+import { getDomainKey, isWispHubDomain } from "../config/domains.js";
 import { CACHE_TTL } from "../config/constants.js";
+import { ACTIONS } from "../config/messages.js";
+import { shouldPersistSessionSnapshot } from "../utils/sessionSnapshot.js";
 
 const ICON_ACTIVE = { 48: "assets/icons/icon48_st_on.png" };
 const ICON_INACTIVE = { 48: "assets/icons/icon48_st_off.png" };
+const SESSION_COOKIE_SNAPSHOTS_KEY = "wisphubYaaSessionCookieSnapshots";
+const SESSION_COOKIE_SNAPSHOT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const SESSION_COOKIE_SNAPSHOT_MAX_PROFILES = 8;
+const SESSION_COOKIE_MAX_PER_PROFILE = 20;
+const SESSION_COOKIE_NAME_HINT_RE = /(session|csrftoken|auth|token|jwt|remember|sid)/i;
+const SESSION_COOKIE_IGNORED_NAME_RE = /^(_ga|_gid|_gat|_fbp|_gcl_au|_hj|amplitude|mixpanel)/i;
+const SUPPORTED_SESSION_DOMAINS = ["wisphub.io", "wisphub.app"];
 
 function updateIcon(tabId, url) {
   const icons = isWispHubDomain(url) ? ICON_ACTIVE : ICON_INACTIVE;
@@ -23,6 +32,322 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 const staffCache = {};
+
+function normalizeUsername(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function isSupportedSessionDomain(domainKey) {
+  return SUPPORTED_SESSION_DOMAINS.includes(String(domainKey || "").trim().toLowerCase());
+}
+
+function isTrustedSessionSender(sender, requestedDomainKey) {
+  const normalizedRequestedDomain = String(requestedDomainKey || "").trim().toLowerCase();
+  if (!isSupportedSessionDomain(normalizedRequestedDomain)) {
+    return false;
+  }
+
+  const senderUrl = sender?.tab?.url || sender?.url || "";
+  if (!senderUrl) {
+    return true;
+  }
+
+  const senderDomainKey = getDomainKey(senderUrl);
+  return senderDomainKey === normalizedRequestedDomain;
+}
+
+function buildSessionSnapshotKey(domainKey, username) {
+  const normalizedDomain = String(domainKey || "").trim().toLowerCase();
+  const normalizedUsername = normalizeUsername(username);
+  if (!normalizedDomain || !normalizedUsername) {
+    return "";
+  }
+  return `${normalizedDomain}::${normalizedUsername}`;
+}
+
+function isCookieUnderDomain(cookie, domainKey) {
+  const safeDomain = String(cookie?.domain || "").replace(/^\./, "").toLowerCase();
+  const safeTarget = String(domainKey || "").trim().toLowerCase();
+  if (!safeDomain || !safeTarget) {
+    return false;
+  }
+  return safeDomain === safeTarget || safeDomain.endsWith(`.${safeTarget}`);
+}
+
+function buildCookieUrl(cookie, fallbackDomain) {
+  const rawDomain = String(cookie?.domain || "").replace(/^\./, "").trim();
+  const domain = rawDomain || String(fallbackDomain || "").trim();
+  const path = String(cookie?.path || "/").trim() || "/";
+  const scheme = cookie?.secure === false ? "http" : "https";
+  return `${scheme}://${domain}${path}`;
+}
+
+function shouldIgnoreCookieName(name) {
+  return SESSION_COOKIE_IGNORED_NAME_RE.test(String(name || ""));
+}
+
+function isLikelySessionCookie(cookie) {
+  const cookieName = String(cookie?.name || "");
+  if (!cookieName || shouldIgnoreCookieName(cookieName)) {
+    return false;
+  }
+
+  return cookie?.httpOnly === true || SESSION_COOKIE_NAME_HINT_RE.test(cookieName);
+}
+
+function selectSessionCookiesForSnapshot(domainCookies) {
+  const filteredDomainCookies = (domainCookies || []).filter(
+    (cookie) => !shouldIgnoreCookieName(cookie?.name),
+  );
+  const preferredCookies = filteredDomainCookies.filter(isLikelySessionCookie);
+  const fallbackCookies = filteredDomainCookies.filter((cookie) => cookie?.secure !== false);
+  const sourceCookies = preferredCookies.length > 0 ? preferredCookies : fallbackCookies;
+  return sourceCookies.slice(0, SESSION_COOKIE_MAX_PER_PROFILE);
+}
+
+function serializeCookie(cookie) {
+  return {
+    name: cookie.name,
+    value: cookie.value,
+    domain: cookie.domain,
+    path: cookie.path,
+    secure: cookie.secure,
+    httpOnly: cookie.httpOnly,
+    sameSite: cookie.sameSite,
+    expirationDate: cookie.expirationDate,
+    storeId: cookie.storeId,
+  };
+}
+
+function buildCookieSetPayload(cookie, fallbackDomain) {
+  const payload = {
+    url: buildCookieUrl(cookie, fallbackDomain),
+    name: cookie.name,
+    value: cookie.value,
+    domain: cookie.domain,
+    path: cookie.path || "/",
+    secure: cookie.secure !== false,
+    httpOnly: cookie.httpOnly === true,
+    storeId: cookie.storeId,
+  };
+
+  if (cookie.sameSite) {
+    payload.sameSite = cookie.sameSite;
+  }
+
+  if (
+    Number.isFinite(cookie.expirationDate) &&
+    Number(cookie.expirationDate) > 0
+  ) {
+    payload.expirationDate = Number(cookie.expirationDate);
+  }
+
+  return payload;
+}
+
+async function readSessionCookieSnapshots() {
+  const result = await chrome.storage.local.get(SESSION_COOKIE_SNAPSHOTS_KEY);
+  return result[SESSION_COOKIE_SNAPSHOTS_KEY] || {};
+}
+
+async function writeSessionCookieSnapshots(snapshotMap) {
+  await chrome.storage.local.set({
+    [SESSION_COOKIE_SNAPSHOTS_KEY]: snapshotMap,
+  });
+}
+
+function pruneSessionCookieSnapshots(snapshotMap) {
+  const now = Date.now();
+  const validEntries = Object.entries(snapshotMap || {}).filter(([, entry]) => {
+    const capturedAt = Number(entry?.capturedAt);
+    if (!Number.isFinite(capturedAt) || capturedAt <= 0) {
+      return false;
+    }
+    return now - capturedAt <= SESSION_COOKIE_SNAPSHOT_MAX_AGE_MS;
+  });
+
+  validEntries.sort(
+    (a, b) => Number(b?.[1]?.capturedAt || 0) - Number(a?.[1]?.capturedAt || 0),
+  );
+
+  return Object.fromEntries(
+    validEntries
+      .slice(0, SESSION_COOKIE_SNAPSHOT_MAX_PROFILES)
+      .filter(([key]) => Boolean(key)),
+  );
+}
+
+function getSnapshotCookieNames(cookies) {
+  return (cookies || [])
+    .map((cookie) => String(cookie?.name || "").trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function createCookieNameSet(cookieNames) {
+  return new Set(
+    (cookieNames || [])
+      .map((value) => String(value || "").trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+async function captureSessionCookies({ domainKey, username }) {
+  if (!isSupportedSessionDomain(domainKey)) {
+    return { success: false, error: "Dominio no soportado para captura de sesión" };
+  }
+
+  const safeUsername = normalizeUsername(username);
+  if (!safeUsername) {
+    return { success: false, error: "No se pudo detectar usuario para capturar sesión" };
+  }
+
+  const allCookies = await chrome.cookies.getAll({ domain: domainKey });
+  const domainCookies = allCookies.filter((cookie) =>
+    isCookieUnderDomain(cookie, domainKey),
+  );
+  const selectedCookies = selectSessionCookiesForSnapshot(domainCookies);
+
+  if (selectedCookies.length === 0) {
+    return {
+      success: false,
+      error: "No se encontraron cookies de sesión relevantes para este dominio",
+    };
+  }
+
+  const rawSnapshots = await readSessionCookieSnapshots();
+  const snapshots = pruneSessionCookieSnapshots(rawSnapshots);
+  const snapshotsChangedByPrune =
+    Object.keys(rawSnapshots || {}).length !== Object.keys(snapshots || {}).length;
+  const snapshotKey = buildSessionSnapshotKey(domainKey, safeUsername);
+  if (!snapshotKey) {
+    return { success: false, error: "No se pudo construir clave de sesión" };
+  }
+
+  const serializedCookies = selectedCookies.map(serializeCookie);
+  const existingSnapshot = snapshots[snapshotKey];
+  const shouldPersist =
+    snapshotsChangedByPrune ||
+    shouldPersistSessionSnapshot(existingSnapshot, serializedCookies, {
+      refreshTimestamp: true,
+    });
+
+  snapshots[snapshotKey] = {
+    domainKey,
+    username: safeUsername,
+    capturedAt: Date.now(),
+    cookies: serializedCookies,
+  };
+
+  if (shouldPersist) {
+    await writeSessionCookieSnapshots(snapshots);
+  }
+
+  return {
+    success: true,
+    snapshotKey,
+    cookieCount: serializedCookies.length,
+    updated: shouldPersist,
+  };
+}
+
+async function hasSessionCookies({ domainKey, username }) {
+  if (!isSupportedSessionDomain(domainKey)) {
+    return { success: false, hasSnapshot: false, error: "Dominio no soportado" };
+  }
+
+  const safeUsername = normalizeUsername(username);
+  if (!safeUsername) {
+    return { success: false, hasSnapshot: false, error: "Usuario inválido para verificar sesión" };
+  }
+
+  const snapshots = pruneSessionCookieSnapshots(await readSessionCookieSnapshots());
+  const snapshotKey = buildSessionSnapshotKey(domainKey, safeUsername);
+  const snapshot = snapshotKey ? snapshots[snapshotKey] : null;
+
+  return {
+    success: true,
+    hasSnapshot: Boolean(snapshot && Array.isArray(snapshot.cookies) && snapshot.cookies.length > 0),
+    cookieCount: Array.isArray(snapshot?.cookies) ? snapshot.cookies.length : 0,
+  };
+}
+
+async function clearDomainCookies(domainKey, cookieNames = []) {
+  const cookies = await chrome.cookies.getAll({ domain: domainKey });
+  const cookieNameSet = createCookieNameSet(cookieNames);
+  const toRemove = cookies.filter((cookie) => {
+    if (!isCookieUnderDomain(cookie, domainKey)) {
+      return false;
+    }
+
+    const lowerName = String(cookie?.name || "").trim().toLowerCase();
+    if (!lowerName || shouldIgnoreCookieName(lowerName)) {
+      return false;
+    }
+
+    if (cookieNameSet.size > 0) {
+      return cookieNameSet.has(lowerName);
+    }
+
+    return isLikelySessionCookie(cookie);
+  });
+
+  await Promise.allSettled(
+    toRemove.map((cookie) =>
+      chrome.cookies.remove({
+        url: buildCookieUrl(cookie, domainKey),
+        name: cookie.name,
+        storeId: cookie.storeId,
+      }),
+    ),
+  );
+}
+
+async function switchSessionCookies({ domainKey, targetUsername }) {
+  if (!isSupportedSessionDomain(domainKey)) {
+    return { success: false, requiresLogin: true, error: "Dominio no soportado para cambio de sesión" };
+  }
+
+  const safeTargetUsername = normalizeUsername(targetUsername);
+  if (!safeTargetUsername) {
+    return { success: false, requiresLogin: true, error: "Usuario destino inválido para cambio de sesión" };
+  }
+
+  const snapshots = pruneSessionCookieSnapshots(await readSessionCookieSnapshots());
+  const snapshotKey = buildSessionSnapshotKey(domainKey, safeTargetUsername);
+  const snapshot = snapshotKey ? snapshots[snapshotKey] : null;
+
+  if (!snapshot || !Array.isArray(snapshot.cookies) || snapshot.cookies.length === 0) {
+    return {
+      success: false,
+      requiresLogin: true,
+      error: "No hay sesión guardada para el perfil destino. Se requiere iniciar sesión.",
+    };
+  }
+
+  const snapshotCookieNames = getSnapshotCookieNames(snapshot.cookies);
+  await clearDomainCookies(domainKey, snapshotCookieNames);
+
+  const restoreResults = await Promise.allSettled(
+    snapshot.cookies.map((cookie) =>
+      chrome.cookies.set(buildCookieSetPayload(cookie, domainKey)),
+    ),
+  );
+
+  const appliedCount = restoreResults.filter((result) => result.status === "fulfilled" && result.value).length;
+  if (appliedCount === 0) {
+    return {
+      success: false,
+      requiresLogin: true,
+      error: "No se pudo restaurar la sesión guardada para el perfil destino",
+    };
+  }
+
+  return {
+    success: true,
+    requiresLogin: false,
+    appliedCount,
+  };
+}
 
 async function fetchStaffFromApi(apiKey, apiBaseUrl) {
   const cached = staffCache[apiBaseUrl];
@@ -121,7 +446,19 @@ async function updateTicketsToNew(apiKey, apiBaseUrl, ticketIds) {
   return { success, failed, errors, updatedIds };
 }
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+function runAuthorizedSessionAction({
+  sender,
+  domainKey,
+  onAllowed,
+  unauthorizedResult,
+}) {
+  if (!isTrustedSessionSender(sender, domainKey)) {
+    return Promise.resolve(unauthorizedResult);
+  }
+  return onAllowed();
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const handlers = {
     FETCH_STAFF: () =>
       fetchStaffFromApi(message.apiKey, message.apiBaseUrl)
@@ -132,6 +469,63 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       updateTicketsToNew(message.apiKey, message.apiBaseUrl, message.ticketIds)
         .then((results) => sendResponse({ success: true, results }))
         .catch((err) => sendResponse({ success: false, error: err.message })),
+
+    [ACTIONS.SESSION_CAPTURE_COOKIES]: () =>
+      runAuthorizedSessionAction({
+        sender,
+        domainKey: message.domainKey,
+        onAllowed: () =>
+          captureSessionCookies({
+            domainKey: message.domainKey,
+            username: message.username,
+          }),
+        unauthorizedResult: {
+          success: false,
+          error: "Origen no autorizado para captura de sesión",
+        },
+      })
+        .then((result) => sendResponse(result))
+        .catch((err) => sendResponse({ success: false, error: err.message })),
+
+    [ACTIONS.SESSION_HAS_COOKIES]: () =>
+      runAuthorizedSessionAction({
+        sender,
+        domainKey: message.domainKey,
+        onAllowed: () =>
+          hasSessionCookies({
+            domainKey: message.domainKey,
+            username: message.username,
+          }),
+        unauthorizedResult: {
+          success: false,
+          hasSnapshot: false,
+          error: "Origen no autorizado para verificación de sesión",
+        },
+      })
+        .then((result) => sendResponse(result))
+        .catch((err) =>
+          sendResponse({ success: false, hasSnapshot: false, error: err.message }),
+        ),
+
+    [ACTIONS.SESSION_SWITCH_COOKIES]: () =>
+      runAuthorizedSessionAction({
+        sender,
+        domainKey: message.domainKey,
+        onAllowed: () =>
+          switchSessionCookies({
+            domainKey: message.domainKey,
+            targetUsername: message.targetUsername,
+          }),
+        unauthorizedResult: {
+          success: false,
+          requiresLogin: true,
+          error: "Origen no autorizado para cambio de sesión",
+        },
+      })
+        .then((result) => sendResponse(result))
+        .catch((err) =>
+          sendResponse({ success: false, requiresLogin: true, error: err.message }),
+        ),
 
   };
 

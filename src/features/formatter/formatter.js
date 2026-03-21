@@ -42,6 +42,32 @@ let autoFillTemplateEnabled = true;
 let _onAutoFormatComplete = null;
 let _templateFn = null;
 
+function normalizeComparableText(value) {
+  return String(value || "")
+    .replace(/\r\n?/g, "\n")
+    .trim();
+}
+
+function extractTextFromHtml(html) {
+  const source = String(html || "");
+  if (!source.trim()) {
+    return "";
+  }
+
+  const normalizedHtml = source
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>\s*<p>/gi, "\n\n")
+    .replace(/<\/div>\s*<div>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<p[^>]*>/gi, "")
+    .replace(/<div[^>]*>/gi, "")
+    .replace(/<[^>]+>/g, "");
+
+  const doc = new DOMParser().parseFromString(normalizedHtml, "text/html");
+  const text = doc.body.textContent || "";
+  return text.replace(/\n{3,}/g, "\n\n").trim();
+}
+
 export function setFormatterTemplateFn(fn) {
   _templateFn = fn;
 }
@@ -67,6 +93,7 @@ export function handleToggle(shouldFormat, options = {}) {
 
   try {
     if (shouldFormat) {
+      const originalContent = getEditorContent(editor);
       const plainText = getEditorText(editor);
 
       if (!plainText?.trim()) {
@@ -74,8 +101,6 @@ export function handleToggle(shouldFormat, options = {}) {
         resetToggleState();
         return { success: false, error: UI_MESSAGES.EDITOR_EMPTY };
       }
-
-      setOriginalContent(getEditorContent(editor));
 
       let textToFormat = completeCommentStructure(plainText);
       const parsedData = parseCommentData(textToFormat);
@@ -85,16 +110,45 @@ export function handleToggle(shouldFormat, options = {}) {
       }
 
       const formattedHtml = formatText(textToFormat);
-      setEditorContent(editor, formattedHtml);
+      const contentChanged =
+        normalizeComparableText(plainText) !==
+        normalizeComparableText(extractTextFromHtml(formattedHtml));
 
+      let fieldFillResult = { changed: false, changedCount: 0 };
       if (options.fillFields !== false) {
-        autoFillFormFields(parsedData, {
+        fieldFillResult = autoFillFormFields(parsedData, {
           autoFillEnabled: autoFillTemplateEnabled,
-        });
+        }) || { changed: false, changedCount: 0 };
+      }
+
+      const fieldsChanged = fieldFillResult.changed === true;
+
+      if (!contentChanged && !fieldsChanged) {
+        resetToggleState();
+        return {
+          success: true,
+          changed: false,
+          noOp: true,
+          contentChanged: false,
+          fieldsChanged: false,
+        };
+      }
+
+      setOriginalContent(originalContent);
+
+      if (contentChanged) {
+        setEditorContent(editor, formattedHtml);
       }
 
       notify(UI_MESSAGES.FORMAT_SUCCESS, NOTIFICATION_TYPES.SUCCESS);
-      return { success: true };
+      return {
+        success: true,
+        changed: true,
+        noOp: false,
+        contentChanged,
+        fieldsChanged,
+        changedFieldCount: Number(fieldFillResult.changedCount || 0),
+      };
     }
 
     const original = getOriginalContent();
@@ -119,7 +173,7 @@ export function applyFormatting(options = {}) {
     silent: !!options.silent,
     fillFields: options.fillFields,
   });
-  if (result.success) {
+  if (result.success && result.changed) {
     setIsFormatted(true);
     updateButtonVisual(true);
   }
@@ -160,14 +214,15 @@ function tryAutoFormat() {
       return;
     }
 
-    setIsFormatted(true);
-    updateButtonVisual(true);
-
     const result = handleToggle(true, { silent: true, fillFields: true });
+    if (result.success && result.changed) {
+      setIsFormatted(true);
+      updateButtonVisual(true);
+    }
 
     if (typeof _onAutoFormatComplete === "function") {
       _onAutoFormatComplete(result);
-    } else if (result.success) {
+    } else if (result.success && result.changed) {
       showNotification(
         UI_MESSAGES.AUTO_FORMAT_APPLIED,
         NOTIFICATION_TYPES.INFO,

@@ -592,7 +592,7 @@ function resolveServiceId(value) {
 }
 
 function isTemplatePlaceholderValue(value) {
-  return normalizeText(value).startsWith("{{POR LLENAR");
+  return /\{\{\s*POR LLENAR/i.test(normalizeText(value));
 }
 
 function collectMissingTemplateFields(fields) {
@@ -607,10 +607,10 @@ function collectMissingTemplateFields(fields) {
   ) {
     missing.push(CLIENT_TEMPLATE_TARGET_LABELS.STAGE);
   }
-  if (!fields.name) {
+  if (!fields.name || isTemplatePlaceholderValue(fields.name)) {
     missing.push(CLIENT_TEMPLATE_TARGET_LABELS.NAME);
   }
-  if (!fields.service) {
+  if (!fields.service || isTemplatePlaceholderValue(fields.service)) {
     missing.push(CLIENT_TEMPLATE_TARGET_LABELS.SERVICE);
   }
   if (
@@ -619,19 +619,19 @@ function collectMissingTemplateFields(fields) {
   ) {
     missing.push(CLIENT_TEMPLATE_TARGET_LABELS.SERVICE_PASSWORD);
   }
-  if (!fields.router) {
+  if (!fields.router || isTemplatePlaceholderValue(fields.router)) {
     missing.push(CLIENT_TEMPLATE_TARGET_LABELS.ROUTER);
   }
-  if (!fields.locality) {
+  if (!fields.locality || isTemplatePlaceholderValue(fields.locality)) {
     missing.push(CLIENT_TEMPLATE_TARGET_LABELS.LOCALITY);
   }
-  if (!fields.ip) {
+  if (!fields.ip || isTemplatePlaceholderValue(fields.ip)) {
     missing.push(CLIENT_TEMPLATE_TARGET_LABELS.IP);
   }
-  if (!fields.status) {
+  if (!fields.status || isTemplatePlaceholderValue(fields.status)) {
     missing.push(CLIENT_TEMPLATE_TARGET_LABELS.STATUS);
   }
-  if (!fields.plan) {
+  if (!fields.plan || isTemplatePlaceholderValue(fields.plan)) {
     missing.push(CLIENT_TEMPLATE_TARGET_LABELS.PLAN);
   }
   if (!fields.equipment || isTemplatePlaceholderValue(fields.equipment)) {
@@ -720,18 +720,32 @@ export function buildClientProvisionTemplateData(row, table) {
   const commentLines = extractCommentLines(commentsRaw);
 
   const stage = extractStageFromCommentLines(commentLines);
-  const name = normalizeClientName(nameData.value);
-  const service = resolveServiceId(serviceData.value);
+  const name =
+    normalizeClientName(nameData.value) ||
+    buildMissingValuePlaceholder(CLIENT_TEMPLATE_TARGET_LABELS.NAME);
+  const service =
+    resolveServiceId(serviceData.value) ||
+    buildMissingValuePlaceholder(CLIENT_TEMPLATE_TARGET_LABELS.SERVICE);
   const servicePassword =
     normalizeText(passwordData.value) ||
     buildMissingValuePlaceholder(
       CLIENT_TEMPLATE_TARGET_LABELS.SERVICE_PASSWORD,
     );
-  const router = normalizeText(routerData.value);
-  const locality = normalizeText(localityData.value);
-  const ip = normalizeText(ipData.value);
-  const status = normalizeText(statusData.value);
-  const plan = normalizeText(planData.value);
+  const router =
+    normalizeText(routerData.value) ||
+    buildMissingValuePlaceholder(CLIENT_TEMPLATE_TARGET_LABELS.ROUTER);
+  const locality =
+    normalizeText(localityData.value) ||
+    buildMissingValuePlaceholder(CLIENT_TEMPLATE_TARGET_LABELS.LOCALITY);
+  const ip =
+    normalizeText(ipData.value) ||
+    buildMissingValuePlaceholder(CLIENT_TEMPLATE_TARGET_LABELS.IP);
+  const status =
+    normalizeText(statusData.value) ||
+    buildMissingValuePlaceholder(CLIENT_TEMPLATE_TARGET_LABELS.STATUS);
+  const plan =
+    normalizeText(planData.value) ||
+    buildMissingValuePlaceholder(CLIENT_TEMPLATE_TARGET_LABELS.PLAN);
   const equipment =
     extractEquipmentLineFromCommentLines(commentLines) ||
     buildMissingValuePlaceholder(CLIENT_TEMPLATE_TARGET_LABELS.EQUIPMENT);

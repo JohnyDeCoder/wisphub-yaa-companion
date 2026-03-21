@@ -59,11 +59,24 @@ import {
   initInstallationActions,
 } from "../features/installations/installationActions.js";
 import { initClientPhoneLinks } from "../features/clients/clientPhoneLinks.js";
+import {
+  extractActiveClientContextFromPage,
+  hasClientServiceContext,
+  sanitizeClientContext,
+} from "../features/clients/diagnostic/clientContext.js";
+import { initClientDetailDiagnosticButton } from "../features/clients/diagnostic/clientDetailDiagnosticButton.js";
+import { runDiagnosticFlowForContext } from "../features/clients/diagnostic/diagnosticFlow.js";
+import { normalizeDiagnosticErrorMessage } from "../features/clients/diagnostic/diagnosticRunner.js";
+import { probeDiagnosticStart } from "../features/clients/diagnostic/startProbe.js";
 import { initClientUploadButton } from "../features/clients/clientUploadButton.js";
 import { initCoordinateMapButton } from "../features/coordinates/coordinateMapButton.js";
 import { initScrollTopButton } from "../features/navigation/scrollTopButton.js";
 import { initSpecialTickets } from "../features/tickets/specialTickets.js";
 import { initFormGuards } from "../features/formatter/utils/formGuards.js";
+import {
+  resumeProfileSwitchFlow,
+  startProfileSwitchFlow,
+} from "../features/session-switcher/profileSwitch.js";
 import {
   initTicketAutoFill,
   initTicketAutoFillNotify,
@@ -137,7 +150,7 @@ function postToBridge(type, payload = {}) {
 }
 
 setOnAutoFormatComplete((formatResult) => {
-  if (formatResult?.success && !formatResult.templateFilled) {
+  if (formatResult?.success && formatResult?.changed && !formatResult.templateFilled) {
     showNotification(UI_MESSAGES.AUTO_FORMAT_APPLIED, NOTIFICATION_TYPES.INFO);
   }
 
@@ -236,6 +249,8 @@ function setupMessageListener() {
     }
 
     if (type === MESSAGE_TYPES.PING_REQUEST) {
+      const activeClientContext = extractActiveClientContextFromPage();
+      const diagnosticReady = hasClientServiceContext(activeClientContext);
       const editor = getEditorInstance();
       postToBridge(
         MESSAGE_TYPES.PING_RESPONSE,
@@ -243,8 +258,116 @@ function setupMessageListener() {
           editorReady: isEditorReady(editor),
           isWispHub: isWispHubDomain(window.location.href),
           formatterEnabled: pageFeatures.formatter,
+          diagnosticReady,
+          diagnosticContext: diagnosticReady ? activeClientContext : null,
         },
       );
+      return;
+    }
+
+    if (type === MESSAGE_TYPES.DIAGNOSTIC_RUN_REQUEST) {
+      (async () => {
+        const externalContext = sanitizeClientContext(data.clientContext);
+        const activeClientContext = extractActiveClientContextFromPage();
+        const targetContext = hasClientServiceContext(externalContext)
+          ? externalContext
+          : activeClientContext;
+
+        let execution;
+        try {
+          execution = runDiagnosticFlowForContext(targetContext, {
+            pingAttempts: 4,
+          });
+        } catch (error) {
+          const errorMessage = normalizeDiagnosticErrorMessage(error);
+          postToBridge(MESSAGE_TYPES.DIAGNOSTIC_RUN_ACK, {
+            result: {
+              success: false,
+              started: false,
+              error: errorMessage,
+            },
+          });
+          postToBridge(MESSAGE_TYPES.DIAGNOSTIC_RUN_RESPONSE, {
+            result: {
+              success: false,
+              error: errorMessage,
+            },
+          });
+          return;
+        }
+
+        const startProbe = await probeDiagnosticStart(execution);
+        if (!startProbe.started) {
+          const errorMessage = normalizeDiagnosticErrorMessage(startProbe.error);
+          postToBridge(MESSAGE_TYPES.DIAGNOSTIC_RUN_ACK, {
+            result: {
+              success: false,
+              started: false,
+              error: errorMessage,
+            },
+          });
+          postToBridge(MESSAGE_TYPES.DIAGNOSTIC_RUN_RESPONSE, {
+            result: {
+              success: false,
+              error: errorMessage,
+            },
+          });
+          return;
+        }
+
+        postToBridge(MESSAGE_TYPES.DIAGNOSTIC_RUN_ACK, {
+          result: {
+            success: true,
+            started: true,
+          },
+        });
+
+        try {
+          const result = await execution;
+          postToBridge(MESSAGE_TYPES.DIAGNOSTIC_RUN_RESPONSE, {
+            result: {
+              success: true,
+              overallStatus: result.overallStatus,
+              summary: result.summary,
+              clientContext: result.clientContext,
+            },
+          });
+        } catch (error) {
+          postToBridge(MESSAGE_TYPES.DIAGNOSTIC_RUN_RESPONSE, {
+            result: {
+              success: false,
+              error: normalizeDiagnosticErrorMessage(error),
+            },
+          });
+        }
+      })();
+      return;
+    }
+
+    if (type === MESSAGE_TYPES.PROFILE_SWITCH_REQUEST) {
+      const result = startProfileSwitchFlow(
+        {
+          targetUsername: data.targetUsername,
+          targetLabel: data.targetLabel,
+          targetProfileKey: data.targetProfileKey,
+          preferCookieSwitch: data.preferCookieSwitch === true,
+        },
+        {
+          notify: showNotification,
+          navigateImmediately: false,
+        },
+      );
+      postToBridge(MESSAGE_TYPES.PROFILE_SWITCH_ACK, { result });
+      if (
+        result?.started &&
+        result.redirectUrl &&
+        result.switchStrategy !== "cookie-swap"
+      ) {
+        setTimeout(() => {
+          window.location.assign(result.redirectUrl);
+        }, 80);
+      }
+      return;
     }
   });
 }
@@ -261,7 +384,6 @@ function waitForEditor() {
     attempts++;
 
     if (attempts > TIMING.MAX_ATTEMPTS) {
-      console.log(`[${EXTENSION_NAME}] Editor search timeout`);
       return;
     }
 
@@ -320,12 +442,14 @@ function init() {
   initTicketActions();
   initInstallationActions();
   initClientPhoneLinks(showNotification);
+  initClientDetailDiagnosticButton();
   initClientUploadButton();
   initCoordinateMapButton(showNotification);
   initScrollTopButton();
   initSpecialTickets();
   initTicketAutoFill();
   initFormGuards();
+  resumeProfileSwitchFlow({ notify: showNotification });
 }
 
 onDomReady(init);

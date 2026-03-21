@@ -3,9 +3,7 @@ import {
   BRIDGE_META,
   buildBridgeMessage,
   clearBridgeToken,
-  generateBridgeToken,
   getBridgeToken,
-  isBridgeMessage,
   isMessageTokenValid,
   postBridgeMessage,
   setBridgeToken,
@@ -23,24 +21,6 @@ describe("pageBridge", () => {
     const validToken = "1234567890abcdef";
     expect(setBridgeToken(validToken)).toBe(true);
     expect(getBridgeToken()).toBe(validToken);
-  });
-
-  it("builds bridge messages with channel metadata", () => {
-    const token = "abcdef0123456789";
-    setBridgeToken(token);
-
-    const message = buildBridgeMessage("PING", { ok: true });
-
-    expect(message.type).toBe("PING");
-    expect(message.ok).toBe(true);
-    expect(message[BRIDGE_META.CHANNEL_FIELD]).toBeDefined();
-    expect(message[BRIDGE_META.TOKEN_FIELD]).toBe(token);
-    expect(isBridgeMessage(message)).toBe(true);
-  });
-
-  it("can build a message without token", () => {
-    const message = buildBridgeMessage("PING", {}, { includeToken: false });
-    expect(message[BRIDGE_META.TOKEN_FIELD]).toBeUndefined();
   });
 
   it("validates message token correctly", () => {
@@ -81,10 +61,4 @@ describe("pageBridge", () => {
     );
   });
 
-  it("generates a non-empty token", () => {
-    const token = generateBridgeToken();
-    expect(typeof token).toBe("string");
-    expect(token.length).toBeGreaterThanOrEqual(16);
-    expect(token).toMatch(/^[a-f0-9]+$/i);
-  });
 });

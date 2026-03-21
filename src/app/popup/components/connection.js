@@ -9,6 +9,7 @@ let retryCount = 0;
 const MAX_RETRIES = 3;
 const CONN_CACHE_KEY = "wisphubConnCache";
 const CACHE_MAX_AGE = 30 * 1000;
+const CLIENT_CONTEXT_PATH_RE = /^\/clientes(\/|$)/i;
 
 function getPathname(url) {
   try {
@@ -20,6 +21,18 @@ function getPathname(url) {
 
 function needsEditor(pathname) {
   return needsEditorPath(pathname);
+}
+
+function isClientContextPath(pathname) {
+  return CLIENT_CONTEXT_PATH_RE.test(String(pathname || ""));
+}
+
+function getDisabledToolState() {
+  return {
+    formatter: false,
+    diagnostic: false,
+    upcoming: false,
+  };
 }
 
 function clearRetryTimeout() {
@@ -59,7 +72,7 @@ function scheduleRetry(elements, onLog) {
       "disconnected",
       CONNECTION_UI_MESSAGES.DISCONNECTED_GENERIC,
     );
-    updateToolCards({ formatter: false });
+    updateToolCards(getDisabledToolState());
     return;
   }
   retryTimeout = setTimeout(() => {
@@ -76,13 +89,13 @@ export async function checkConnection(elements, onLog) {
 
     if (!tab) {
       updateStatus(elements, "disconnected", CONNECTION_UI_MESSAGES.NO_ACTIVE_TAB);
-      updateToolCards({ formatter: false });
+      updateToolCards(getDisabledToolState());
       return;
     }
 
     if (!isWispHubDomain(tab.url)) {
       updateStatus(elements, "disconnected", CONNECTION_UI_MESSAGES.NOT_IN_WISPHUB);
-      updateToolCards({ formatter: false });
+      updateToolCards(getDisabledToolState());
       return;
     }
 
@@ -92,8 +105,11 @@ export async function checkConnection(elements, onLog) {
 
     const hasFreshCache =
       cached && cached.url === tab.url && Date.now() - cached.ts < CACHE_MAX_AGE;
+    const clientSensitive = isClientContextPath(pathname);
     const canUseCachedState =
-      hasFreshCache && !(editorExpected && !cached.state?.editorReady);
+      hasFreshCache &&
+      !clientSensitive &&
+      !(editorExpected && !cached.state?.editorReady);
 
     if (canUseCachedState) {
       applyConnState(elements, cached.state, editorExpected, pathname, log, true);
@@ -105,38 +121,51 @@ export async function checkConnection(elements, onLog) {
 
       if (response?.status === "OK") {
         retryCount = 0;
-        const state = { ok: true, editorReady: !!response.editorReady, formatterEnabled: !!response.formatterEnabled };
+        const state = {
+          ok: true,
+          editorReady: !!response.editorReady,
+          formatterEnabled: !!response.formatterEnabled,
+          diagnosticReady: !!response.diagnosticReady,
+          diagnosticContext: response.diagnosticContext || null,
+        };
         saveConnCache(tab.url, state);
         applyConnState(elements, state, editorExpected, pathname, log, false);
       } else {
         updateStatus(elements, "checking", CONNECTION_UI_MESSAGES.CHECKING);
-        updateToolCards({ formatter: false });
+        updateToolCards(getDisabledToolState());
         scheduleRetry(elements, onLog);
       }
     } catch {
       updateStatus(elements, "checking", CONNECTION_UI_MESSAGES.CHECKING);
-      updateToolCards({ formatter: false });
+      updateToolCards(getDisabledToolState());
       scheduleRetry(elements, onLog);
     }
   } catch {
     updateStatus(elements, "error", CONNECTION_UI_MESSAGES.CONNECTION_ERROR);
-    updateToolCards({ formatter: false });
+    updateToolCards(getDisabledToolState());
   }
 }
 
 function applyConnState(elements, state, editorExpected, pathname, log, fromCache) {
+  const tools = {
+    formatter: false,
+    diagnostic: !!state.diagnosticReady,
+    upcoming: false,
+  };
+
   if (editorExpected && state.editorReady) {
     updateStatus(elements, "connected", CONNECTION_UI_MESSAGES.READY);
-    updateToolCards({ formatter: !!state.formatterEnabled });
+    tools.formatter = !!state.formatterEnabled;
+    updateToolCards(tools);
     if (!fromCache) {
       log("success", `Página con editor detectada: ${pathname}`);
     }
   } else if (editorExpected && !state.editorReady) {
     updateStatus(elements, "partial", CONNECTION_UI_MESSAGES.PARTIAL);
-    updateToolCards({ formatter: false });
+    updateToolCards(tools);
   } else {
     updateStatus(elements, "connected", CONNECTION_UI_MESSAGES.READY);
-    updateToolCards({ formatter: false });
+    updateToolCards(tools);
     if (!fromCache) {
       log("success", `Página de WispHub: ${pathname}`);
     }

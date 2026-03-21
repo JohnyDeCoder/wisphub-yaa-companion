@@ -1,6 +1,6 @@
 # Privacy Policy — Wisphub Yaa Companion
 
-**Last updated:** March 17, 2026
+**Last updated:** March 20, 2026
 
 ## Overview
 
@@ -19,6 +19,11 @@ This extension collects and stores the following data **locally on your browser*
 - **Activity logs**: Local logs of extension actions (formatting, price calculations, etc.) stored only in your browser. A maximum of 50 log entries are retained.
 - **Connection state cache**: A short-lived cache (30 seconds) of the last connection check result to avoid redundant pings.
 - **Bridge security token**: A temporary in-page channel token used to validate internal extension message flow. It is kept in memory and is not persisted in storage.
+- **Session cookie snapshots (profile switch)**: Limited cookie snapshots used only to switch between internal profiles of the same operator account (`Colima`/`Michoacán`) on the same WispHub domain. Safeguards:
+  - maximum 8 profile snapshots
+  - maximum 20 cookies per snapshot
+  - 24-hour expiration
+  - only likely authentication/session cookies are kept; analytics cookies are ignored
 
 **No personal data is collected beyond what is described above. No analytics, telemetry, or tracking of any kind is performed.**
 
@@ -28,6 +33,7 @@ This extension collects and stores the following data **locally on your browser*
 - API Keys are used **exclusively** to communicate with the official WispHub API (`api.wisphub.io` and `api.wisphub.app`).
 - The extension reads and modifies text content within the CKEditor on WispHub pages to provide formatting, price calculation, and template features.
 - Staff data retrieved from the API is used solely to display staff identification in the extension popup and to auto-fill form fields on WispHub pages.
+- Session cookie snapshots are used only to restore an already-authenticated profile session on the same allowed domain. If no valid snapshot exists, the extension falls back to assisted login.
 
 ## Data Sharing
 
@@ -43,6 +49,7 @@ This extension does **not**:
 - **User preferences** are stored indefinitely until the user clears browser data or uninstalls the extension.
 - **Staff info cache (background)** expires automatically after 24 hours.
 - **Staff info cache (popup)** expires automatically after 7 days.
+- **Session cookie snapshots** expire automatically after 24 hours and are pruned to keep only the most recent snapshots.
 - **Activity logs** are limited to the 50 most recent entries and can be manually cleared by the user from the extension popup.
 - **All stored data** is removed automatically when the extension is uninstalled.
 
@@ -51,6 +58,7 @@ This extension does **not**:
 | Permission                                   | Purpose                                                                   |
 | -------------------------------------------- | ------------------------------------------------------------------------- |
 | `storage`                                    | Save user preferences, API keys, and cached data locally in the browser   |
+| `cookies`                                    | Store and restore session snapshots for profile switch on allowed domains |
 | `host_permissions` (wisphub.io, wisphub.app) | Run content scripts on WispHub pages and communicate with the WispHub API |
 
 This extension does **not** request the `activeTab`, `tabs`, `scripting`, or any other broad permissions. Content scripts are declared in the manifest and run only on `wisphub.io` and `wisphub.app` domains.

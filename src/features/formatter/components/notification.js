@@ -58,7 +58,7 @@ export function updateNotificationSettings(settings) {
   }
 }
 
-export function showNotification(message, type, duration) {
+export function showNotification(message, type, duration, onClose) {
   if (!notificationsEnabled) {
     return () => {};
   }
@@ -73,7 +73,11 @@ export function showNotification(message, type, duration) {
   }
 
   notifCounter++;
-  const displayTime = duration || TIMING.NOTIFICATION_DURATION;
+  const hasAutoDismiss =
+    duration == null || (Number.isFinite(duration) && duration > 0);
+  const displayTime = hasAutoDismiss
+    ? duration || TIMING.NOTIFICATION_DURATION
+    : TIMING.NOTIFICATION_DURATION;
   const iconSvg =
     type === "loading" ? LOADING_ICON : ICON_PATHS[type] || ICON_PATHS.info;
 
@@ -106,18 +110,36 @@ export function showNotification(message, type, duration) {
 
   const progress = document.createElement("div");
   progress.className = "wisphub-yaa-notification-progress";
+  if (!hasAutoDismiss) {
+    progress.style.display = "none";
+  }
 
   notification.append(content, closeBtn, progress);
 
-  const timer = setTimeout(() => {
-    dismissNotification(notification, 0);
-  }, displayTime);
+  let timer = 0;
+  let closed = false;
+  const closeNotification = () => {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    dismissNotification(notification, timer);
+    if (typeof onClose === "function") {
+      onClose();
+    }
+  };
+
+  if (hasAutoDismiss) {
+    timer = setTimeout(() => {
+      closeNotification();
+    }, displayTime);
+  }
 
   closeBtn.addEventListener("click", () => {
-    dismissNotification(notification, timer);
+    closeNotification();
   });
 
   container.appendChild(notification);
 
-  return () => dismissNotification(notification, timer);
+  return closeNotification;
 }

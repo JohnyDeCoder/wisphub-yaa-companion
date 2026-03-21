@@ -9,9 +9,29 @@ function createButton(onToggle) {
     title: "Formatear texto (Ctrl+Shift+F)",
     onClick: () => {
       const nextState = !getIsFormatted();
-      setIsFormatted(nextState);
-      updateButtonVisual(nextState);
-      onToggle(nextState, { fillFields: false });
+      const result = onToggle(nextState, { fillFields: false });
+
+      if (!result?.success) {
+        if (!nextState) {
+          setIsFormatted(false);
+          updateButtonVisual(false);
+        }
+        return;
+      }
+
+      if (!nextState) {
+        setIsFormatted(false);
+        updateButtonVisual(false);
+        return;
+      }
+
+      if (result.changed) {
+        setIsFormatted(true);
+        updateButtonVisual(true);
+      } else {
+        setIsFormatted(false);
+        updateButtonVisual(false);
+      }
     },
   });
 

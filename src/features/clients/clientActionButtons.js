@@ -33,6 +33,26 @@ function ensureClientTemplateActionButton(container, config) {
   return true;
 }
 
+function ensureClientDiagnosticActionButton(container, config) {
+  if (!config.isClientListPage()) {
+    return false;
+  }
+
+  if (
+    !config.diagnosticButtonClass ||
+    typeof config.createDiagnosticButton !== "function"
+  ) {
+    return false;
+  }
+
+  if (container.querySelector(`.${config.diagnosticButtonClass}`)) {
+    return false;
+  }
+
+  container.append(config.createDiagnosticButton());
+  return true;
+}
+
 export function getActionButtonContainer(container) {
   if (container?.matches?.(".text-right")) {
     return container;
@@ -44,23 +64,65 @@ export function getActionButtonContainer(container) {
   );
 }
 
-function movePriorityActionButtonToEnd(container, templateButtonClass) {
-  const templateButton = container.querySelector(`.${templateButtonClass}`);
-  if (templateButton && templateButton !== container.lastElementChild) {
-    container.appendChild(templateButton);
-    return true;
-  }
-  if (templateButton) {
+function moveActionButtonToEnd(container, buttonClass) {
+  if (!buttonClass) {
     return false;
   }
 
-  const mapButton = container.querySelector(".wisphub-yaa-action-btn-map");
-  if (mapButton && mapButton !== container.lastElementChild) {
-    container.appendChild(mapButton);
+  const button = container.querySelector(`.${buttonClass}`);
+  if (!button) {
+    return false;
+  }
+
+  if (button !== container.lastElementChild) {
+    container.appendChild(button);
     return true;
   }
 
   return false;
+}
+
+function moveButtonsToEndInOrder(container, buttonClasses = []) {
+  const buttons = buttonClasses
+    .map((buttonClass) => {
+      if (!buttonClass) {
+        return null;
+      }
+      return container.querySelector(`.${buttonClass}`);
+    })
+    .filter(Boolean);
+
+  if (buttons.length === 0) {
+    return false;
+  }
+
+  const children = Array.from(container.children);
+  const trailing = children.slice(-buttons.length);
+  const alreadyOrdered = trailing.every((node, index) => node === buttons[index]);
+  if (alreadyOrdered) {
+    return false;
+  }
+
+  buttons.forEach((button) => {
+    container.appendChild(button);
+  });
+  return true;
+}
+
+function movePriorityActionButtonsToEnd(
+  container,
+  diagnosticButtonClass,
+  templateButtonClass,
+) {
+  const hasTemplate = Boolean(container.querySelector(`.${templateButtonClass}`));
+  if (hasTemplate) {
+    return moveButtonsToEndInOrder(container, [
+      diagnosticButtonClass,
+      templateButtonClass,
+    ]);
+  }
+
+  return moveActionButtonToEnd(container, "wisphub-yaa-action-btn-map");
 }
 
 function appendViewAndFilesButtons(buttonContainer, slug, skipViewClient) {
@@ -136,8 +198,13 @@ export function addOrUpdateClientActionButtons({
       changed = true;
     }
 
-    const moved = movePriorityActionButtonToEnd(
+    if (ensureClientDiagnosticActionButton(buttonContainer, config)) {
+      changed = true;
+    }
+
+    const moved = movePriorityActionButtonsToEnd(
       buttonContainer,
+      config.diagnosticButtonClass,
       config.templateButtonClass,
     );
     if (changed || moved) {
@@ -169,11 +236,19 @@ export function addOrUpdateClientActionButtons({
     injected = true;
   }
 
+  if (ensureClientDiagnosticActionButton(buttonContainer, config)) {
+    injected = true;
+  }
+
   if (!injected) {
     return false;
   }
 
-  movePriorityActionButtonToEnd(buttonContainer, config.templateButtonClass);
+  movePriorityActionButtonsToEnd(
+    buttonContainer,
+    config.diagnosticButtonClass,
+    config.templateButtonClass,
+  );
   decorateActionButtonGroup(buttonContainer);
   return true;
 }

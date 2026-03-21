@@ -5,7 +5,7 @@ export function renderChangelog(container) {
     return;
   }
 
-  container.innerHTML = "";
+  container.replaceChildren();
   CHANGELOG.forEach((entry) => {
     const div = document.createElement("div");
     div.className = "changelog-entry";

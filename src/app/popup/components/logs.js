@@ -47,7 +47,7 @@ export async function clearLogs() {
 }
 
 export function renderLogs(container, logs) {
-  container.innerHTML = "";
+  container.replaceChildren();
   logs.forEach((entry) => {
     const el = document.createElement("div");
     el.className = "log-entry";

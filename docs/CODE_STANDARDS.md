@@ -28,6 +28,18 @@ Aplicamos principios clásicos de ingeniería limpia:
 - Mejora continua: dejar el código mejor que como se encontró.
 - Causa raíz: corregir el origen del problema, no solo el síntoma visible.
 
+## Principios Prácticos de Implementación
+
+Para evitar deuda técnica y mantener cambios revisables en producción:
+
+- Resolver de forma simple o no implementarlo todavía.
+- Eliminar código muerto o redundante sin conservarlo “por si acaso”.
+- Si una sección necesita demasiados comentarios para entenderse, simplificar su diseño.
+- Separar refactors de correcciones funcionales en cambios distintos.
+- Exigir que cada cambio pueda explicarse de forma breve y precisa.
+- Priorizar comportamiento correcto antes de optimizaciones prematuras.
+- Mantener cambios pequeños y trazables para facilitar revisión y rollback.
+
 ## Enfoque de Arquitectura
 
 La arquitectura se entiende como contratos claros entre capas, no como una restricción burocrática.

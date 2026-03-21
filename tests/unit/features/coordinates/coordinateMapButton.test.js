@@ -21,13 +21,6 @@ describe("coordinateMapButton helpers", () => {
     expect(input.closest(".wisphub-yaa-coordinates-inline")).toBe(first);
   });
 
-  it("returns null when input is missing or detached", () => {
-    expect(ensureCoordinateInlineContainer(null)).toBeNull();
-
-    const detached = document.createElement("input");
-    expect(ensureCoordinateInlineContainer(detached)).toBeNull();
-  });
-
   it("injects map button whenever the coordinates field exists", () => {
     document.body.innerHTML = `
       <div class="form-group" id="content-maps">

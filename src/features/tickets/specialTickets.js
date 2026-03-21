@@ -31,6 +31,7 @@ const SPECIAL_TICKETS = [
 const NAV_ITEM_CLASS = "wisphub-yaa-special-ticket-nav";
 const DROPDOWN_CLASS = "wisphub-yaa-special-ticket-dropdown";
 const BACKDROP_CLASS = "wisphub-yaa-special-ticket-backdrop";
+const MICHOACAN_ACCOUNT_DOMAINS = ["vwinternetnetworks", "vwinm"];
 
 function log(consoleMsg, popupMsg, level = "info") {
   sendLogToPopup("SpecialTickets", level, consoleMsg, popupMsg);
@@ -53,6 +54,27 @@ function closeDropdown() {
   if (backdrop) {
     backdrop.remove();
   }
+}
+
+function getCurrentUsername() {
+  const usernameEl = document.querySelector(
+    ".user-menu .user-name, .navbar .user-name, .dropdown .user-name",
+  );
+  return usernameEl?.textContent?.trim() || "";
+}
+
+function getAccountDomain(username) {
+  const safeUsername = String(username || "").trim().toLowerCase();
+  const atIndex = safeUsername.indexOf("@");
+  if (atIndex === -1) {
+    return "";
+  }
+  return safeUsername.slice(atIndex + 1);
+}
+
+function shouldDisableForCurrentProfile() {
+  const accountDomain = getAccountDomain(getCurrentUsername());
+  return MICHOACAN_ACCOUNT_DOMAINS.includes(accountDomain);
 }
 
 function showDropdown(toggle) {
@@ -145,6 +167,17 @@ function createNavDropdown() {
 }
 
 export function initSpecialTickets() {
+  if (shouldDisableForCurrentProfile()) {
+    document.querySelector(`.${NAV_ITEM_CLASS}`)?.remove();
+    closeDropdown();
+    log(
+      "Special tickets disabled for Michoacán profile",
+      "Tickets especiales deshabilitados para este perfil",
+      "info",
+    );
+    return;
+  }
+
   if (document.querySelector(`.${NAV_ITEM_CLASS}`)) {
     return;
   }

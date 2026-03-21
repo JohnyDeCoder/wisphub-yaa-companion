@@ -2,6 +2,20 @@
 
 Todos los cambios notables de este proyecto se documentan aqui.
 
+## v1.4.0 - 2026-03-20
+
+- Nuevo Diagnóstico Express para clientes, con revisión rápida de ping, torch, tráfico semanal y estado de cuenta.
+- El diagnóstico ahora se muestra en un modal con progreso por pasos, detalle final y opción de volver a ejecutarlo.
+- Se agregaron accesos directos desde la vista del cliente para abrir ping, torch y tráfico semanal en una pestaña nueva.
+- Se mejoró la lectura de resultados para distinguir mejor entre completo, parcial, alerta y error.
+- Si el diagnóstico no puede iniciar, ahora se muestra el error real y ya no se marca como iniciado por error.
+- Nuevo cambio rápido de perfil entre Colima y Michoacán en el popup, según el dominio donde estés.
+- Cuando falta sesión del otro perfil, la extensión ahora guía el inicio de sesión paso a paso.
+- La sesión guardada se mantiene vigente aunque no cambien las cookies, para evitar pedir acceso de nuevo sin necesidad.
+- La plantilla de aprovisionamiento se mejoró para rellenar datos faltantes con el formato _{{POR LLENAR / CAMPO }}_.
+- Se ajustó el formateador para no aplicar cambios ni mostrar aviso cuando el texto ya está correcto.
+- Mejoras generales de estabilidad, seguridad y rendimiento en los flujos de clientes.
+
 ## v1.3.0 - 2026-03-19
 
 - Clientes: nuevo botón para copiar la plantilla de aprovisionamiento en un solo clic.

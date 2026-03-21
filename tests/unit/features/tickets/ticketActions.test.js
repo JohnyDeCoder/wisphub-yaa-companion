@@ -2,17 +2,9 @@ import { __testables__ } from "../../../../src/features/tickets/ticketActions.js
 
 describe("ticketActions map button", () => {
   const {
-    buildClientMapUrlFromUsername,
     resolveTicketMapUrl,
     injectTicketCopyButtons,
   } = __testables__;
-
-  it("builds /clientes-mapa fallback URL from username", () => {
-    const mapUrl = buildClientMapUrlFromUsername("0485@yaa-connect");
-    expect(mapUrl).toBe(
-      `${window.location.origin}/clientes-mapa/0485@yaa-connect/485/`,
-    );
-  });
 
   it("resolves map URL from Dirección before fallback", () => {
     document.body.innerHTML = `

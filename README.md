@@ -401,6 +401,24 @@ Al igual que en los tickets, la extensión busca las columnas por su nombre, no 
   - `Ctrl+Clic`: abre configuración rápida para cambiar el formato (`upper/lower/title`) y el separador entre palabras.
   - La configuración se guarda para siguientes copias.
 
+- **Diagnóstico Express (BETA)** (en `/clientes/ver/...`):
+  - Ejecuta una secuencia rápida por cliente: `Ping`, `Torch`, `Tráfico semanal` y `Estado de cuenta`.
+  - Abre un modal de diagnóstico con progreso visual por etapa, estado tipo semáforo y una sección de detalles al finalizar.
+  - Permite copiar el resultado completo con formato multilinea y también **re-ejecutar** desde el mismo modal.
+  - En el encabezado del cliente agrega accesos directos de una acción a: `Ping`, `Torch` y `Tráfico semanal` (abren en nueva pestaña).
+  - Cada tarjeta del bloque **Detalles** incluye un botón ghost de ayuda con popover (click) para explicar, de forma breve y específica, qué representa cada dato.
+  - En el subtítulo del modal prioriza el **nombre completo del cliente** cuando está disponible.
+  - En el resumen copiado incluye enlaces rápidos en URL absoluta (con dominio completo) y muestras de `Ping` (hasta 4 registros).
+  - Añade interpretación explícita cuando `Torch` o `Tráfico semanal` responden sin consumo/flujo detectado.
+  - Si una o más etapas fallan, entrega resultado `PARCIAL` o `ERROR` y mantiene el resumen con los datos disponibles.
+  - Si el servicio está `Cancelado`, `Suspendido`, `Desactivado`, etc., se clasifica con alerta y evita falsos `COMPLETO`.
+  - Clasifica errores comunes con mensajes claros (`401`, `403`, timeout, parseo incompleto, task failure).
+  - Si el diagnóstico no puede iniciar (por ejemplo, porque ya hay uno en curso), el popup muestra el error real y no se cierra como si hubiera iniciado.
+  - Si cierras el modal durante la ejecución, se cancela el flujo pendiente.
+  - En la vista de detalle del cliente (`/clientes/ver/...`) agrega un botón de cabecera: **Ejecutar diagnóstico express** (BETA).
+  - En la lista de clientes no agrega botón de diagnóstico para evitar confusión visual con otras acciones.
+  - Limitación conocida: depende de endpoints internos de sesión y estructura HTML de WispHub; ante cambios de plataforma puede degradar a resultado parcial.
+
 Aparecen junto a los botones de acción que ya tiene WispHub, con separador e iconos propios.
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
@@ -446,9 +464,13 @@ Aparecen junto a los botones de acción que ya tiene WispHub, con separador e ic
 El icono de la extensión en la barra del navegador abre un **panel de control** con estas secciones:
 
 - **Estado de conexión:** Muestra si estás en WispHub y si el editor está disponible.
-- **Info de staff:** Nombre de usuario e ID, con opción de copiado.
+- **Info de sesión:** Nombre de usuario detectado en la página, ID de staff (si hay API Key), badge de advertencia cuando faltan API Keys y acceso directo a Configuración avanzada.
+- **Switch de perfil (Colima/Michoacán):** Botón en la tarjeta de sesión para cambiar rápidamente entre perfiles del dominio actual (`wisphub.io` o `wisphub.app`) con restauración de sesión por cookies cuando existe snapshot del perfil destino (sin volver a capturar contraseña). Si no existe snapshot o expiró, usa fallback asistido de cierre de sesión + login guiado.
+  - La vigencia de la sesión guardada se renueva aunque las cookies no cambien, para reducir cambios innecesarios a login asistido.
 - **Formateador:** Botón para formatear o restaurar el comentario desde el panel emergente.
 - **Calculadora:** Calculadora independiente de precios con prorrateo (siempre disponible, sin necesidad de editor ni dominio específico).
+- **Diagnóstico Express (BETA):** Tarjeta contextual que se habilita al seleccionar un cliente en `/clientes/` o al abrir su detalle; inicia el diagnóstico y muestra el resultado en modal dentro de la página.
+- **Próximamente:** Tarjeta reservada para la siguiente herramienta (se muestra deshabilitada para evitar confusión).
 - **Ajustes:**
   - Activar/desactivar notificaciones en página.
   - Activar/desactivar auto-formato al cargar.
@@ -529,10 +551,11 @@ config → utils → lib → features → app (page.js / content.js / background
 
 | Aspecto           | Detalle                                                       |
 | ----------------- | ------------------------------------------------------------- |
-| **Permisos**      | Solo `storage` (guardar ajustes y caché localmente)           |
+| **Permisos**      | `storage` y `cookies` (ajustes/caché local + cambio de sesión asistido) |
 | **Dominios**      | Restringido a `*.wisphub.io` y `*.wisphub.app`                |
 | **Código remoto** | No se usa `eval`, `Function()` ni scripts externos            |
 | **API Keys**      | Se guardan localmente en el navegador, nunca salen a terceros |
+| **Cookies de sesión** | Snapshot local por perfil (máx. 8 perfiles, máx. 20 cookies por perfil, TTL 24h, sin cookies de analytics) |
 | **Datos**         | No se recopilan datos personales ni se envía telemetría       |
 
 Para más detalles, consulta la [Política de Privacidad](PRIVACY_POLICY.md).
@@ -572,7 +595,7 @@ Consulta el archivo [LICENSE](LICENSE) para el texto completo.
 [issues-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/issues
 [license-shield]: https://img.shields.io/github/license/JohnyDeCoder/wisphub-yaa-companion.svg?style=for-the-badge
 [license-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/blob/master/LICENSE
-[version-shield]: https://img.shields.io/badge/version-1.3.0-blue?style=for-the-badge
+[version-shield]: https://img.shields.io/badge/version-1.4.0-blue?style=for-the-badge
 [release-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/releases
 [manifest-shield]: https://img.shields.io/badge/manifest-v3-orange?style=for-the-badge
 [manifest-url]: https://developer.chrome.com/docs/extensions/mv3/intro/

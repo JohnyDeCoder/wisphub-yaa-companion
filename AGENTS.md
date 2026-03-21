@@ -10,13 +10,18 @@ Project-wide defaults for AI coding agents. Keep this file focused on always-fol
 - Follow existing architecture layers: `config -> utils -> lib -> features -> app`.
 - Keep code flow readable from top to bottom (public entry points first, helpers later).
 - Centralize reusable UI strings in `src/config/messages.js`.
+- Before building new UI patterns/components, verify and reuse existing ones in the codebase whenever possible.
 - For every new feature or behavior change, add or update automated tests in the same change.
 - When improving/refactoring existing behavior, update related tests so they stay faithful to expected behavior.
+- Keep the automated suite focused on critical paths (core business flows, regressions and safety checks); avoid adding low-value or redundant tests.
 - For every new user-facing feature, update `README.md` under the `Funcionalidades` section in the same PR.
 - For every new release version, update the latest entry first in `src/app/popup/changelog.json` and then regenerate `CHANGELOG.md` from that source.
 - Keep release change lists clear and ordered by impact, using simple Spanish for end users (avoid unnecessary technical jargon).
 - Validate all boundary inputs (DOM, API payloads, URL data, cross-context messages).
 - Use safe DOM APIs (`textContent`) for user text; avoid unsafe HTML insertion.
+- Prefer DOM node construction (`createElement`, `replaceChildren`, `append`) over HTML string injection to reduce security/performance warnings in store validators.
+- Treat extension-store validator warnings as release blockers when they affect security or unsafe DOM patterns; fix them before packaging.
+- Run focused pre-release checks for touched areas (`eslint`, critical tests, and target build) to keep warning count near zero.
 - Keep comments in English and only for non-obvious intent/complexity.
 - Keep code identifiers in English (`variables`, `functions`, `constants`, `classes`).
 - Keep documentation content in Spanish when it is project docs, except files that are explicitly English.
@@ -31,6 +36,9 @@ Project-wide defaults for AI coding agents. Keep this file focused on always-fol
 - Do not duplicate repeated UI messages across feature files.
 - Do not bypass secure message helpers for page/content bridge communication.
 - Do not leave dead code, commented-out code, or noisy comments.
+- Do not grow the test suite with non-critical coverage that increases maintenance cost without reducing real risk.
+- Do not add new dynamic `innerHTML`/`outerHTML` assignments for UI rendering.
+- Do not ignore validator/security warnings from Chrome Web Store or Firefox Add-ons; resolve or explicitly document unavoidable cases.
 - Do not use destructive git operations or revert unrelated user changes.
 - LLM agents must not execute `git add`, `git commit`, or `git push` commands. They should only suggest commands for the user to run.
 
@@ -115,6 +123,7 @@ Avoid:
 - Diff is small and scoped to the request.
 - Lint passes.
 - Relevant tests pass.
+- No new validator-style warnings introduced by the change set (especially unsafe DOM injection patterns).
 - Functional behavior changes include tests (new or updated).
 - New user-facing features are documented in `README.md` (`Funcionalidades`).
 - Relevant build command passes.

@@ -1,7 +1,7 @@
 import { normalizeText } from "./tableHelpers.js";
 
 export const CLIENT_TEMPLATE_PLACEHOLDERS = Object.freeze({
-  STAGE: "POR LLENAR",
+  STAGE: "*{{POR LLENAR / ETAPA }}*",
 });
 
 export const CLIENT_TEMPLATE_TARGET_LABELS = Object.freeze({
@@ -128,7 +128,7 @@ export function extractEquipmentLineFromCommentLines(commentLines) {
 export function buildMissingValuePlaceholder(label) {
   const normalizedLabel = normalizeText(label).toUpperCase();
   if (!normalizedLabel) {
-    return "{{POR LLENAR }}";
+    return "*{{POR LLENAR }}*";
   }
-  return `{{POR LLENAR / ${normalizedLabel} }}`;
+  return `*{{POR LLENAR / ${normalizedLabel} }}*`;
 }

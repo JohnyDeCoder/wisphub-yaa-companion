@@ -202,6 +202,146 @@ button.wisphub-yaa-action-btn {
     no-repeat center / contain;
 }
 
+.wisphub-yaa-action-btn-diagnostic-ping::before {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M5%2018q-.425%200-.712-.288T4%2017t.288-.712T5%2016h5.5L2.7%208.2q-.275-.275-.288-.687T2.7%206.8q.275-.275.7-.275t.7.275l7.9%207.875l5.2-5.2q-.1-.225-.15-.462T17%208.5q0-1.05.725-1.775T19.5%206t1.775.725T22%208.5t-.725%201.775T19.5%2011q-.225%200-.437-.037t-.413-.113L13.5%2016H19q.425%200%20.713.288T20%2017t-.288.713T19%2018z%22%2F%3E%3C%2Fsvg%3E")
+    no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M5%2018q-.425%200-.712-.288T4%2017t.288-.712T5%2016h5.5L2.7%208.2q-.275-.275-.288-.687T2.7%206.8q.275-.275.7-.275t.7.275l7.9%207.875l5.2-5.2q-.1-.225-.15-.462T17%208.5q0-1.05.725-1.775T19.5%206t1.775.725T22%208.5t-.725%201.775T19.5%2011q-.225%200-.437-.037t-.413-.113L13.5%2016H19q.425%200%20.713.288T20%2017t-.288.713T19%2018z%22%2F%3E%3C%2Fsvg%3E")
+    no-repeat center / contain;
+}
+
+.wisphub-yaa-action-btn-diagnostic-torch::before {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-miterlimit%3D%222%22%20stroke-width%3D%224%22%3E%3Cpath%20d%3D%22M27%2034h-6v10h6zm4%200H17l-3-8h20z%22%2F%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M21%2014c2-4.61%206-10%206-10s6.36%2011.49%206.36%2015.23S30.74%2026%2027%2026h-8c-2.64%200-4.36-2.14-4.36-4.78S19%2010%2019%2010s.96%202.01%202%204%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")
+    no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-miterlimit%3D%222%22%20stroke-width%3D%224%22%3E%3Cpath%20d%3D%22M27%2034h-6v10h6zm4%200H17l-3-8h20z%22%2F%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M21%2014c2-4.61%206-10%206-10s6.36%2011.49%206.36%2015.23S30.74%2026%2027%2026h-8c-2.64%200-4.36-2.14-4.36-4.78S19%2010%2019%2010s.96%202.01%202%204%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")
+    no-repeat center / contain;
+}
+
+.wisphub-yaa-action-btn-diagnostic-traffic::before {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M1.75%2013.4q-.325-.225-.387-.612t.137-.738l3.05-4.9q.55-.875%201.563-.937t1.662.712L9%208.35l2.375-3.85q.575-.95%201.663-.962t1.687.912L16%206.35l2.8-4.45q.225-.375.663-.462t.787.187q.325.225.388.613t-.138.737l-2.8%204.45q-.575.925-1.662.925t-1.688-.9l-1.275-1.9L10.7%209.4q-.525.875-1.537.95T7.5%209.65L6.25%208.2L3.2%2013.125q-.225.375-.663.463T1.75%2013.4M14.5%2018q1.05%200%201.775-.725T17%2015.5t-.725-1.775T14.5%2013t-1.775.725T12%2015.5t.725%201.775T14.5%2018m0%202q-1.875%200-3.188-1.312T10%2015.5t1.313-3.187T14.5%2011t3.188%201.313T19%2015.5q0%20.65-.175%201.263T18.3%2017.9l2%202q.275.275.275.7t-.275.7t-.7.275t-.7-.275l-2-2q-.525.35-1.137.525T14.5%2020%22%2F%3E%3C%2Fsvg%3E")
+    no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M1.75%2013.4q-.325-.225-.387-.612t.137-.738l3.05-4.9q.55-.875%201.563-.937t1.662.712L9%208.35l2.375-3.85q.575-.95%201.663-.962t1.687.912L16%206.35l2.8-4.45q.225-.375.663-.462t.787.187q.325.225.388.613t-.138.737l-2.8%204.45q-.575.925-1.662.925t-1.688-.9l-1.275-1.9L10.7%209.4q-.525.875-1.537.95T7.5%209.65L6.25%208.2L3.2%2013.125q-.225.375-.663.463T1.75%2013.4M14.5%2018q1.05%200%201.775-.725T17%2015.5t-.725-1.775T14.5%2013t-1.775.725T12%2015.5t.725%201.775T14.5%2018m0%202q-1.875%200-3.188-1.312T10%2015.5t1.313-3.187T14.5%2011t3.188%201.313T19%2015.5q0%20.65-.175%201.263T18.3%2017.9l2%202q.275.275.275.7t-.275.7t-.7.275t-.7-.275l-2-2q-.525.35-1.137.525T14.5%2020%22%2F%3E%3C%2Fsvg%3E")
+    no-repeat center / contain;
+}
+
+.wisphub-yaa-action-btn-diagnostic::before {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27M8.733.339a4.955%204.955%200%201%200%200%209.91a4.955%204.955%200%200%200%200-9.91m3.184%2015.609h.977l1.034-1.48a1%201%200%200%201%201.702.102l1.01%201.897l.396-.568a1%201%200%200%201%20.82-.428H18.9a1%201%200%201%201%200%202h-.523l-1.033%201.48a1%201%200%200%201-1.703-.103l-1.009-1.896l-.397.568a1%201%200%200%201-.82.428h-1.25a4.514%204.514%200%200%200%207.383%201.696a1%201%200%200%201%20.097-.097a4.512%204.512%200%201%200-7.728-3.599m9.747%204.3a6.512%206.512%200%201%200-1.414%201.414l1.88%201.881a1%201%200%200%200%201.415-1.414zm-12.11-7.986a8%208%200%200%200-.821-.041c-2.287%200-4.47.965-6.073%202.668c-1.6%201.7-2.493%203.998-2.493%206.384c0%20.415.336.75.75.75h9.786A7.98%207.98%200%200%201%208.4%2016.406c0-1.517.422-2.935%201.154-4.143Z%27%2F%3E%3C%2Fsvg%3E")
+    no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27M8.733.339a4.955%204.955%200%201%200%200%209.91a4.955%204.955%200%200%200%200-9.91m3.184%2015.609h.977l1.034-1.48a1%201%200%200%201%201.702.102l1.01%201.897l.396-.568a1%201%200%200%201%20.82-.428H18.9a1%201%200%201%201%200%202h-.523l-1.033%201.48a1%201%200%200%201-1.703-.103l-1.009-1.896l-.397.568a1%201%200%200%201-.82.428h-1.25a4.514%204.514%200%200%200%207.383%201.696a1%201%200%200%201%20.097-.097a4.512%204.512%200%201%200-7.728-3.599m9.747%204.3a6.512%206.512%200%201%200-1.414%201.414l1.88%201.881a1%201%200%200%200%201.415-1.414zm-12.11-7.986a8%208%200%200%200-.821-.041c-2.287%200-4.47.965-6.073%202.668c-1.6%201.7-2.493%203.998-2.493%206.384c0%20.415.336.75.75.75h9.786A7.98%207.98%200%200%201%208.4%2016.406c0-1.517.422-2.935%201.154-4.143Z%27%2F%3E%3C%2Fsvg%3E")
+    no-repeat center / contain;
+}
+
+.wisphub-yaa-diagnostic-header-slot {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.wisphub-yaa-diagnostic-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wisphub-yaa-diagnostic-header-shortcuts {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wisphub-yaa-diagnostic-header-layout {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.wisphub-yaa-diagnostic-header-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.wisphub-yaa-diagnostic-header-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px !important;
+  min-height: 34px;
+  border: 1px solid #00a87d !important;
+  border-radius: 4px;
+  background-color: #00a87d !important;
+  color: #ffffff !important;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: pointer;
+  text-decoration: none !important;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.wisphub-yaa-diagnostic-header-btn:hover {
+  background-color: #009f76 !important;
+  box-shadow: 0 2px 4px rgba(0, 196, 145, 0.32);
+}
+
+.wisphub-yaa-diagnostic-header-btn:disabled,
+.wisphub-yaa-diagnostic-header-btn[aria-disabled="true"] {
+  background: var(--wisphub-yaa-copy-disabled-bg) !important;
+  border-color: var(--wisphub-yaa-copy-disabled-border) !important;
+  color: var(--wisphub-yaa-copy-disabled-fg) !important;
+  box-shadow: none !important;
+  cursor: not-allowed;
+}
+
+.wisphub-yaa-diagnostic-header-btn-icon {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  background: currentColor;
+  flex-shrink: 0;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27M8.733.339a4.955%204.955%200%201%200%200%209.91a4.955%204.955%200%200%200%200-9.91m3.184%2015.609h.977l1.034-1.48a1%201%200%200%201%201.702.102l1.01%201.897l.396-.568a1%201%200%200%201%20.82-.428H18.9a1%201%200%201%201%200%202h-.523l-1.033%201.48a1%201%200%200%201-1.703-.103l-1.009-1.896l-.397.568a1%201%200%200%201-.82.428h-1.25a4.514%204.514%200%200%200%207.383%201.696a1%201%200%200%201%20.097-.097a4.512%204.512%200%201%200-7.728-3.599m9.747%204.3a6.512%206.512%200%201%200-1.414%201.414l1.88%201.881a1%201%200%200%200%201.415-1.414zm-12.11-7.986a8%208%200%200%200-.821-.041c-2.287%200-4.47.965-6.073%202.668c-1.6%201.7-2.493%203.998-2.493%206.384c0%20.415.336.75.75.75h9.786A7.98%207.98%200%200%201%208.4%2016.406c0-1.517.422-2.935%201.154-4.143Z%27%2F%3E%3C%2Fsvg%3E")
+    no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27M8.733.339a4.955%204.955%200%201%200%200%209.91a4.955%204.955%200%200%200%200-9.91m3.184%2015.609h.977l1.034-1.48a1%201%200%200%201%201.702.102l1.01%201.897l.396-.568a1%201%200%200%201%20.82-.428H18.9a1%201%200%201%201%200%202h-.523l-1.033%201.48a1%201%200%200%201-1.703-.103l-1.009-1.896l-.397.568a1%201%200%200%201-.82.428h-1.25a4.514%204.514%200%200%200%207.383%201.696a1%201%200%200%201%20.097-.097a4.512%204.512%200%201%200-7.728-3.599m9.747%204.3a6.512%206.512%200%201%200-1.414%201.414l1.88%201.881a1%201%200%200%200%201.415-1.414zm-12.11-7.986a8%208%200%200%200-.821-.041c-2.287%200-4.47.965-6.073%202.668c-1.6%201.7-2.493%203.998-2.493%206.384c0%20.415.336.75.75.75h9.786A7.98%207.98%200%200%201%208.4%2016.406c0-1.517.422-2.935%201.154-4.143Z%27%2F%3E%3C%2Fsvg%3E")
+    no-repeat center / contain;
+}
+
+.wisphub-yaa-diagnostic-header-btn-label {
+  font-weight: 400;
+}
+
+a.wisphub-yaa-action-btn.wisphub-yaa-diagnostic-header-shortcut-btn {
+  margin: 0;
+}
+
+.wisphub-yaa-beta-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0.35px;
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  color: rgba(20, 33, 52, 0.56);
+  background: rgba(236, 242, 249, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.wisphub-yaa-beta-badge-inline {
+  padding: 2px 5px;
+  margin-left: 2px;
+}
+
 .wisphub-yaa-action-btn-mark-new::before {
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m12 12.625l1.275.775q.275.175.538-.025T14 12.85l-.325-1.45l1.1-.95q.25-.225.163-.525t-.438-.35l-1.45-.125l-.6-1.375q-.125-.3-.45-.3t-.45.3l-.6 1.375l-1.45.125q-.35.05-.437.35t.162.525l1.1.95L10 12.85q-.075.325.188.525t.537.025zM12 18l-4.2 1.8q-1 .425-1.9-.162T5 17.975V5q0-.825.588-1.412T7 3h10q.825 0 1.413.588T19 5v12.975q0 1.075-.9 1.663t-1.9.162z'/%3E%3C/svg%3E")
     no-repeat center / contain;
@@ -392,6 +532,472 @@ a.cke_button.wisphub-toolbar-btn.wisphub-yaa-copy-control.disabled:hover {
   background: transparent !important;
 }
 
+/* ── Diagnostic modal ───────────────────────────────────────────── */
+.wisphub-yaa-diagnostic-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100002;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+}
+
+.wisphub-yaa-diagnostic-modal.wisphub-yaa-diagnostic-modal-visible,
+.wisphub-yaa-diagnostic-modal.wisphub-yaa-diagnostic-modal-closing {
+  display: flex;
+}
+
+.wisphub-yaa-diagnostic-modal.wisphub-yaa-diagnostic-modal-visible {
+  animation: wisphub-yaa-diagnostic-fade-in 0.22s ease forwards;
+}
+
+.wisphub-yaa-diagnostic-modal.wisphub-yaa-diagnostic-modal-closing {
+  animation: wisphub-yaa-diagnostic-fade-out 0.22s ease forwards;
+}
+
+.wisphub-yaa-diagnostic-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(9, 18, 33, 0.58);
+  cursor: default;
+}
+
+.wisphub-yaa-diagnostic-modal-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(860px, 96vw);
+  max-height: 88vh;
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid #d6dce5;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(10, 28, 48, 0.25);
+  padding: 16px 16px 14px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+}
+
+.wisphub-yaa-diagnostic-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wisphub-yaa-diagnostic-title-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wisphub-yaa-diagnostic-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #12263a;
+}
+
+.wisphub-yaa-diagnostic-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: #4a5f74;
+}
+
+.wisphub-yaa-diagnostic-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #d3dce7;
+  border-radius: 6px;
+  background: #f9fbfd;
+  color: #36516c;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.wisphub-yaa-diagnostic-close-btn:hover {
+  border-color: #bfd0e1;
+  background: #edf4fb;
+}
+
+.wisphub-yaa-diagnostic-close-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.wisphub-yaa-diagnostic-status {
+  margin: 12px 0 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #28527b;
+}
+
+.wisphub-yaa-diagnostic-status[data-tone="running"] {
+  color: #28527b;
+}
+
+.wisphub-yaa-diagnostic-status[data-tone="success"] {
+  color: #166534;
+}
+
+.wisphub-yaa-diagnostic-status[data-tone="warning"] {
+  color: #7c5716;
+}
+
+.wisphub-yaa-diagnostic-status[data-tone="error"] {
+  color: #9f1239;
+}
+
+.wisphub-yaa-diagnostic-progress {
+  width: 100%;
+  height: 9px;
+  border-radius: 99px;
+  background: #e6edf5;
+  overflow: hidden;
+  border: 1px solid #d7e0ea;
+}
+
+.wisphub-yaa-diagnostic-progress-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #3793e0 0%, #5cb5ff 100%);
+  transition: width 0.26s ease;
+}
+
+.wisphub-yaa-diagnostic-progress-bar[data-tone="running"] {
+  background: linear-gradient(90deg, #3793e0 0%, #5cb5ff 100%);
+}
+
+.wisphub-yaa-diagnostic-progress-bar[data-tone="success"] {
+  background: linear-gradient(90deg, #00c491 0%, #00a87d 100%);
+}
+
+.wisphub-yaa-diagnostic-progress-bar[data-tone="warning"] {
+  background: linear-gradient(90deg, #d9a000 0%, #f0c323 100%);
+}
+
+.wisphub-yaa-diagnostic-progress-bar[data-tone="error"] {
+  background: linear-gradient(90deg, #d4464c 0%, #ef5b63 100%);
+}
+
+.wisphub-yaa-diagnostic-steps {
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.wisphub-yaa-diagnostic-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid #d7dfeb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #25445d;
+  background: #fbfdff;
+}
+
+.wisphub-yaa-diagnostic-step-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.wisphub-yaa-diagnostic-step-spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+}
+
+.wisphub-yaa-diagnostic-step-spinner svg {
+  width: 14px;
+  height: 14px;
+}
+
+.wisphub-yaa-diagnostic-step[data-step-state="running"] {
+  border-color: #2f9df5;
+  background: #ecf6ff;
+}
+
+.wisphub-yaa-diagnostic-step[data-step-state="done"] {
+  border-color: #00b283;
+  background: #ecfdf9;
+}
+
+.wisphub-yaa-diagnostic-step[data-step-state="warning"] {
+  border-color: #d9a000;
+  background: #fff9e5;
+}
+
+.wisphub-yaa-diagnostic-step[data-step-state="error"] {
+  border-color: #db5c67;
+  background: #fff0f2;
+}
+
+.wisphub-yaa-diagnostic-details {
+  margin-top: 12px;
+  border: 1px solid #d8e0eb;
+  border-radius: 8px;
+  background: #f9fbfe;
+  padding: 12px;
+}
+
+.wisphub-yaa-diagnostic-details[hidden] {
+  display: none !important;
+}
+
+.wisphub-yaa-diagnostic-details-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f3c57;
+}
+
+.wisphub-yaa-diagnostic-details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.wisphub-yaa-diagnostic-details-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.wisphub-yaa-diagnostic-detail-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid #d9e3ef;
+  border-left: 4px solid #7ca3c6;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #ffffff;
+}
+
+.wisphub-yaa-diagnostic-detail-row[data-tone="success"] {
+  border-left-color: #2aa84d;
+}
+
+.wisphub-yaa-diagnostic-detail-row[data-tone="warning"] {
+  border-left-color: #d9a000;
+}
+
+.wisphub-yaa-diagnostic-detail-row[data-tone="error"] {
+  border-left-color: #d4464c;
+}
+
+.wisphub-yaa-diagnostic-detail-label {
+  color: #4a6076;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.wisphub-yaa-diagnostic-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wisphub-yaa-diagnostic-detail-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border: none;
+  border-radius: 4px;
+  padding: 0;
+  color: #3f6da5;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.8;
+  transition:
+    opacity 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.wisphub-yaa-diagnostic-detail-help-btn::before {
+  content: "";
+  display: block;
+  width: 14px;
+  height: 14px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M10.5%2010.5h2V18m0%200H15m-2.5%200H10m1.5-11V6h1v1z%22%2F%3E%3C%2Fsvg%3E")
+    no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M10.5%2010.5h2V18m0%200H15m-2.5%200H10m1.5-11V6h1v1z%22%2F%3E%3C%2Fsvg%3E")
+    no-repeat center / contain;
+}
+
+.wisphub-yaa-diagnostic-detail-help-btn:hover,
+.wisphub-yaa-diagnostic-detail-help-btn:focus-visible,
+.wisphub-yaa-diagnostic-detail-help-btn[data-open="true"] {
+  opacity: 1;
+  color: #2b5f9d;
+  background: #e8f2ff;
+  outline: none;
+}
+
+.wisphub-yaa-diagnostic-detail-popover {
+  position: absolute;
+  top: 34px;
+  right: 10px;
+  z-index: 3;
+  width: min(250px, calc(100% - 20px));
+  border: 1px solid #9fc5f6;
+  border-radius: 8px;
+  background: #f0f7ff;
+  color: #24476b;
+  font-size: 11px;
+  line-height: 1.35;
+  padding: 8px 10px;
+  box-shadow: 0 8px 20px rgba(28, 71, 113, 0.18);
+  display: none;
+}
+
+.wisphub-yaa-diagnostic-detail-popover[data-visible="true"] {
+  display: block;
+}
+
+.wisphub-yaa-diagnostic-detail-value {
+  color: #1d3249;
+  font-size: 12px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.wisphub-yaa-diagnostic-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  gap: 8px;
+}
+
+.wisphub-yaa-diagnostic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.wisphub-yaa-diagnostic-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.wisphub-yaa-diagnostic-btn-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.wisphub-yaa-diagnostic-btn-primary {
+  color: #ffffff;
+  border-color: #00a87d;
+  background-color: #00a87d;
+}
+
+.wisphub-yaa-diagnostic-btn-primary:hover {
+  border-color: #009f76;
+  background-color: #009f76;
+  box-shadow: 0 2px 6px rgba(0, 196, 145, 0.35);
+}
+
+.wisphub-yaa-diagnostic-copy {
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+  border-radius: 6px;
+}
+
+.wisphub-yaa-diagnostic-btn:disabled,
+.wisphub-yaa-diagnostic-copy:disabled {
+  color: var(--wisphub-yaa-copy-disabled-fg);
+  background: var(--wisphub-yaa-copy-disabled-bg);
+  border-color: #a7b8cb;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@keyframes wisphub-yaa-diagnostic-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes wisphub-yaa-diagnostic-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .wisphub-yaa-diagnostic-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .wisphub-yaa-diagnostic-details-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wisphub-yaa-diagnostic-modal.wisphub-yaa-diagnostic-modal-visible,
+  .wisphub-yaa-diagnostic-modal.wisphub-yaa-diagnostic-modal-closing {
+    animation: none !important;
+  }
+
+  .wisphub-yaa-diagnostic-progress-bar {
+    transition: none !important;
+  }
+}
+
 /* ── Tickets: Special ticket navbar dropdown ──────────────────── */
 .wisphub-yaa-nav-special-tickets {
   display: inline-flex !important;
@@ -399,7 +1005,7 @@ a.cke_button.wisphub-toolbar-btn.wisphub-yaa-copy-control.disabled:hover {
   gap: 6px;
   color: #fff !important;
   background-color: #28a745 !important;
-  padding: 10px 15px !important;
+  padding: 11px 16px !important;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;

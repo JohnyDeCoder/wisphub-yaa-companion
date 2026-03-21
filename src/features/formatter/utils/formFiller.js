@@ -24,21 +24,25 @@ function triggerChange(element) {
 function setFieldValue(id, value) {
   const field = document.getElementById(id);
   if (!field || !value) {
-    return;
+    return false;
+  }
+  if (field.value === value) {
+    return false;
   }
   field.value = value;
   triggerChange(field);
+  return true;
 }
 
 function selectByUsername(selectId, username) {
   const select = document.getElementById(selectId);
   if (!select) {
-    return;
+    return false;
   }
 
   // Only fill if the field is currently empty/unset
   if (select.value && select.value !== "") {
-    return;
+    return false;
   }
 
   if (username) {
@@ -50,7 +54,7 @@ function selectByUsername(selectId, username) {
     if (match) {
       select.value = match.value;
       triggerChange(select);
-      return;
+      return true;
     }
   }
 
@@ -58,30 +62,34 @@ function selectByUsername(selectId, username) {
   if (firstOption) {
     select.value = firstOption.value;
     triggerChange(select);
+    return true;
   }
+  return false;
 }
 
 function selectByValueIfEmpty(selectId, value) {
   const select = document.getElementById(selectId);
   if (!select || !value) {
-    return;
+    return false;
   }
 
   if (select.value && select.value !== "") {
-    return;
+    return false;
   }
 
   const option = Array.from(select.options).find((opt) => opt.value === value);
   if (!option) {
-    return;
+    return false;
   }
 
   select.value = option.value;
   triggerChange(select);
+  return true;
 }
 
 // Preserve "(Ref: ...)" parts in the address field
 export function uppercaseFormFields() {
+  let changedCount = 0;
   for (const id of UPPERCASE_FIELD_IDS) {
     const field = document.getElementById(id);
     if (!field || !field.value?.trim()) {
@@ -124,8 +132,10 @@ export function uppercaseFormFields() {
 
     if (field.value !== original) {
       markFieldAsFormatted(field, original);
+      changedCount += 1;
     }
   }
+  return changedCount;
 }
 
 function markFieldAsFormatted(field, originalValue) {
@@ -176,67 +186,93 @@ export function clearAllFieldIndicators() {
 function setFieldValueWithMark(id, value) {
   const field = document.getElementById(id);
   if (!field || !value) {
-    return;
+    return false;
   }
   const originalValue = field.value || "";
   if (originalValue === value) {
-    return;
+    return false;
   }
   field.value = value;
   triggerChange(field);
   markFieldAsFormatted(field, originalValue);
+  return true;
 }
 
 function fillRegimenFiscal(data) {
   if (!data) {
-    return;
+    return 0;
   }
 
+  let changedCount = 0;
   const select = document.getElementById("id_perfil-obligacion_fiscal");
   if (select) {
     const option = Array.from(select.options).find(
       (opt) => opt.value === data.code,
     );
     if (option) {
+      if (select.value !== data.code) {
+        changedCount += 1;
+      }
       select.value = data.code;
       triggerChange(select);
     }
   }
 
-  setFieldValue("id_perfil-informacion_adicional", data.description);
+  if (setFieldValue("id_perfil-informacion_adicional", data.description)) {
+    changedCount += 1;
+  }
+  return changedCount;
 }
 
 export function autoFillFormFields(parsedData, options = {}) {
   if (!parsedData) {
-    return;
+    return { changed: false, changedCount: 0 };
   }
 
   const autoFillEnabled = options.autoFillEnabled !== false;
+  let changedCount = 0;
 
-  uppercaseFormFields();
+  changedCount += uppercaseFormFields();
 
-  setFieldValueWithMark("id_cliente-cliente_rb", parsedData.installNumber);
+  if (setFieldValueWithMark("id_cliente-cliente_rb", parsedData.installNumber)) {
+    changedCount += 1;
+  }
 
   const fechaField = document.getElementById("id_cliente-fecha_instalacion");
   if (fechaField && !fechaField.value?.trim()) {
-    setFieldValueWithMark("id_cliente-fecha_instalacion", getMexicoDateTime());
+    if (setFieldValueWithMark("id_cliente-fecha_instalacion", getMexicoDateTime())) {
+      changedCount += 1;
+    }
   }
 
   const costoField = document.getElementById("id_cliente-costo_instalacion");
   if (costoField && !costoField.value?.trim()) {
-    setFieldValueWithMark(
+    if (setFieldValueWithMark(
       "id_cliente-costo_instalacion",
       parsedData.installCost,
-    );
+    )) {
+      changedCount += 1;
+    }
   }
 
-  selectByUsername("id_cliente-creado_por", parsedData.asesor);
+  if (selectByUsername("id_cliente-creado_por", parsedData.asesor)) {
+    changedCount += 1;
+  }
 
-  selectByUsername("id_cliente-tecnico", parsedData.tecnico);
+  if (selectByUsername("id_cliente-tecnico", parsedData.tecnico)) {
+    changedCount += 1;
+  }
 
   if (autoFillEnabled && parsedData.isPreInstallFormComment) {
-    selectByValueIfEmpty("id_cliente-forma_contratacion", "pagina_internet");
+    if (selectByValueIfEmpty("id_cliente-forma_contratacion", "pagina_internet")) {
+      changedCount += 1;
+    }
   }
 
-  fillRegimenFiscal(parsedData.regimenFiscal);
+  changedCount += fillRegimenFiscal(parsedData.regimenFiscal);
+
+  return {
+    changed: changedCount > 0,
+    changedCount,
+  };
 }

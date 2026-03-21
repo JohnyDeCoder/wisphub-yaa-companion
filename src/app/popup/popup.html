@@ -19,7 +19,7 @@
           <div class="header-content">
             <div class="header-text">
               <h1>Wisphub Yaa Companion</h1>
-              <span class="badge">v1.3.0</span>
+              <span class="badge">v1.4.0</span>
             </div>
           </div>
           <button
@@ -54,14 +54,38 @@
             <circle cx="12" cy="7" r="4"></circle>
           </svg>
           <span id="staffUsername">—</span>
-          <span class="header-badge" id="staffIdBadge" title="Click para copiar"
+          <button
+            class="header-badge header-badge-icon header-badge-push"
+            id="btnProfileSwitch"
+            type="button"
+            title="Cambiar entre perfiles de sesión"
+            aria-label="Cambiar entre perfiles de sesión"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="currentColor"
+                fill-rule="evenodd"
+                d="M.75 12C.75 5.787 5.787.75 12 .75c2.725 0 5.224.97 7.17 2.58L20.5 2l1 1v4.5H17l-1-1l1.392-1.392A8.7 8.7 0 0 0 12 3.25a8.75 8.75 0 1 0 8.575 6.999l2.45-.498q.224 1.094.225 2.249c0 6.213-5.037 11.25-11.25 11.25S.75 18.213.75 12m14.5-2.25a3.25 3.25 0 1 1-6.5 0a3.25 3.25 0 0 1 6.5 0m3.013 5.904l-.222-.106A14.04 14.04 0 0 0 12 14.191c-2.16 0-4.21.487-6.041 1.357l-.222.106A7.25 7.25 0 0 0 12 19.25a7.25 7.25 0 0 0 6.263-3.596"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+          <span
+            class="header-badge"
+            id="staffIdBadge"
+            title="Click para copiar"
             >ID: —</span
           >
         </div>
         <div class="status-indicator" id="statusIndicator">
           <span class="status-dot"></span>
           <span class="status-label" id="statusLabel">Verificando...</span>
-          <button class="header-badge" id="btnLogs" title="Ver registros">
+          <button class="header-badge header-badge-push" id="btnLogs" title="Ver registros">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="12"
@@ -154,8 +178,47 @@
                 </div>
               </div>
 
-              <!-- Tool 3: Placeholder -->
-              <div class="flip-card disabled">
+              <!-- Tool 3: Diagnóstico Express -->
+              <div class="flip-card disabled" data-tool="diagnostic">
+                <div class="flip-card-inner">
+                  <div class="flip-card-back">
+                    <div class="flip-back-content">
+                      <span class="tool-beta-ghost" aria-hidden="true">BETA</span>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="32"
+                        height="32"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          fill="currentColor"
+                          fill-rule="evenodd"
+                          d="M8.733.339a4.955 4.955 0 1 0 0 9.91a4.955 4.955 0 0 0 0-9.91m3.184 15.609h.977l1.034-1.48a1 1 0 0 1 1.702.102l1.01 1.897l.396-.568a1 1 0 0 1 .82-.428H18.9a1 1 0 1 1 0 2h-.523l-1.033 1.48a1 1 0 0 1-1.703-.103l-1.009-1.896l-.397.568a1 1 0 0 1-.82.428h-1.25a4.514 4.514 0 0 0 7.383 1.696a1 1 0 0 1 .097-.097a4.512 4.512 0 1 0-7.728-3.599m9.747 4.3a6.512 6.512 0 1 0-1.414 1.414l1.88 1.881a1 1 0 0 0 1.415-1.414zm-12.11-7.986a8 8 0 0 0-.821-.041c-2.287 0-4.47.965-6.073 2.668c-1.6 1.7-2.493 3.998-2.493 6.384c0 .415.336.75.75.75h9.786A7.98 7.98 0 0 1 8.4 16.406c0-1.517.422-2.935 1.154-4.143Z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+                      <strong>Diagnóstico<br />Express</strong>
+                    </div>
+                  </div>
+                  <div class="flip-card-front">
+                    <div class="flip-front-content">
+                      <p class="flip-desc"
+                        >Ejecuta Ping, Torch, Tráfico y Estado de cuenta para el
+                        cliente
+                        activo</p
+                      >
+                      <button
+                        class="btn btn-primary btn-full"
+                        id="btnRunDiagnostic"
+                        >Usar</button
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tool 4: Placeholder -->
+              <div class="flip-card disabled" data-tool="upcoming">
                 <div class="flip-card-inner">
                   <div class="flip-card-back">
                     <div class="flip-back-content">
@@ -185,6 +248,11 @@
                   <div class="flip-card-front">
                     <div class="flip-front-content">
                       <p class="flip-desc">Nueva herramienta en desarrollo</p>
+                      <button
+                        class="btn btn-primary btn-full"
+                        id="btnUpcoming"
+                        >Usar</button
+                      >
                     </div>
                   </div>
                 </div>

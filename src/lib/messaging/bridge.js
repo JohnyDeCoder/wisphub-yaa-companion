@@ -16,7 +16,15 @@ const LOG_TTL = 24 * 60 * 60 * 1000; // Log entry lifetime in ms (default: 24h)
 
 let editorReady = false;
 let formatterEnabled = false;
+let diagnosticReady = false;
+let diagnosticContext = null;
 let bridgeToken = "";
+const DIAGNOSTIC_ACK_TIMEOUT_MS = 1200;
+const DIAGNOSTIC_ACK_POLL_INTERVAL_MS = 40;
+const PROFILE_SWITCH_ACK_TIMEOUT_MS = 120000;
+const PROFILE_SWITCH_ACK_POLL_INTERVAL_MS = 40;
+const SESSION_CAPTURE_MIN_INTERVAL_MS = 2 * 60 * 1000;
+const lastSessionCaptureByProfile = new Map();
 let userSettings = {
   notificationsEnabled: true,
   autoFormatEnabled: false,
@@ -36,6 +44,169 @@ function postToPage(type, payload = {}, options = {}) {
     includeToken: options.includeToken !== false,
     requireToken: options.requireToken === true,
   });
+}
+
+function waitForDiagnosticStartAck(timeoutMs = DIAGNOSTIC_ACK_TIMEOUT_MS) {
+  return new Promise((resolve) => {
+    const startedAt = Date.now();
+
+    const poll = () => {
+      const ack = window.__WISPHUB_LAST_DIAGNOSTIC_ACK__;
+      if (ack && typeof ack === "object") {
+        resolve({
+          success: ack.success !== false,
+          started: ack.started !== false,
+          error: ack.error || "",
+        });
+        return;
+      }
+
+      if (Date.now() - startedAt >= timeoutMs) {
+        resolve({
+          success: false,
+          started: false,
+          error: "No se recibió confirmación de inicio del diagnóstico en la página activa",
+        });
+        return;
+      }
+
+      setTimeout(poll, DIAGNOSTIC_ACK_POLL_INTERVAL_MS);
+    };
+
+    poll();
+  });
+}
+
+function waitForProfileSwitchAck(timeoutMs = PROFILE_SWITCH_ACK_TIMEOUT_MS) {
+  return new Promise((resolve) => {
+    const startedAt = Date.now();
+
+    const poll = () => {
+      const ack = window.__WISPHUB_LAST_PROFILE_SWITCH_ACK__;
+      if (ack && typeof ack === "object") {
+        resolve({
+          success: ack.success !== false,
+          started: ack.started === true,
+          cancelled: ack.cancelled === true,
+          info: ack.info || "",
+          error: ack.error || "",
+          switchStrategy: ack.switchStrategy || "",
+          redirectUrl: ack.redirectUrl || "",
+          fallbackRedirectUrl: ack.fallbackRedirectUrl || "",
+          requiresLogin: ack.requiresLogin === true,
+        });
+        return;
+      }
+
+      if (Date.now() - startedAt >= timeoutMs) {
+        resolve({
+          success: false,
+          started: false,
+          cancelled: false,
+          info: "",
+          error: "No se recibió confirmación para el cambio de perfil en la página activa",
+          switchStrategy: "",
+          redirectUrl: "",
+          fallbackRedirectUrl: "",
+          requiresLogin: false,
+        });
+        return;
+      }
+
+      setTimeout(poll, PROFILE_SWITCH_ACK_POLL_INTERVAL_MS);
+    };
+
+    poll();
+  });
+}
+
+function getCurrentUsernameFromDom() {
+  const usernameEl = document.querySelector(
+    ".user-menu .user-name, .navbar .user-name, .dropdown .user-name",
+  );
+  return usernameEl?.textContent?.trim() || "";
+}
+
+function buildSessionCaptureKey(domainKey, username) {
+  const safeDomain = String(domainKey || "").trim().toLowerCase();
+  const safeUsername = String(username || "").trim().toLowerCase();
+  if (!safeDomain || !safeUsername) {
+    return "";
+  }
+  return `${safeDomain}::${safeUsername}`;
+}
+
+async function captureSessionCookiesSnapshot(domainKey, username, options = {}) {
+  if (!domainKey || !username) {
+    return { success: false };
+  }
+
+  const forceCapture = options.force === true;
+  const cacheKey = buildSessionCaptureKey(domainKey, username);
+  if (cacheKey && !forceCapture) {
+    const now = Date.now();
+    const lastCapturedAt = Number(lastSessionCaptureByProfile.get(cacheKey) || 0);
+    if (now - lastCapturedAt < SESSION_CAPTURE_MIN_INTERVAL_MS) {
+      return { success: true, skipped: true };
+    }
+  }
+
+  try {
+    const result = await browserAPI.runtime.sendMessage({
+      action: ACTIONS.SESSION_CAPTURE_COOKIES,
+      domainKey,
+      username,
+    });
+
+    if (result?.success && cacheKey) {
+      lastSessionCaptureByProfile.set(cacheKey, Date.now());
+    }
+
+    return result;
+  } catch {
+    return { success: false };
+  }
+}
+
+async function hasSessionCookiesSnapshot(domainKey, username) {
+  if (!domainKey || !username) {
+    return false;
+  }
+
+  try {
+    const response = await browserAPI.runtime.sendMessage({
+      action: ACTIONS.SESSION_HAS_COOKIES,
+      domainKey,
+      username,
+    });
+    return response?.success === true && response?.hasSnapshot === true;
+  } catch {
+    return false;
+  }
+}
+
+async function switchSessionCookies(domainKey, targetUsername) {
+  if (!domainKey || !targetUsername) {
+    return {
+      success: false,
+      requiresLogin: true,
+      error: "Falta información para cambiar cookies de sesión",
+    };
+  }
+
+  try {
+    return await browserAPI.runtime.sendMessage({
+      action: ACTIONS.SESSION_SWITCH_COOKIES,
+      domainKey,
+      targetUsername,
+    });
+  } catch {
+    return {
+      success: false,
+      requiresLogin: true,
+      error: "No se pudo cambiar la sesión por cookies",
+    };
+  }
 }
 
 function pruneExpiredLogs(logs) {
@@ -109,6 +280,19 @@ export function listenToPageMessages() {
       postToPage(MESSAGE_TYPES.CHANNEL_INIT, {}, { includeToken: true });
       // Ensure page world receives current settings after each handshake.
       postToPage(MESSAGE_TYPES.SETTINGS_UPDATE, { settings: userSettings });
+
+      const username = getCurrentUsernameFromDom();
+      const domainKey = getDomainKey(window.location.hostname);
+      if (domainKey && username) {
+        captureSessionCookiesSnapshot(domainKey, username);
+      } else if (domainKey) {
+        setTimeout(() => {
+          const delayedUsername = getCurrentUsernameFromDom();
+          if (delayedUsername) {
+            captureSessionCookiesSnapshot(domainKey, delayedUsername);
+          }
+        }, 1200);
+      }
       return;
     }
 
@@ -125,6 +309,8 @@ export function listenToPageMessages() {
     if (type === MESSAGE_TYPES.PING_RESPONSE) {
       editorReady = isReady;
       formatterEnabled = !!data.formatterEnabled;
+      diagnosticReady = !!data.diagnosticReady;
+      diagnosticContext = data.diagnosticContext || null;
       return;
     }
 
@@ -135,6 +321,21 @@ export function listenToPageMessages() {
 
     if (type === MESSAGE_TYPES.RESTORE_RESPONSE) {
       window.__WISPHUB_LAST_RESTORE_RESULT__ = result;
+      return;
+    }
+
+    if (type === MESSAGE_TYPES.DIAGNOSTIC_RUN_RESPONSE) {
+      window.__WISPHUB_LAST_DIAGNOSTIC_RESULT__ = result;
+      return;
+    }
+
+    if (type === MESSAGE_TYPES.DIAGNOSTIC_RUN_ACK) {
+      window.__WISPHUB_LAST_DIAGNOSTIC_ACK__ = result;
+      return;
+    }
+
+    if (type === MESSAGE_TYPES.PROFILE_SWITCH_ACK) {
+      window.__WISPHUB_LAST_PROFILE_SWITCH_ACK__ = result;
       return;
     }
 
@@ -203,7 +404,14 @@ export function listenToExtensionMessages() {
     if (action === ACTIONS.PING) {
       postToPage(MESSAGE_TYPES.PING_REQUEST);
       setTimeout(
-        () => sendResponse({ status: "OK", editorReady, formatterEnabled }),
+        () =>
+          sendResponse({
+            status: "OK",
+            editorReady,
+            formatterEnabled,
+            diagnosticReady,
+            diagnosticContext,
+          }),
         100,
       );
       return true;
@@ -250,12 +458,124 @@ export function listenToExtensionMessages() {
       return true;
     }
 
+    if (action === ACTIONS.GET_SESSION_CONTEXT) {
+      const username = getCurrentUsernameFromDom();
+      const domainKey = getDomainKey(window.location.hostname);
+      if (domainKey && username) {
+        captureSessionCookiesSnapshot(domainKey, username);
+      }
+      sendResponse({
+        success: true,
+        context: {
+          domainKey,
+          pathname: window.location.pathname,
+          loggedIn: Boolean(username),
+          username,
+        },
+      });
+      return true;
+    }
+
     if (action === ACTIONS.UPDATE_SETTINGS) {
       if (message.settings) {
         userSettings = { ...userSettings, ...message.settings };
         postToPage(MESSAGE_TYPES.SETTINGS_UPDATE, { settings: userSettings });
       }
       sendResponse({ success: true });
+      return true;
+    }
+
+    if (action === ACTIONS.RUN_CLIENT_DIAGNOSTIC) {
+      window.__WISPHUB_LAST_DIAGNOSTIC_ACK__ = null;
+      postToPage(MESSAGE_TYPES.DIAGNOSTIC_RUN_REQUEST, {
+        clientContext: message.clientContext || null,
+        fromPopup: !!message.fromPopup,
+      });
+      waitForDiagnosticStartAck().then((ack) => {
+        sendResponse(ack);
+      });
+      return true;
+    }
+
+    if (action === ACTIONS.START_PROFILE_SWITCH) {
+      (async () => {
+        try {
+          const domainKey = getDomainKey(window.location.hostname);
+          const currentUsername = getCurrentUsernameFromDom();
+          const targetUsername = String(message.targetUsername || "").trim();
+
+          if (domainKey && currentUsername) {
+            await captureSessionCookiesSnapshot(domainKey, currentUsername, {
+              force: true,
+            });
+          }
+
+          const canUseCookieSwitch = await hasSessionCookiesSnapshot(
+            domainKey,
+            targetUsername,
+          );
+
+          window.__WISPHUB_LAST_PROFILE_SWITCH_ACK__ = null;
+          postToPage(MESSAGE_TYPES.PROFILE_SWITCH_REQUEST, {
+            targetUsername,
+            targetLabel: message.targetLabel || "",
+            targetProfileKey: message.targetProfileKey || "",
+            preferCookieSwitch: canUseCookieSwitch,
+          });
+
+          const ack = await waitForProfileSwitchAck();
+          if (!ack.success || !ack.started || ack.cancelled) {
+            sendResponse(ack);
+            return;
+          }
+
+          if (ack.switchStrategy === "cookie-swap") {
+            const cookieSwitchResult = await switchSessionCookies(
+              domainKey,
+              targetUsername,
+            );
+
+            if (cookieSwitchResult?.success) {
+              if (ack.redirectUrl) {
+                window.location.assign(ack.redirectUrl);
+              }
+              sendResponse({
+                ...ack,
+                requiresLogin: false,
+              });
+              return;
+            }
+
+            if (ack.fallbackRedirectUrl) {
+              window.location.assign(ack.fallbackRedirectUrl);
+            }
+            sendResponse({
+              ...ack,
+              switchStrategy: "login-assist",
+              requiresLogin: true,
+              info:
+                cookieSwitchResult?.error ||
+                "No se encontró sesión guardada. Continúa con login asistido.",
+              error: "",
+            });
+            return;
+          }
+
+          sendResponse(ack);
+        } catch (error) {
+          sendResponse({
+            success: false,
+            started: false,
+            cancelled: false,
+            info: "",
+            error: error?.message || "No se pudo iniciar el cambio de perfil",
+            switchStrategy: "",
+            redirectUrl: "",
+            fallbackRedirectUrl: "",
+            requiresLogin: false,
+          });
+        }
+      })();
       return true;
     }
 
@@ -266,8 +586,7 @@ export function listenToExtensionMessages() {
 
 async function handleGetStaffInfo(sendResponse) {
   try {
-    const usernameEl = document.querySelector(".user-menu .user-name");
-    const username = usernameEl?.textContent?.trim();
+    const username = getCurrentUsernameFromDom();
     if (!username) {
       sendResponse({ staff: null, error: "Username not found in DOM" });
       return;

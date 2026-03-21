@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Wisphub Yaa Companion",
   "description": "Extensión de productividad para WispHub — (uso interno Yaa Internet)",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "author": "JohnyDeCoder",
   "homepage_url": "https://github.com/JohnyDeCoder/wisphub-yaa-companion",
   "minimum_chrome_version": "110",
@@ -23,7 +23,8 @@
     "128": "assets/icons/icon128.png"
   },
   "permissions": [
-    "storage"
+    "storage",
+    "cookies"
   ],
   "host_permissions": [
     "https://*.wisphub.io/*",
