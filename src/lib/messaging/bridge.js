@@ -397,7 +397,12 @@ async function relayTicketUpdate(ticketIds) {
   }
 }
 
-export function listenToExtensionMessages() {
+export function listenToExtensionMessages(options = {}) {
+  const navigationLocation =
+    options?.locationObj && typeof options.locationObj.assign === "function"
+      ? options.locationObj
+      : window.location;
+
   browserAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const { action } = message;
 
@@ -537,7 +542,7 @@ export function listenToExtensionMessages() {
 
             if (cookieSwitchResult?.success) {
               if (ack.redirectUrl) {
-                window.location.assign(ack.redirectUrl);
+                navigationLocation.assign(ack.redirectUrl);
               }
               sendResponse({
                 ...ack,
@@ -547,7 +552,7 @@ export function listenToExtensionMessages() {
             }
 
             if (ack.fallbackRedirectUrl) {
-              window.location.assign(ack.fallbackRedirectUrl);
+              navigationLocation.assign(ack.fallbackRedirectUrl);
             }
             sendResponse({
               ...ack,

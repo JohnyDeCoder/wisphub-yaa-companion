@@ -42,7 +42,10 @@ vi.mock("../../../../src/utils/pageBridge.js", () => ({
 import { listenToExtensionMessages } from "../../../../src/lib/messaging/bridge.js";
 
 describe("bridge diagnostic startup ack", () => {
+  let locationObj;
+
   beforeEach(() => {
+    locationObj = { assign: vi.fn() };
     mocks.runtimeListener = null;
     mocks.postBridgeMessage.mockReset();
     mocks.postBridgeMessage.mockImplementation(() => true);
@@ -56,7 +59,7 @@ describe("bridge diagnostic startup ack", () => {
   });
 
   it("responds with page ack payload instead of immediate success", async () => {
-    listenToExtensionMessages();
+    listenToExtensionMessages({ locationObj });
 
     expect(typeof mocks.runtimeListener).toBe("function");
 
@@ -101,7 +104,7 @@ describe("bridge diagnostic startup ack", () => {
 
   it("returns a startup error when no page ack is received within timeout", async () => {
     vi.useFakeTimers();
-    listenToExtensionMessages();
+    listenToExtensionMessages({ locationObj });
 
     let resolveResponse;
     const responsePromise = new Promise((resolve) => {
@@ -129,7 +132,10 @@ describe("bridge diagnostic startup ack", () => {
 });
 
 describe("bridge profile switch actions", () => {
+  let locationObj;
+
   beforeEach(() => {
+    locationObj = { assign: vi.fn() };
     mocks.runtimeListener = null;
     mocks.postBridgeMessage.mockReset();
     mocks.postBridgeMessage.mockImplementation(() => true);
@@ -158,7 +164,7 @@ describe("bridge profile switch actions", () => {
       </div>
     `;
 
-    listenToExtensionMessages();
+    listenToExtensionMessages({ locationObj });
     const response = {};
     mocks.runtimeListener(
       { action: ACTIONS.GET_SESSION_CONTEXT },
@@ -191,7 +197,7 @@ describe("bridge profile switch actions", () => {
       return true;
     });
 
-    listenToExtensionMessages();
+    listenToExtensionMessages({ locationObj });
 
     let resolveResponse;
     const responsePromise = new Promise((resolve) => {
@@ -261,7 +267,7 @@ describe("bridge profile switch actions", () => {
       return true;
     });
 
-    listenToExtensionMessages();
+    listenToExtensionMessages({ locationObj });
 
     let resolveResponse;
     const responsePromise = new Promise((resolve) => {
@@ -289,6 +295,7 @@ describe("bridge profile switch actions", () => {
       fallbackRedirectUrl: "/accounts/logout/?next=%2Faccounts%2Flogin%2F%3Fnext%3D%252Fclientes%252F",
       requiresLogin: false,
     });
+    expect(locationObj.assign).toHaveBeenCalledWith("/clientes/");
 
     expect(mocks.runtimeSendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -300,7 +307,7 @@ describe("bridge profile switch actions", () => {
 
   it("returns timeout error when profile switch ack is missing", async () => {
     vi.useFakeTimers();
-    listenToExtensionMessages();
+    listenToExtensionMessages({ locationObj });
 
     let resolveResponse;
     const responsePromise = new Promise((resolve) => {
