@@ -101,7 +101,7 @@ Su objetivo es simple: **reducir clics, automatizar tareas repetitivas y facilit
 | Manifiesto V3           | Formato moderno de extensiones de navegador                  |
 | CKEditor                | Editor de texto enriquecido de WispHub (integración directa) |
 | ESLint                  | Linting y calidad de código                                  |
-| Vitest + JSDOM          | Pruebas unitarias y de regresión                             |
+| Vitest (Node + JSDOM)   | Pruebas unitarias y de regresión                             |
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 

@@ -95,6 +95,7 @@ Para evitar falsos positivos en `tests/**/*.test.js`:
 - La configuración de ESLint debe incluir `globals.vitest` para pruebas (`describe`, `it`, `expect`, etc.).
 - Las reglas de arquitectura por capas (`boundaries`) no se aplican en tests.
 - Si se agregan nuevos archivos de prueba, deben quedar bajo `tests/**` para heredar estas reglas automáticamente.
+- Los tests de lógica pura (sin `window`, `document` ni `DOMParser`) deben usar `/* @vitest-environment node */` para reducir sobrecarga de JSDOM y evitar dependencias de entorno innecesarias.
 
 ## Política de Idioma y Documentación
 

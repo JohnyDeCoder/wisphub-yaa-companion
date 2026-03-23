@@ -117,6 +117,7 @@ Avoid:
 - Keep tests grouped by feature/domain to mirror `src/features/*`.
 - Prefer paths like `tests/unit/features/<feature>/<module>.test.js`.
 - If a module lives under a nested feature path (for example `src/features/formatter/utils/*`), mirror that nesting in tests.
+- For pure logic tests that do not require DOM APIs (`window`, `document`, `DOMParser`), use `/* @vitest-environment node */` to reduce JSDOM overhead and improve runtime.
 
 ### PR checklist
 
