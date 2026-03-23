@@ -1,3 +1,4 @@
+/* @vitest-environment node */
 import {
   extractCoordinatesFromText,
   getGoogleMapsDestination,
@@ -36,3 +37,4 @@ describe("maps utils", () => {
     expect(getGoogleMapsDestination("texto sin mapa")).toBeNull();
   });
 });
+

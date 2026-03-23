@@ -1,3 +1,4 @@
+/* @vitest-environment node */
 import {
   hasTorchFlowTraffic,
   parseRateToBps,
@@ -61,3 +62,4 @@ describe("torchSnapshotQuality", () => {
     expect(parseRateToBps("0.0 Kbps")).toBe(0);
   });
 });
+

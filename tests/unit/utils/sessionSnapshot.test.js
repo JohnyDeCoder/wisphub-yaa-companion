@@ -1,3 +1,4 @@
+/* @vitest-environment node */
 import {
   buildSnapshotFingerprint,
   shouldPersistSessionSnapshot,
@@ -61,4 +62,5 @@ describe("sessionSnapshot utils", () => {
     ).toBe(false);
   });
 });
+
 

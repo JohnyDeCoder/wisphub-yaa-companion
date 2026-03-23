@@ -1,3 +1,4 @@
+/* @vitest-environment node */
 import {
   resolveTorchTrafficState,
   TORCH_TRAFFIC_STATE,
@@ -35,3 +36,4 @@ describe("torchQuality", () => {
     expect(resolveTorchTrafficState({})).toBe(TORCH_TRAFFIC_STATE.NO_DATA);
   });
 });
+

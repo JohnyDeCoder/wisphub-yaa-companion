@@ -1,3 +1,4 @@
+/* @vitest-environment node */
 import { probeDiagnosticStart } from "../../../../../src/features/clients/diagnostic/startProbe.js";
 
 describe("diagnostic start probe", () => {
@@ -38,4 +39,5 @@ describe("diagnostic start probe", () => {
     }
   });
 });
+
 

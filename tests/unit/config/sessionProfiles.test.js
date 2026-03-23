@@ -1,3 +1,4 @@
+/* @vitest-environment node */
 import {
   buildLogoutRedirectUrl,
   buildSessionProfilesForDomain,
@@ -49,3 +50,4 @@ describe("sessionProfiles config", () => {
     expect(isLoginPath("/clientes/")).toBe(false);
   });
 });
+

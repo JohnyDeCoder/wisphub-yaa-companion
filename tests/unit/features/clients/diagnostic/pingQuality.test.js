@@ -1,3 +1,4 @@
+/* @vitest-environment node */
 import {
   parsePacketLossPercentage,
   PING_HEALTH,
@@ -19,3 +20,4 @@ describe("pingQuality", () => {
     expect(resolvePingHealth(130)).toBe(PING_HEALTH.DOWN);
   });
 });
+
