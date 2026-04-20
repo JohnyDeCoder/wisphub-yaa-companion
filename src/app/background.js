@@ -2,6 +2,7 @@ import { getDomainKey, isWispHubDomain } from "../config/domains.js";
 import { CACHE_TTL } from "../config/constants.js";
 import { ACTIONS } from "../config/messages.js";
 import { shouldPersistSessionSnapshot } from "../utils/sessionSnapshot.js";
+import { normalizeValue } from "../utils/string.js";
 
 const ICON_ACTIVE = { 48: "assets/icons/icon48_st_on.png" };
 const ICON_INACTIVE = { 48: "assets/icons/icon48_st_off.png" };
@@ -12,6 +13,8 @@ const SESSION_COOKIE_MAX_PER_PROFILE = 20;
 const SESSION_COOKIE_NAME_HINT_RE = /(session|csrftoken|auth|token|jwt|remember|sid)/i;
 const SESSION_COOKIE_IGNORED_NAME_RE = /^(_ga|_gid|_gat|_fbp|_gcl_au|_hj|amplitude|mixpanel)/i;
 const SUPPORTED_SESSION_DOMAINS = ["wisphub.io", "wisphub.app"];
+const QUICK_INFO_TICKETS_FETCH_LIMIT = 100;
+const QUICK_INFO_TICKETS_DISPLAY_LIMIT = 5;
 
 function updateIcon(tabId, url) {
   const icons = isWispHubDomain(url) ? ICON_ACTIVE : ICON_INACTIVE;
@@ -32,10 +35,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 const staffCache = {};
-
-function normalizeUsername(value) {
-  return String(value || "").trim().toLowerCase();
-}
 
 function isSupportedSessionDomain(domainKey) {
   return SUPPORTED_SESSION_DOMAINS.includes(String(domainKey || "").trim().toLowerCase());
@@ -58,7 +57,7 @@ function isTrustedSessionSender(sender, requestedDomainKey) {
 
 function buildSessionSnapshotKey(domainKey, username) {
   const normalizedDomain = String(domainKey || "").trim().toLowerCase();
-  const normalizedUsername = normalizeUsername(username);
+  const normalizedUsername = normalizeValue(username);
   if (!normalizedDomain || !normalizedUsername) {
     return "";
   }
@@ -191,12 +190,32 @@ function createCookieNameSet(cookieNames) {
   );
 }
 
+function findSnapshotByAccountDomain(snapshots, domainKey, accountDomain) {
+  const normalDomain = normalizeValue(accountDomain);
+  if (!normalDomain) {
+    return null;
+  }
+  const normalKey = String(domainKey || "").trim().toLowerCase();
+  return (
+    Object.values(snapshots).find((snapshot) => {
+      if (snapshot.domainKey !== normalKey) {
+        return false;
+      }
+      const raw = String(snapshot.username || "");
+      const atIdx = raw.indexOf("@");
+      const snapshotDomain =
+        atIdx >= 0 ? raw.slice(atIdx + 1).toLowerCase() : "";
+      return snapshotDomain === normalDomain;
+    }) || null
+  );
+}
+
 async function captureSessionCookies({ domainKey, username }) {
   if (!isSupportedSessionDomain(domainKey)) {
     return { success: false, error: "Dominio no soportado para captura de sesión" };
   }
 
-  const safeUsername = normalizeUsername(username);
+  const safeUsername = normalizeValue(username);
   if (!safeUsername) {
     return { success: false, error: "No se pudo detectar usuario para capturar sesión" };
   }
@@ -255,14 +274,18 @@ async function hasSessionCookies({ domainKey, username }) {
     return { success: false, hasSnapshot: false, error: "Dominio no soportado" };
   }
 
-  const safeUsername = normalizeUsername(username);
+  const safeUsername = normalizeValue(username);
   if (!safeUsername) {
     return { success: false, hasSnapshot: false, error: "Usuario inválido para verificar sesión" };
   }
 
   const snapshots = pruneSessionCookieSnapshots(await readSessionCookieSnapshots());
   const snapshotKey = buildSessionSnapshotKey(domainKey, safeUsername);
-  const snapshot = snapshotKey ? snapshots[snapshotKey] : null;
+  const atIdx = safeUsername.indexOf("@");
+  const accountDomain = atIdx >= 0 ? safeUsername.slice(atIdx + 1) : "";
+  const snapshot =
+    (snapshotKey ? snapshots[snapshotKey] : null) ||
+    findSnapshotByAccountDomain(snapshots, domainKey, accountDomain);
 
   return {
     success: true,
@@ -307,14 +330,19 @@ async function switchSessionCookies({ domainKey, targetUsername }) {
     return { success: false, requiresLogin: true, error: "Dominio no soportado para cambio de sesión" };
   }
 
-  const safeTargetUsername = normalizeUsername(targetUsername);
+  const safeTargetUsername = normalizeValue(targetUsername);
   if (!safeTargetUsername) {
     return { success: false, requiresLogin: true, error: "Usuario destino inválido para cambio de sesión" };
   }
 
   const snapshots = pruneSessionCookieSnapshots(await readSessionCookieSnapshots());
   const snapshotKey = buildSessionSnapshotKey(domainKey, safeTargetUsername);
-  const snapshot = snapshotKey ? snapshots[snapshotKey] : null;
+  const atIdx = safeTargetUsername.indexOf("@");
+  const accountDomain =
+    atIdx >= 0 ? safeTargetUsername.slice(atIdx + 1) : "";
+  const snapshot =
+    (snapshotKey ? snapshots[snapshotKey] : null) ||
+    findSnapshotByAccountDomain(snapshots, domainKey, accountDomain);
 
   if (!snapshot || !Array.isArray(snapshot.cookies) || snapshot.cookies.length === 0) {
     return {
@@ -379,6 +407,42 @@ async function fetchStaffFromApi(apiKey, apiBaseUrl) {
     `[Background] Staff fetched: ${allStaff.length} records from ${apiBaseUrl}`,
   );
   return allStaff;
+}
+
+async function fetchClientQuickInfo(apiKey, apiBaseUrl, idServicio) {
+  const headers = { Authorization: `Api-Key ${apiKey}` };
+  const [saldoResult, ticketsResult] = await Promise.allSettled([
+    fetch(`${apiBaseUrl}clientes/${idServicio}/saldo/`, { headers }),
+    fetch(`${apiBaseUrl}tickets/?estado=2&limit=${QUICK_INFO_TICKETS_FETCH_LIMIT}`, { headers }),
+  ]);
+
+  if (saldoResult.status === "fulfilled" && !saldoResult.value.ok) {
+    console.warn(`[Background] fetchClientQuickInfo saldo ${idServicio} → HTTP ${saldoResult.value.status}`);
+  }
+  const saldoJson =
+    saldoResult.status === "fulfilled" && saldoResult.value.ok
+      ? await saldoResult.value.json().catch(() => null)
+      : null;
+  const saldo = saldoJson ? { saldo: saldoJson.saldo ?? null } : null;
+
+  if (ticketsResult.status === "fulfilled" && !ticketsResult.value.ok) {
+    console.warn(`[Background] fetchClientQuickInfo tickets ${idServicio} → HTTP ${ticketsResult.value.status}`);
+  }
+  const ticketsJson =
+    ticketsResult.status === "fulfilled" && ticketsResult.value.ok
+      ? await ticketsResult.value.json().catch(() => null)
+      : null;
+  const ticketsRaw =
+    ticketsJson?.results ?? (Array.isArray(ticketsJson) ? ticketsJson : null);
+  // Single-page fetch is intentional: paginating a hover tooltip would be too slow.
+  // Installations with >100 open tickets may show an incomplete list for some clients.
+  const tickets =
+    ticketsRaw === null
+      ? null
+      : ticketsRaw
+        .filter((t) => String(t.servicio?.id_servicio) === String(idServicio))
+        .slice(0, QUICK_INFO_TICKETS_DISPLAY_LIMIT);
+  return { saldo, tickets };
 }
 
 async function updateTicketStatus(apiKey, apiBaseUrl, ticketId, headers) {
@@ -525,6 +589,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .then((result) => sendResponse(result))
         .catch((err) =>
           sendResponse({ success: false, requiresLogin: true, error: err.message }),
+        ),
+
+    [ACTIONS.CLIENT_QUICK_INFO]: () =>
+      fetchClientQuickInfo(
+        message.apiKey,
+        message.apiBaseUrl,
+        message.idServicio,
+      )
+        .then((data) => sendResponse({ success: true, data }))
+        .catch((err) =>
+          sendResponse({
+            success: false,
+            data: { saldo: null, tickets: null },
+            error: err.message,
+          }),
         ),
 
   };
