@@ -81,7 +81,7 @@ function requestQuickInfo(idServicio) {
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
       pendingRequests.delete(idServicio);
-      resolve({ saldo: null, tickets: null });
+      resolve({ saldo: null, tickets: null, plan: null });
     }, REQUEST_TIMEOUT_MS);
     pendingRequests.set(idServicio, { resolve, timer });
     postBridgeMessage(
@@ -107,7 +107,7 @@ function handleQuickInfoResponse(event) {
   }
   clearTimeout(pending.timer);
   pendingRequests.delete(idServicio);
-  const safeResult = result || { saldo: null, tickets: null };
+  const safeResult = result || { saldo: null, tickets: null, plan: null };
   quickInfoCache.set(idServicio, { data: safeResult, ts: Date.now() });
   pending.resolve(safeResult);
 }
