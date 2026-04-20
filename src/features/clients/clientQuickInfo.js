@@ -130,7 +130,7 @@ function formatSaldo(saldo) {
 
 function buildPopupEl(rowData, data, sourceRow) {
   const { nombre, idServicio, ip, username } = rowData;
-  const { saldo, tickets } = data;
+  const { saldo, tickets, plan } = data;
 
   const popup = document.createElement("div");
   popup.className = POPUP_CLASS;
@@ -138,14 +138,24 @@ function buildPopupEl(rowData, data, sourceRow) {
   const header = document.createElement("div");
   header.className = "yaa-qi-header";
 
-  const titleEl = document.createElement("div");
+  const titleEl = username
+    ? document.createElement("a")
+    : document.createElement("div");
   titleEl.className = "yaa-qi-title";
+  if (username) {
+    titleEl.href = `${window.location.origin}/clientes/ver/${username}/`;
+    titleEl.target = "_blank";
+    titleEl.rel = "noopener noreferrer";
+    titleEl.addEventListener("click", () => selectRow(sourceRow));
+  }
   titleEl.textContent = nombre;
   header.appendChild(titleEl);
 
   const subtitleEl = document.createElement("div");
   subtitleEl.className = "yaa-qi-subtitle";
-  subtitleEl.textContent = `ID: ${idServicio}`;
+  subtitleEl.textContent = plan?.nombre
+    ? `ID: ${idServicio} | ${plan.nombre}`
+    : `ID: ${idServicio}`;
   header.appendChild(subtitleEl);
 
   popup.appendChild(header);
@@ -169,16 +179,17 @@ function buildPopupEl(rowData, data, sourceRow) {
     payEl.className = "yaa-qi-meta-item yaa-qi-meta-item--unknown";
     payEl.textContent = "Saldo no disponible";
   }
-  meta.appendChild(payEl);
   if (username) {
-    const extLink = document.createElement("a");
-    extLink.href = `${window.location.origin}/clientes/ver/${username}/#retab3`;
-    extLink.target = "_blank";
-    extLink.rel = "noopener noreferrer";
-    extLink.className = "wisphub-yaa-view-client-link";
-    extLink.setAttribute("aria-label", "Ver cliente");
-    extLink.addEventListener("click", () => selectRow(sourceRow));
-    meta.appendChild(extLink);
+    const payLink = document.createElement("a");
+    payLink.href = `${window.location.origin}/clientes/ver/${username}/#retab3`;
+    payLink.target = "_blank";
+    payLink.rel = "noopener noreferrer";
+    payLink.className = "yaa-qi-pay-link";
+    payLink.addEventListener("click", () => selectRow(sourceRow));
+    payLink.appendChild(payEl);
+    meta.appendChild(payLink);
+  } else {
+    meta.appendChild(payEl);
   }
 
   popup.appendChild(meta);

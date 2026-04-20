@@ -411,9 +411,10 @@ async function fetchStaffFromApi(apiKey, apiBaseUrl) {
 
 async function fetchClientQuickInfo(apiKey, apiBaseUrl, idServicio) {
   const headers = { Authorization: `Api-Key ${apiKey}` };
-  const [saldoResult, ticketsResult] = await Promise.allSettled([
+  const [saldoResult, ticketsResult, clientResult] = await Promise.allSettled([
     fetch(`${apiBaseUrl}clientes/${idServicio}/saldo/`, { headers }),
     fetch(`${apiBaseUrl}tickets/?estado=2&limit=${QUICK_INFO_TICKETS_FETCH_LIMIT}`, { headers }),
+    fetch(`${apiBaseUrl}clientes/${idServicio}/`, { headers }),
   ]);
 
   if (saldoResult.status === "fulfilled" && !saldoResult.value.ok) {
@@ -442,7 +443,17 @@ async function fetchClientQuickInfo(apiKey, apiBaseUrl, idServicio) {
       : ticketsRaw
         .filter((t) => String(t.servicio?.id_servicio) === String(idServicio))
         .slice(0, QUICK_INFO_TICKETS_DISPLAY_LIMIT);
-  return { saldo, tickets };
+
+  if (clientResult.status === "fulfilled" && !clientResult.value.ok) {
+    console.warn(`[Background] fetchClientQuickInfo client ${idServicio} → HTTP ${clientResult.value.status}`);
+  }
+  const clientJson =
+    clientResult.status === "fulfilled" && clientResult.value.ok
+      ? await clientResult.value.json().catch(() => null)
+      : null;
+  const plan = clientJson?.plan_internet ?? null;
+
+  return { saldo, tickets, plan };
 }
 
 async function updateTicketStatus(apiKey, apiBaseUrl, ticketId, headers) {

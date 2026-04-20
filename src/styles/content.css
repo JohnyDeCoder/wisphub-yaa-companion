@@ -1501,6 +1501,16 @@ html[data-darkreader-scheme="dark"] #wisphub-yaa-scroll-top-btn {
   margin-bottom: 2px;
 }
 
+a.yaa-qi-title {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+a.yaa-qi-title:hover {
+  text-decoration: underline;
+}
+
 .yaa-qi-subtitle {
   font-size: 11px;
   color: #94a3b8;
@@ -1535,6 +1545,15 @@ html[data-darkreader-scheme="dark"] #wisphub-yaa-scroll-top-btn {
 
 .yaa-qi-meta-item--unknown {
   color: #64748b;
+}
+
+.yaa-qi-pay-link {
+  text-decoration: none;
+}
+
+.yaa-qi-pay-link:hover,
+.yaa-qi-pay-link:hover .yaa-qi-meta-item {
+  text-decoration: underline;
 }
 
 .yaa-qi-section {
