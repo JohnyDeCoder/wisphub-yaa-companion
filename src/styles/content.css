@@ -1423,3 +1423,154 @@ html[data-darkreader-scheme="dark"] #wisphub-yaa-scroll-top-btn {
     transform: rotate(360deg);
   }
 }
+
+/* ======================================== QUICK INFO POPUP ======================================== */
+
+.wisphub-yaa-quick-info-popup {
+  position: fixed;
+  z-index: 99999;
+  background: #1e293b;
+  border: 1px solid #00c491;
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-width: 220px;
+  max-width: 300px;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  animation: yaa-qi-fadein 0.15s ease forwards;
+  pointer-events: auto;
+}
+
+@keyframes yaa-qi-fadein {
+  to {
+    opacity: 1;
+  }
+}
+
+.wisphub-yaa-quick-info-popup::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  width: 0;
+  height: 0;
+  border: 7px solid transparent;
+}
+
+.wisphub-yaa-quick-info-popup::after {
+  content: "";
+  position: absolute;
+  top: 15px;
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+}
+
+.wisphub-yaa-quick-info-popup.yaa-qi--arrow-left::before {
+  left: -14px;
+  border-right-color: #00c491;
+}
+
+.wisphub-yaa-quick-info-popup.yaa-qi--arrow-left::after {
+  left: -11px;
+  border-right-color: #1e293b;
+}
+
+.wisphub-yaa-quick-info-popup.yaa-qi--arrow-right::before {
+  right: -14px;
+  border-left-color: #00c491;
+}
+
+.wisphub-yaa-quick-info-popup.yaa-qi--arrow-right::after {
+  right: -11px;
+  border-left-color: #1e293b;
+}
+
+.yaa-qi-header {
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 8px;
+}
+
+.yaa-qi-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: #f1f5f9;
+  margin-bottom: 2px;
+}
+
+.yaa-qi-subtitle {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.yaa-qi-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.yaa-qi-meta-item {
+  font-size: 11px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.yaa-qi-meta-item--ok {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.yaa-qi-meta-item--debt {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.yaa-qi-meta-item--unknown {
+  color: #64748b;
+}
+
+.yaa-qi-section {
+  margin-bottom: 4px;
+}
+
+.yaa-qi-section-header {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.yaa-qi-empty {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 11px;
+  margin: 0;
+}
+
+.yaa-qi-ticket-link {
+  display: block;
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 3px 4px;
+  border-radius: 4px;
+  transition: color 0.12s, background 0.12s;
+}
+
+.yaa-qi-ticket-link:hover {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.08);
+}
