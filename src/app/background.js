@@ -3,12 +3,13 @@ import { CACHE_TTL } from "../config/constants.js";
 import { ACTIONS } from "../config/messages.js";
 import { shouldPersistSessionSnapshot } from "../utils/sessionSnapshot.js";
 import { normalizeValue } from "../utils/string.js";
+import { buildProfileSnapshotKey } from "../utils/sessionKey.js";
 
 const ICON_ACTIVE = { 48: "assets/icons/icon48_st_on.png" };
 const ICON_INACTIVE = { 48: "assets/icons/icon48_st_off.png" };
 const SESSION_COOKIE_SNAPSHOTS_KEY = "wisphubYaaSessionCookieSnapshots";
 const SESSION_COOKIE_SNAPSHOT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-const SESSION_COOKIE_SNAPSHOT_MAX_PROFILES = 8;
+const SESSION_COOKIE_SNAPSHOT_MAX_PROFILES = 4;
 const SESSION_COOKIE_MAX_PER_PROFILE = 20;
 const SESSION_COOKIE_NAME_HINT_RE = /(session|csrftoken|auth|token|jwt|remember|sid)/i;
 const SESSION_COOKIE_IGNORED_NAME_RE = /^(_ga|_gid|_gat|_fbp|_gcl_au|_hj|amplitude|mixpanel)/i;
@@ -37,11 +38,11 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 const staffCache = {};
 
 function isSupportedSessionDomain(domainKey) {
-  return SUPPORTED_SESSION_DOMAINS.includes(String(domainKey || "").trim().toLowerCase());
+  return SUPPORTED_SESSION_DOMAINS.includes(normalizeValue(domainKey));
 }
 
 function isTrustedSessionSender(sender, requestedDomainKey) {
-  const normalizedRequestedDomain = String(requestedDomainKey || "").trim().toLowerCase();
+  const normalizedRequestedDomain = normalizeValue(requestedDomainKey);
   if (!isSupportedSessionDomain(normalizedRequestedDomain)) {
     return false;
   }
@@ -55,14 +56,6 @@ function isTrustedSessionSender(sender, requestedDomainKey) {
   return senderDomainKey === normalizedRequestedDomain;
 }
 
-function buildSessionSnapshotKey(domainKey, username) {
-  const normalizedDomain = String(domainKey || "").trim().toLowerCase();
-  const normalizedUsername = normalizeValue(username);
-  if (!normalizedDomain || !normalizedUsername) {
-    return "";
-  }
-  return `${normalizedDomain}::${normalizedUsername}`;
-}
 
 function isCookieUnderDomain(cookie, domainKey) {
   const safeDomain = String(cookie?.domain || "").replace(/^\./, "").toLowerCase();
@@ -190,25 +183,6 @@ function createCookieNameSet(cookieNames) {
   );
 }
 
-function findSnapshotByAccountDomain(snapshots, domainKey, accountDomain) {
-  const normalDomain = normalizeValue(accountDomain);
-  if (!normalDomain) {
-    return null;
-  }
-  const normalKey = String(domainKey || "").trim().toLowerCase();
-  return (
-    Object.values(snapshots).find((snapshot) => {
-      if (snapshot.domainKey !== normalKey) {
-        return false;
-      }
-      const raw = String(snapshot.username || "");
-      const atIdx = raw.indexOf("@");
-      const snapshotDomain =
-        atIdx >= 0 ? raw.slice(atIdx + 1).toLowerCase() : "";
-      return snapshotDomain === normalDomain;
-    }) || null
-  );
-}
 
 async function captureSessionCookies({ domainKey, username }) {
   if (!isSupportedSessionDomain(domainKey)) {
@@ -237,7 +211,7 @@ async function captureSessionCookies({ domainKey, username }) {
   const snapshots = pruneSessionCookieSnapshots(rawSnapshots);
   const snapshotsChangedByPrune =
     Object.keys(rawSnapshots || {}).length !== Object.keys(snapshots || {}).length;
-  const snapshotKey = buildSessionSnapshotKey(domainKey, safeUsername);
+  const snapshotKey = buildProfileSnapshotKey(domainKey, safeUsername);
   if (!snapshotKey) {
     return { success: false, error: "No se pudo construir clave de sesión" };
   }
@@ -280,17 +254,14 @@ async function hasSessionCookies({ domainKey, username }) {
   }
 
   const snapshots = pruneSessionCookieSnapshots(await readSessionCookieSnapshots());
-  const snapshotKey = buildSessionSnapshotKey(domainKey, safeUsername);
-  const atIdx = safeUsername.indexOf("@");
-  const accountDomain = atIdx >= 0 ? safeUsername.slice(atIdx + 1) : "";
-  const snapshot =
-    (snapshotKey ? snapshots[snapshotKey] : null) ||
-    findSnapshotByAccountDomain(snapshots, domainKey, accountDomain);
+  const snapshotKey = buildProfileSnapshotKey(domainKey, safeUsername);
+  const snapshot = snapshotKey ? snapshots[snapshotKey] : null;
 
   return {
     success: true,
     hasSnapshot: Boolean(snapshot && Array.isArray(snapshot.cookies) && snapshot.cookies.length > 0),
     cookieCount: Array.isArray(snapshot?.cookies) ? snapshot.cookies.length : 0,
+    username: snapshot?.username || null,
   };
 }
 
@@ -336,13 +307,8 @@ async function switchSessionCookies({ domainKey, targetUsername }) {
   }
 
   const snapshots = pruneSessionCookieSnapshots(await readSessionCookieSnapshots());
-  const snapshotKey = buildSessionSnapshotKey(domainKey, safeTargetUsername);
-  const atIdx = safeTargetUsername.indexOf("@");
-  const accountDomain =
-    atIdx >= 0 ? safeTargetUsername.slice(atIdx + 1) : "";
-  const snapshot =
-    (snapshotKey ? snapshots[snapshotKey] : null) ||
-    findSnapshotByAccountDomain(snapshots, domainKey, accountDomain);
+  const snapshotKey = buildProfileSnapshotKey(domainKey, safeTargetUsername);
+  const snapshot = snapshotKey ? snapshots[snapshotKey] : null;
 
   if (!snapshot || !Array.isArray(snapshot.cookies) || snapshot.cookies.length === 0) {
     return {
@@ -411,11 +377,13 @@ async function fetchStaffFromApi(apiKey, apiBaseUrl) {
 
 async function fetchClientQuickInfo(apiKey, apiBaseUrl, idServicio) {
   const headers = { Authorization: `Api-Key ${apiKey}` };
-  const [saldoResult, ticketsResult, clientResult] = await Promise.allSettled([
-    fetch(`${apiBaseUrl}clientes/${idServicio}/saldo/`, { headers }),
-    fetch(`${apiBaseUrl}tickets/?estado=2&limit=${QUICK_INFO_TICKETS_FETCH_LIMIT}`, { headers }),
-    fetch(`${apiBaseUrl}clientes/${idServicio}/`, { headers }),
-  ]);
+  const [saldoResult, ticketsResult, clientResult, pendingTicketsResult] =
+    await Promise.allSettled([
+      fetch(`${apiBaseUrl}clientes/${idServicio}/saldo/`, { headers }),
+      fetch(`${apiBaseUrl}tickets/?estado=2&limit=${QUICK_INFO_TICKETS_FETCH_LIMIT}`, { headers }),
+      fetch(`${apiBaseUrl}clientes/${idServicio}/`, { headers }),
+      fetch(`${apiBaseUrl}tickets/?estado=1&limit=${QUICK_INFO_TICKETS_FETCH_LIMIT}`, { headers }),
+    ]);
 
   if (saldoResult.status === "fulfilled" && !saldoResult.value.ok) {
     console.warn(`[Background] fetchClientQuickInfo saldo ${idServicio} → HTTP ${saldoResult.value.status}`);
@@ -453,7 +421,25 @@ async function fetchClientQuickInfo(apiKey, apiBaseUrl, idServicio) {
       : null;
   const plan = clientJson?.plan_internet ?? null;
 
-  return { saldo, tickets, plan };
+  if (pendingTicketsResult.status === "fulfilled" && !pendingTicketsResult.value.ok) {
+    console.warn(
+      `[Background] fetchClientQuickInfo pendingTickets ${idServicio} → HTTP ${pendingTicketsResult.value.status}`,
+    );
+  }
+  const pendingTicketsJson =
+    pendingTicketsResult.status === "fulfilled" && pendingTicketsResult.value.ok
+      ? await pendingTicketsResult.value.json().catch(() => null)
+      : null;
+  const pendingTicketsRaw =
+    pendingTicketsJson?.results ?? (Array.isArray(pendingTicketsJson) ? pendingTicketsJson : null);
+  const pendingTickets =
+    pendingTicketsRaw === null
+      ? null
+      : pendingTicketsRaw
+        .filter((t) => String(t.servicio?.id_servicio) === String(idServicio))
+        .slice(0, QUICK_INFO_TICKETS_DISPLAY_LIMIT);
+
+  return { saldo, tickets, plan, pendingTickets };
 }
 
 async function updateTicketStatus(apiKey, apiBaseUrl, ticketId, headers) {
