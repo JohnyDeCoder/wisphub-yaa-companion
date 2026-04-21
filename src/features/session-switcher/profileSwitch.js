@@ -9,6 +9,7 @@ import {
   splitUsername,
 } from "../../config/sessionProfiles.js";
 import { getDomainKey } from "../../config/domains.js";
+import { normalizeValue } from "../../utils/string.js";
 
 const USERNAME_SELECTORS = Object.freeze([
   ".user-menu .user-name",
@@ -17,10 +18,6 @@ const USERNAME_SELECTORS = Object.freeze([
 ]);
 
 const PERSISTENT_NOTIFICATION_DURATION = Number.POSITIVE_INFINITY;
-
-function normalizeUsername(username) {
-  return String(username || "").trim().toLowerCase();
-}
 
 function dispatchInputEvents(input) {
   input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -61,7 +58,13 @@ function clearActiveNotification(documentObj) {
   }
 }
 
-function showPersistentNotification(documentObj, notifyFn, message, type, onClose) {
+function showPersistentNotification(
+  documentObj,
+  notifyFn,
+  message,
+  type,
+  onClose,
+) {
   clearActiveNotification(documentObj);
 
   if (typeof notifyFn !== "function") {
@@ -101,12 +104,14 @@ function prefillLoginUsername(documentObj, username) {
     return false;
   }
 
-  const currentValue = String(input.value || "").trim().toLowerCase();
   const targetValue = String(username || "").trim();
   if (!targetValue) {
     return false;
   }
 
+  const currentValue = String(input.value || "")
+    .trim()
+    .toLowerCase();
   if (!currentValue) {
     input.value = targetValue;
     dispatchInputEvents(input);
@@ -115,7 +120,9 @@ function prefillLoginUsername(documentObj, username) {
 }
 
 function submitLogoutFormIfPresent(documentObj) {
-  const form = documentObj.querySelector('form[action="/accounts/logout/"]');
+  const form = documentObj.querySelector(
+    'form[action^="/accounts/logout"], form:not([action])',
+  );
   if (!form) {
     return false;
   }
@@ -155,6 +162,10 @@ function formatAccountDomain(username, fallback = "sin-perfil") {
   return accountDomain || fallback;
 }
 
+function buildLoginGuideText(username) {
+  return String(username || "").trim();
+}
+
 export function readPendingProfileSwitch(storage = window.localStorage) {
   const raw = safeReadStorage(storage, PROFILE_SWITCH_STORAGE_KEY);
   if (!raw) {
@@ -176,7 +187,11 @@ export function savePendingProfileSwitch(
   pendingRecord,
   storage = window.localStorage,
 ) {
-  safeWriteStorage(storage, PROFILE_SWITCH_STORAGE_KEY, JSON.stringify(pendingRecord));
+  safeWriteStorage(
+    storage,
+    PROFILE_SWITCH_STORAGE_KEY,
+    JSON.stringify(pendingRecord),
+  );
 }
 
 export function clearPendingProfileSwitch(storage = window.localStorage) {
@@ -260,7 +275,7 @@ export function startProfileSwitchFlow(
   const currentUsername = String(pageContext.username || "").trim();
   const isAlreadyOnTarget =
     pageContext.loggedIn &&
-    normalizeUsername(currentUsername) === normalizeUsername(targetUsername);
+    normalizeValue(currentUsername) === normalizeValue(targetUsername);
 
   if (isAlreadyOnTarget) {
     return {
@@ -356,14 +371,12 @@ export function startProfileSwitchFlow(
   };
 }
 
-export function resumeProfileSwitchFlow(
-  {
-    storage = window.localStorage,
-    documentObj = document,
-    locationObj = window.location,
-    notify = null,
-  } = {},
-) {
+export function resumeProfileSwitchFlow({
+  storage = window.localStorage,
+  documentObj = document,
+  locationObj = window.location,
+  notify = null,
+} = {}) {
   const pending = readPendingProfileSwitch(storage);
   if (!pending) {
     clearActiveNotification(documentObj);
@@ -395,20 +408,23 @@ export function resumeProfileSwitchFlow(
     clearActiveNotification(documentObj);
   };
 
-  if (
-    context.loggedIn &&
-    normalizeUsername(context.username) === normalizeUsername(pending.targetUsername)
-  ) {
-    clearPendingProfileSwitch(storage);
-    clearActiveNotification(documentObj);
-    showTransientNotification(
-      documentObj,
-      notify,
-      `Sesión cambiada correctamente a ${pending.targetLabel}.`,
-      "success",
-      5000,
+  if (context.loggedIn) {
+    const { accountDomain: targetDomain } = splitUsername(
+      pending.targetUsername,
     );
-    return { active: false, reason: "completed" };
+    const { accountDomain: currentDomain } = splitUsername(context.username);
+    if (normalizeValue(currentDomain) === normalizeValue(targetDomain)) {
+      clearPendingProfileSwitch(storage);
+      clearActiveNotification(documentObj);
+      showTransientNotification(
+        documentObj,
+        notify,
+        `Sesión cambiada correctamente a ${pending.targetLabel}.`,
+        "success",
+        5000,
+      );
+      return { active: false, reason: "completed" };
+    }
   }
 
   if (context.isLogoutPage) {
@@ -421,16 +437,17 @@ export function resumeProfileSwitchFlow(
         "info",
         cancelTracking,
       );
-      return { active: true, state: "logging-out" };
     }
+    return { active: true, state: "logging-out" };
   }
 
   if (context.isLoginPage) {
     prefillLoginUsername(documentObj, pending.targetUsername);
+    const guideText = buildLoginGuideText(pending.targetUsername);
     showPersistentNotification(
       documentObj,
       notify,
-      `Inicia sesión como ${pending.targetUsername}.`,
+      `Inicia sesión con ${guideText}.`,
       "info",
       cancelTracking,
     );
@@ -438,20 +455,22 @@ export function resumeProfileSwitchFlow(
   }
 
   if (context.loggedIn) {
+    const guideText = buildLoginGuideText(pending.targetUsername);
     showPersistentNotification(
       documentObj,
       notify,
-      `Perfil incorrecto detectado. Iniciaste como ${context.username}. Debes iniciar como ${pending.targetUsername}.`,
+      `Perfil incorrecto detectado. Iniciaste como ${context.username}. Debes iniciar con ${guideText}.`,
       "error",
       cancelTracking,
     );
     return { active: true, state: "wrong-profile" };
   }
 
+  const guideText = buildLoginGuideText(pending.targetUsername);
   showPersistentNotification(
     documentObj,
     notify,
-    `Cambio a ${pending.targetLabel} en progreso. Continúa el inicio de sesión como ${pending.targetUsername}.`,
+    `Cambio a ${pending.targetLabel} en progreso. Continúa el inicio de sesión con ${guideText}.`,
     "warning",
     cancelTracking,
   );

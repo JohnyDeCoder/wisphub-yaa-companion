@@ -191,6 +191,90 @@ describe("profileSwitch flow", () => {
     );
   });
 
+  it("auto-submits logout form when form has no action attribute", () => {
+    const storage = createMemoryStorage();
+    savePending(storage);
+    const form = document.createElement("form");
+    form.method = "post";
+    const csrf = document.createElement("input");
+    csrf.type = "hidden";
+    csrf.name = "csrfmiddlewaretoken";
+    csrf.value = "abc123";
+    form.appendChild(csrf);
+    form.requestSubmit = vi.fn();
+    document.body.appendChild(form);
+    const notify = vi.fn(() => vi.fn());
+    const locationObj = createLocation("/accounts/logout/");
+
+    const state = resumeProfileSwitchFlow({
+      storage,
+      locationObj,
+      documentObj: document,
+      notify,
+    });
+
+    expect(state).toMatchObject({ active: true, state: "logging-out" });
+    expect(form.requestSubmit).toHaveBeenCalledTimes(1);
+    expect(notify).toHaveBeenCalledWith(
+      "Cerrando sesión actual para continuar con Michoacán...",
+      "info",
+      Number.POSITIVE_INFINITY,
+      expect.any(Function),
+    );
+  });
+
+  it("auto-submits logout form when action includes query string", () => {
+    const storage = createMemoryStorage();
+    savePending(storage);
+    const form = document.createElement("form");
+    form.action = "/accounts/logout/?next=%2Faccounts%2Flogin%2F%3Fnext%3D%252Fclientes%252F";
+    form.method = "post";
+    form.requestSubmit = vi.fn();
+    document.body.appendChild(form);
+    const notify = vi.fn(() => vi.fn());
+    const locationObj = createLocation("/accounts/logout/");
+
+    const state = resumeProfileSwitchFlow({
+      storage,
+      locationObj,
+      documentObj: document,
+      notify,
+    });
+
+    expect(state).toMatchObject({ active: true, state: "logging-out" });
+    expect(form.requestSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not show wrong-profile when on logout page but no form found", () => {
+    const storage = createMemoryStorage();
+    savePending(storage);
+    const userMenu = document.createElement("div");
+    userMenu.className = "user-menu";
+    const userNameEl = document.createElement("span");
+    userNameEl.className = "user-name";
+    userNameEl.textContent = "johny@yaa-internet-by-vw";
+    userMenu.appendChild(userNameEl);
+    document.body.appendChild(userMenu);
+    const notify = vi.fn(() => vi.fn());
+    const locationObj = createLocation("/accounts/logout/");
+
+    const state = resumeProfileSwitchFlow({
+      storage,
+      locationObj,
+      documentObj: document,
+      notify,
+    });
+
+    expect(state).not.toMatchObject({ state: "wrong-profile" });
+    expect(state).toMatchObject({ active: true });
+    expect(notify).not.toHaveBeenCalledWith(
+      expect.stringContaining("Perfil incorrecto"),
+      "error",
+      expect.any(Number),
+      expect.any(Function),
+    );
+  });
+
   it("prefills login input and shows persistent tracking notification", () => {
     const storage = createMemoryStorage();
     savePending(storage);
@@ -210,11 +294,9 @@ describe("profileSwitch flow", () => {
     });
 
     expect(state).toMatchObject({ active: true, state: "awaiting-login" });
-    expect(document.getElementById("id_login").value).toBe(
-      "johny@vwinternetnetworks",
-    );
+    expect(document.getElementById("id_login").value).toBe("johny@vwinternetnetworks");
     expect(notify).toHaveBeenCalledWith(
-      "Inicia sesión como johny@vwinternetnetworks.",
+      "Inicia sesión con johny@vwinternetnetworks.",
       "info",
       Number.POSITIVE_INFINITY,
       expect.any(Function),
@@ -241,7 +323,7 @@ describe("profileSwitch flow", () => {
 
     expect(state).toMatchObject({ active: true, state: "wrong-profile" });
     expect(notify).toHaveBeenCalledWith(
-      "Perfil incorrecto detectado. Iniciaste como johny@yaa-internet-by-vw. Debes iniciar como johny@vwinternetnetworks.",
+      "Perfil incorrecto detectado. Iniciaste como johny@yaa-internet-by-vw. Debes iniciar con johny@vwinternetnetworks.",
       "error",
       Number.POSITIVE_INFINITY,
       expect.any(Function),
@@ -250,6 +332,44 @@ describe("profileSwitch flow", () => {
     const onClose = notify.mock.calls[0][3];
     onClose();
     expect(storage.getItem(PROFILE_SWITCH_STORAGE_KEY)).toBeNull();
+  });
+
+  it("completes when logged-in user has matching accountDomain but different localPart", () => {
+    // pending.targetUsername was built from origin localPart + target domain = "pina@vwinternetnetworks"
+    // but the actual user that logged in is "kevin@vwinternetnetworks" (same domain, different local)
+    const storage = createMemoryStorage();
+    savePendingProfileSwitch(
+      {
+        id: "switch-mich",
+        domainKey: "wisphub.io",
+        targetUsername: "pina@vwinternetnetworks",
+        targetLabel: "Michoacán",
+        createdAt: Date.now(),
+      },
+      storage,
+    );
+    document.body.innerHTML = `
+      <div class="user-menu">
+        <span class="user-name">kevin@vwinternetnetworks</span>
+      </div>
+    `;
+    const notify = vi.fn();
+    const locationObj = createLocation("/clientes/");
+
+    const state = resumeProfileSwitchFlow({
+      storage,
+      locationObj,
+      documentObj: document,
+      notify,
+    });
+
+    expect(state).toMatchObject({ active: false, reason: "completed" });
+    expect(storage.getItem(PROFILE_SWITCH_STORAGE_KEY)).toBeNull();
+    expect(notify).toHaveBeenCalledWith(
+      "Sesión cambiada correctamente a Michoacán.",
+      "success",
+      5000,
+    );
   });
 
   it("completes and clears pending record after successful target login", () => {
