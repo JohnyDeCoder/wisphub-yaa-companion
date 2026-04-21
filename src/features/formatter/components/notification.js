@@ -118,28 +118,25 @@ export function showNotification(message, type, duration, onClose) {
 
   let timer = 0;
   let closed = false;
-  const closeNotification = () => {
-    if (closed) {
-      return;
-    }
+  const dismissOnly = () => {
+    if (closed) { return; }
     closed = true;
     dismissNotification(notification, timer);
+  };
+  const closeWithCallback = () => {
+    if (closed) { return; }
+    dismissOnly();
     if (typeof onClose === "function") {
       onClose();
     }
   };
 
   if (hasAutoDismiss) {
-    timer = setTimeout(() => {
-      closeNotification();
-    }, displayTime);
+    timer = setTimeout(closeWithCallback, displayTime);
   }
 
-  closeBtn.addEventListener("click", () => {
-    closeNotification();
-  });
-
+  closeBtn.addEventListener("click", closeWithCallback);
   container.appendChild(notification);
 
-  return closeNotification;
+  return dismissOnly;
 }

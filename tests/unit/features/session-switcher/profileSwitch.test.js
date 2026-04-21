@@ -6,6 +6,7 @@ import {
   savePendingProfileSwitch,
   startProfileSwitchFlow,
 } from "../../../../src/features/session-switcher/profileSwitch.js";
+import { showNotification } from "../../../../src/features/formatter/components/notification.js";
 
 function createMemoryStorage() {
   const map = new Map();
@@ -397,6 +398,51 @@ describe("profileSwitch flow", () => {
       "success",
       5000,
     );
+  });
+
+  it("preserves pending record when switch is re-initiated while wrong-profile notification is active", () => {
+    const storage = createMemoryStorage();
+    const locationObj = createLocation("/clientes/");
+    savePending(storage);
+
+    const userMenu = document.createElement("div");
+    userMenu.className = "user-menu";
+    const userName = document.createElement("span");
+    userName.className = "user-name";
+    userName.textContent = "johny@yaa-internet-by-vw";
+    userMenu.appendChild(userName);
+    document.body.appendChild(userMenu);
+
+    const resumeState = resumeProfileSwitchFlow({
+      storage,
+      locationObj,
+      documentObj: document,
+      notify: showNotification,
+    });
+    expect(resumeState).toMatchObject({ state: "wrong-profile" });
+
+    const result = startProfileSwitchFlow(
+      { targetUsername: "johny@vwinternetnetworks", targetLabel: "Michoacán" },
+      {
+        context: {
+          domainKey: "wisphub.io",
+          pathname: "/clientes/",
+          loggedIn: true,
+          username: "johny@yaa-internet-by-vw",
+        },
+        confirmFn: () => true,
+        locationObj,
+        storage,
+        documentObj: document,
+        notify: showNotification,
+        navigateImmediately: false,
+      },
+    );
+
+    expect(result).toMatchObject({ success: true, started: true });
+    const pending = readPendingProfileSwitch(storage);
+    expect(pending).not.toBeNull();
+    expect(pending.targetUsername).toBe("johny@vwinternetnetworks");
   });
 
   it("can clear pending switch explicitly", () => {
