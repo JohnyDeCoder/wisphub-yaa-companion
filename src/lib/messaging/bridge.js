@@ -2,6 +2,12 @@ import { EXTENSION_NAME } from "../../config/constants.js";
 import { getDomainKey, getApiBaseUrl } from "../../config/domains.js";
 import { MESSAGE_TYPES, ACTIONS } from "../../config/messages.js";
 import { browserAPI } from "../../utils/browser.js";
+import { buildProfileSnapshotKey } from "../../utils/sessionKey.js";
+import {
+  LOG_STORAGE_KEY,
+  MAX_LOG_ENTRIES,
+  pruneExpiredLogs,
+} from "../../utils/logStorage.js";
 import {
   generateBridgeToken,
   isBridgeMessage,
@@ -9,10 +15,7 @@ import {
   postBridgeMessage,
 } from "../../utils/pageBridge.js";
 
-const LOG_STORAGE_KEY = "wisphubYaaLogs"; // chrome.storage key for popup log entries
 const API_KEY_STORAGE_KEY = "wisphubYaaApiKeys"; // chrome.storage key for API keys per domain
-const MAX_LOG_ENTRIES = 50; // Max stored log entries before oldest are pruned (default: 50)
-const LOG_TTL = 24 * 60 * 60 * 1000; // Log entry lifetime in ms (default: 24h)
 
 let editorReady = false;
 let formatterEnabled = false;
@@ -29,6 +32,9 @@ let userSettings = {
   notificationsEnabled: true,
   autoFormatEnabled: false,
   autoPriceCalcEnabled: false,
+  autoFillTemplateEnabled: true,
+  quickInfoEnabled: true,
+  quickInfoDelay: 1000,
 };
 
 function ensureBridgeToken() {
@@ -127,14 +133,6 @@ function getCurrentUsernameFromDom() {
   return usernameEl?.textContent?.trim() || "";
 }
 
-function buildSessionCaptureKey(domainKey, username) {
-  const safeDomain = String(domainKey || "").trim().toLowerCase();
-  const safeUsername = String(username || "").trim().toLowerCase();
-  if (!safeDomain || !safeUsername) {
-    return "";
-  }
-  return `${safeDomain}::${safeUsername}`;
-}
 
 async function captureSessionCookiesSnapshot(domainKey, username, options = {}) {
   if (!domainKey || !username) {
@@ -142,7 +140,7 @@ async function captureSessionCookiesSnapshot(domainKey, username, options = {}) 
   }
 
   const forceCapture = options.force === true;
-  const cacheKey = buildSessionCaptureKey(domainKey, username);
+  const cacheKey = buildProfileSnapshotKey(domainKey, username);
   if (cacheKey && !forceCapture) {
     const now = Date.now();
     const lastCapturedAt = Number(lastSessionCaptureByProfile.get(cacheKey) || 0);
@@ -170,7 +168,7 @@ async function captureSessionCookiesSnapshot(domainKey, username, options = {}) 
 
 async function hasSessionCookiesSnapshot(domainKey, username) {
   if (!domainKey || !username) {
-    return false;
+    return { hasSnapshot: false, storedUsername: null };
   }
 
   try {
@@ -179,9 +177,12 @@ async function hasSessionCookiesSnapshot(domainKey, username) {
       domainKey,
       username,
     });
-    return response?.success === true && response?.hasSnapshot === true;
+    return {
+      hasSnapshot: response?.success === true && response?.hasSnapshot === true,
+      storedUsername: response?.username || null,
+    };
   } catch {
-    return false;
+    return { hasSnapshot: false, storedUsername: null };
   }
 }
 
@@ -209,29 +210,28 @@ async function switchSessionCookies(domainKey, targetUsername) {
   }
 }
 
-function pruneExpiredLogs(logs) {
-  const now = Date.now();
-  return logs.filter((entry) => entry?.ts && now - entry.ts < LOG_TTL);
-}
-
 function persistLogEntry(data) {
   try {
     browserAPI.storage.local
       .get(LOG_STORAGE_KEY)
       .then((res) => {
         const logs = pruneExpiredLogs(res[LOG_STORAGE_KEY] || []);
-        const ts = Date.now();
-        const time = new Date().toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-        });
         logs.push({
-          time,
+          time: new Date().toLocaleTimeString(undefined, {
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+          }),
           level: data.level || "info",
           message: data.message || "",
-          ts,
+          ts: Date.now(),
+          feature: String(data.feature || "").trim(),
+          action: String(data.action || "").trim(),
+          pagePath: String(data.pagePath || "").trim(),
+          before: String(data.before || "").trim(),
+          after: String(data.after || "").trim(),
+          kind: String(data.kind || "").trim(),
         });
         if (logs.length > MAX_LOG_ENTRIES) {
           logs.splice(0, logs.length - MAX_LOG_ENTRIES);
@@ -349,6 +349,11 @@ export function listenToPageMessages() {
       return;
     }
 
+    if (type === MESSAGE_TYPES.CLIENT_QUICK_INFO_REQUEST) {
+      relayClientQuickInfo(data.idServicio);
+      return;
+    }
+
   });
 }
 
@@ -394,6 +399,27 @@ async function relayTicketUpdate(ticketIds) {
     );
   } catch (err) {
     failAll(err.message);
+  }
+}
+
+async function relayClientQuickInfo(idServicio) {
+  const sendResult = (result) =>
+    postToPage(MESSAGE_TYPES.CLIENT_QUICK_INFO_RESPONSE, { idServicio, result });
+
+  try {
+    const { domainKey, apiKey } = await getApiKeyForCurrentDomain();
+    if (!domainKey || !apiKey) {
+      return sendResult({ saldo: null, tickets: null });
+    }
+    const response = await browserAPI.runtime.sendMessage({
+      action: ACTIONS.CLIENT_QUICK_INFO,
+      apiKey,
+      apiBaseUrl: getApiBaseUrl(domainKey),
+      idServicio,
+    });
+    sendResult(response?.data || { saldo: null, tickets: null });
+  } catch {
+    sendResult({ saldo: null, tickets: null });
   }
 }
 
@@ -515,14 +541,13 @@ export function listenToExtensionMessages(options = {}) {
             });
           }
 
-          const canUseCookieSwitch = await hasSessionCookiesSnapshot(
-            domainKey,
-            targetUsername,
-          );
+          const snapshotResult = await hasSessionCookiesSnapshot(domainKey, targetUsername);
+          const canUseCookieSwitch = snapshotResult.hasSnapshot;
+          const resolvedTargetUsername = snapshotResult.storedUsername || targetUsername;
 
           window.__WISPHUB_LAST_PROFILE_SWITCH_ACK__ = null;
           postToPage(MESSAGE_TYPES.PROFILE_SWITCH_REQUEST, {
-            targetUsername,
+            targetUsername: resolvedTargetUsername,
             targetLabel: message.targetLabel || "",
             targetProfileKey: message.targetProfileKey || "",
             preferCookieSwitch: canUseCookieSwitch,
@@ -537,7 +562,7 @@ export function listenToExtensionMessages(options = {}) {
           if (ack.switchStrategy === "cookie-swap") {
             const cookieSwitchResult = await switchSessionCookies(
               domainKey,
-              targetUsername,
+              resolvedTargetUsername,
             );
 
             if (cookieSwitchResult?.success) {
