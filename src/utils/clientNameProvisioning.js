@@ -1,4 +1,5 @@
 import { normalizeText } from "./tableHelpers.js";
+import { removeAccents } from "./string.js";
 
 const TRAILING_SERVICE_COUNT_RE = /\s*-\s*\d+\s*$/;
 const NAME_CASING_OPTIONS = new Set(["upper", "lower", "title"]);
@@ -22,12 +23,6 @@ export function normalizeClientName(rawName, options = {}) {
   }
 
   return normalized.replace(TRAILING_SERVICE_COUNT_RE, "").trim();
-}
-
-function removeAccents(value) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function normalizeSeparatorAliasToken(value) {

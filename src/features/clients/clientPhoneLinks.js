@@ -7,6 +7,7 @@ import { addOrUpdateClientActionButtons } from "./clientActionButtons.js";
 import {
   findColumnIndex,
   getDataTableCellText,
+  matchesKeywords,
   normalizeText,
 } from "../../utils/tableHelpers.js";
 import {
@@ -138,11 +139,6 @@ function looksLikeIP(text) {
   return IP_RE.test(text.trim());
 }
 
-function matchesKeywords(text, keywords) {
-  const lower = normalizeText(text).toLowerCase();
-  return keywords.some((kw) => lower.includes(kw));
-}
-
 function findDomColumnIndex(table, keywords, excludeIndices = []) {
   if (!table) {
     return -1;
@@ -188,7 +184,7 @@ function createWaLink(phoneText, cleaned) {
       e.preventDefault();
       copyToClipboard(phoneText).then((ok) => {
         if (ok && _notify) {
-          _notify(`Teléfono copiado: ${phoneText}`, "success", 2000);
+          _notify(CLIENTS_UI_MESSAGES.PHONE_COPIED(phoneText), "success", 2000);
           log(`Phone copied: ${phoneText}`, `Teléfono copiado: ${phoneText}`);
         }
       });
@@ -266,7 +262,7 @@ function createMapLink(text, mapUrl) {
       e.preventDefault();
       copyToClipboard(text).then((ok) => {
         if (ok && _notify) {
-          _notify(`Coordenadas copiadas: ${text}`, "success", 2000);
+          _notify(CLIENTS_UI_MESSAGES.COORDINATES_COPIED(text), "success", 2000);
         }
       });
     }
@@ -356,6 +352,7 @@ function getRawCellValueFromRow(table, row, colIndex) {
 
   const cells = row.querySelectorAll("td");
   const cell = cells[colIndex];
+  // innerHTML preserves <br> separators that extractCommentLines uses for parsing structured cells.
   return String(cell?.innerHTML || cell?.textContent || "");
 }
 
@@ -1182,10 +1179,7 @@ function pollUntilFound(maxAttempts, interval) {
     attempts++;
     const found = processAll();
     if (found > 0) {
-      log(
-        `Client enhancements injected: ${found} elements`,
-        `Mejoras de clientes inyectadas: ${found} elementos`,
-      );
+      log(`Client enhancements injected: ${found} elements`);
       startObserver();
       return;
     }
@@ -1263,10 +1257,7 @@ export function initClientPhoneLinks(notifyFn) {
   }
 
   _notify = notifyFn;
-  log(
-    "Phone and map link enhancements loaded",
-    "Mejoras de enlaces telefónicos y mapas cargadas",
-  );
+  log("Phone and map link enhancements loaded");
 
   pollUntilFound(20, 1000);
 }

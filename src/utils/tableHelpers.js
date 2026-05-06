@@ -43,7 +43,7 @@ export function findColumnIndex(table, keywords, excludeIndices, logTag) {
         }
       }
     } catch (err) {
-      console.warn(`[${tag}] DataTable header scan error:`, err?.message);
+      console.warn(`[WYC][${tag}] DataTable header scan error:`, err?.message);
     }
   }
 
@@ -113,9 +113,28 @@ export function getDataTableCellText(tableSelector, row, colIndex, logTag) {
     }
 
     console.warn(
-      `[${tag}] DataTable cell read error (col ${colIndex}):`,
+      `[WYC][${tag}] DataTable cell read error (col ${colIndex}):`,
       err?.message,
     );
     return "";
   }
+}
+
+export function matchesKeywords(text, keywords) {
+  const lower = normalizeText(text).toLowerCase();
+  return keywords.some((kw) => lower.includes(kw));
+}
+
+// Returns { $, tableEl, dt } or null when jQuery/DataTable is unavailable or
+// the element is not initialized as a DataTable.
+export function getJQueryDataTable(selector) {
+  const $ = window.jQuery;
+  if (!$ || !$.fn?.DataTable) {
+    return null;
+  }
+  const tableEl = $(selector);
+  if (!tableEl.length || !$.fn.DataTable.isDataTable(tableEl)) {
+    return null;
+  }
+  return { $, tableEl, dt: tableEl.DataTable() };
 }

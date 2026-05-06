@@ -1,8 +1,8 @@
 import {
   COPY_CONTROL_CLASS,
-  EXTENSION_NAME,
   INSTALL_BUTTON_ID,
 } from "../../config/constants.js";
+import { INSTALLS_UI_MESSAGES } from "../../config/messages.js";
 import { sendLogToPopup } from "../../utils/logger.js";
 import { waitForElement } from "../../utils/polling.js";
 import { applyHostTooltip } from "../../utils/hostTooltip.js";
@@ -14,6 +14,7 @@ import {
   normalizeText,
   findColumnIndex,
   getDataTableCellText,
+  getJQueryDataTable,
 } from "../../utils/tableHelpers.js";
 
 let _busy = false;
@@ -48,8 +49,8 @@ export function initInstallNotify(notifyFn) {
   _notify = notifyFn;
 }
 
-function log(consoleMsg, popupMsg, level = "info") {
-  sendLogToPopup("Installs", level, consoleMsg, popupMsg);
+function log(consoleMsg, popupMsg, level = "info", details = {}) {
+  sendLogToPopup("Installs", level, consoleMsg, popupMsg, details);
 }
 
 function extractEditUrl(row, idServicio) {
@@ -70,22 +71,15 @@ function extractEditUrl(row, idServicio) {
 }
 
 function getInProgressEntries() {
-  const $ = window.jQuery;
-  if (!$ || !$.fn?.DataTable) {
-    console.log("[Installs] jQuery/DataTable not available");
+  const dtResult = getJQueryDataTable(TABLE_SELECTOR);
+  if (!dtResult) {
+    log("jQuery/DataTable not available");
     return [];
   }
 
-  const tableEl = $(TABLE_SELECTOR);
-  if (!tableEl.length) {
-    console.log("[Installs] Table not found:", TABLE_SELECTOR);
-    return [];
-  }
-
-  const dt = tableEl.DataTable();
   const entries = [];
 
-  dt.rows().every(function () {
+  dtResult.dt.rows().every(function () {
     const data = this.data();
     const node = this.node();
     for (let i = 0; i < data.length; i++) {
@@ -93,16 +87,14 @@ function getInProgressEntries() {
       if (STATUS_PROGRESS_RE.test(cellText)) {
         const idServicio = normalizeText(data[0]);
         const editUrl = extractEditUrl(node, idServicio);
-        console.log(
-          `[Installs] In Progress → id=${idServicio}, url=${editUrl}`,
-        );
+        log(`In Progress → id=${idServicio}, url=${editUrl}`);
         entries.push({ clientId: idServicio, row: node, editUrl });
         break;
       }
     }
   });
 
-  console.log(`[Installs] Found ${entries.length} "In Progress" entries`);
+  log(`Found ${entries.length} "In Progress" entries`);
   return entries;
 }
 
@@ -131,7 +123,7 @@ async function updateViaWebForm(editUrl) {
   estadoSelect.value = "1";
   form.querySelectorAll('input[type="file"]').forEach((el) => el.remove());
 
-  console.log(`[Installs] POST ${editUrl} estado_instalacion=1`);
+  log(`POST ${editUrl} estado_instalacion=1`);
   const postRes = await fetch(editUrl, {
     method: "POST",
     credentials: "same-origin",
@@ -152,15 +144,11 @@ async function handleMarkAsNew() {
 
   const entries = getInProgressEntries();
   if (entries.length === 0) {
-    _notify('No se encontraron instalaciones "En Progreso"', "warning");
+    _notify(INSTALLS_UI_MESSAGES.NO_IN_PROGRESS, "warning");
     return;
   }
 
-  if (
-    !confirm(
-      `¿Marcar ${entries.length} instalación(es) de "En Progreso" a "Nueva"?`,
-    )
-  ) {
+  if (!confirm(INSTALLS_UI_MESSAGES.CONFIRM_MARK_AS_NEW(entries.length))) {
     return;
   }
 
@@ -169,13 +157,10 @@ async function handleMarkAsNew() {
     `Marking ${entries.length} installation(s) as New...`,
     `Marcando ${entries.length} instalación(es) como Nuevas...`,
   );
-  console.log(
-    "[Installs] Processing:",
-    entries.map((e) => e.clientId),
-  );
+  log(`Processing: ${entries.map((e) => e.clientId).join(", ")}`);
 
   const dismissLoading = _notify(
-    `Procesando ${entries.length} instalación(es)...`,
+    INSTALLS_UI_MESSAGES.PROCESSING(entries.length),
     "loading",
     120000,
   );
@@ -188,11 +173,11 @@ async function handleMarkAsNew() {
     try {
       await updateViaWebForm(entry.editUrl);
       success++;
-      console.log(`[Installs] #${entry.clientId} → OK`);
+      log(`#${entry.clientId} → OK`);
     } catch (err) {
       failed++;
       errors.push({ id: entry.clientId, error: err.message });
-      console.warn(`[Installs] #${entry.clientId} → ERROR:`, err.message);
+      log(`#${entry.clientId} → ERROR: ${err.message}`, undefined, "warn");
     }
   }
 
@@ -201,23 +186,31 @@ async function handleMarkAsNew() {
   }
 
   if (failed === 0) {
-    _notify(`${success} instalación(es) marcadas como Nuevas`, "success", 5000);
+    _notify(INSTALLS_UI_MESSAGES.SUCCESS_MARKED(success), "success", 5000);
     log(
       `${success} of ${entries.length} installation(s) marked as New`,
-      `${success} de ${entries.length} instalación(es) marcadas como Nuevas`,
+      INSTALLS_UI_MESSAGES.SUCCESS_MARKED(success),
+      "success",
+      {
+        kind: "audit",
+        action: "Marcadas como Nuevas",
+        pagePath: window.location.pathname,
+        pageUrl: window.location.href,
+        stateColor: "success",
+      },
     );
   } else if (success > 0) {
-    _notify(`${success} OK, ${failed} con error`, "warning", 7000);
+    _notify(INSTALLS_UI_MESSAGES.PARTIAL_SUCCESS(success, failed), "warning", 7000);
     log(
       `${success} succeeded, ${failed} failed`,
-      `${success} exitosas, ${failed} con error`,
+      INSTALLS_UI_MESSAGES.PARTIAL_SUCCESS(success, failed),
       "warning",
     );
   } else {
-    _notify(`Error al actualizar ${failed} instalación(es)`, "error", 7000);
+    _notify(INSTALLS_UI_MESSAGES.TOTAL_FAILURE(failed), "error", 7000);
     log(
       `${failed} installation(s) failed to update`,
-      `${failed} instalación(es) fallaron al actualizar`,
+      INSTALLS_UI_MESSAGES.TOTAL_FAILURE(failed),
       "error",
     );
   }
@@ -273,7 +266,7 @@ function injectButton(btnGroup) {
 // ── Installation type suffix based on domain ────────────────────────────
 function getInstallTypeSuffix() {
   const domain = getDomainKey(window.location.hostname);
-  console.log("[Installs] Domain key:", domain);
+  log(`Domain key: ${domain}`);
   if (domain === "wisphub.app") {
     return "Inst. Fibra";
   }
@@ -283,9 +276,7 @@ function getInstallTypeSuffix() {
 // ── Build copy text ─────────────────────────────────────────────────────
 function buildInstallCopyText(row, table) {
   if (!row || !table) {
-    console.warn(
-      "[Installs] buildInstallCopyText: missing row or table reference",
-    );
+    log("buildInstallCopyText: missing row or table reference", undefined, "warn");
     return "";
   }
 
@@ -297,12 +288,7 @@ function buildInstallCopyText(row, table) {
     "Installs",
   );
 
-  console.log(
-    "[Installs] Column indices → locality:",
-    localityCol,
-    "| client:",
-    clientCol,
-  );
+  log(`Column indices → locality: ${localityCol} | client: ${clientCol}`);
 
   // Use DataTables API only — immune to column hiding / reordering.
   // getCellTextByIndex (DOM-based) is NOT used because hidden columns
@@ -321,14 +307,7 @@ function buildInstallCopyText(row, table) {
   );
   const suffix = getInstallTypeSuffix();
 
-  console.log(
-    "[Installs] Extracted → locality:",
-    JSON.stringify(locality),
-    "| client:",
-    JSON.stringify(client),
-    "| suffix:",
-    suffix,
-  );
+  log(`Extracted → locality: ${JSON.stringify(locality)} | client: ${JSON.stringify(client)} | suffix: ${suffix}`);
 
   // Require at least client; locality is optional
   if (!client) {
@@ -346,7 +325,7 @@ function buildInstallCopyText(row, table) {
   }
 
   if (!locality) {
-    console.log("[Installs] Locality is empty, building text without it");
+    log("Locality is empty, building text without it");
   }
 
   return [locality, client, suffix].filter(Boolean).join(" - ");
@@ -437,11 +416,7 @@ function bindInstallCopyClickHandler(table) {
       }
       const payload = buildInstallCopyText(row, table);
       if (!payload) {
-        _notify(
-          "No se pudo construir el texto de la instalación",
-          "warning",
-          3000,
-        );
+        _notify(INSTALLS_UI_MESSAGES.COPY_TEXT_BUILD_FAILED, "warning", 3000);
         return;
       }
 
@@ -451,7 +426,7 @@ function bindInstallCopyClickHandler(table) {
           log(`Install text copied: ${payload}`, `Texto copiado: ${payload}`);
           return;
         }
-        _notify("No se pudo copiar el texto de la instalación", "error", 4000);
+        _notify(INSTALLS_UI_MESSAGES.COPY_TEXT_FAILED, "error", 4000);
       });
     },
     true,
@@ -480,10 +455,7 @@ function initInstallCopyButtons() {
 
     const injected = injectInstallCopyButtons();
     if (injected > 0) {
-      log(
-        `Copy button added to ${injected} installation row(s)`,
-        `Botón de copiado agregado en ${injected} instalación(es)`,
-      );
+      log(`Copy button added to ${injected} installation row(s)`);
     }
 
     bindInstallCopyClickHandler(table);
@@ -496,8 +468,8 @@ export function initInstallationActions() {
     return;
   }
 
-  console.log(`[${EXTENSION_NAME}] Installations page detected`);
-  log("Installations module loaded", "Módulo de instalaciones cargado");
+  log("Installations page detected");
+  log("Installations module loaded");
 
   initInstallCopyButtons();
   waitForElement(ACTION_BAR_SELECTOR).then((btnGroup) => {
@@ -505,6 +477,6 @@ export function initInstallationActions() {
       return;
     }
     injectButton(btnGroup);
-    log('"Mark as New" button added', 'Botón "Marcar como Nuevas" añadido');
+    log('"Mark as New" button added');
   });
 }

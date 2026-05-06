@@ -1,3 +1,4 @@
+import { TICKETS_EDITOR_PATH_RE } from "../../config/pagePatterns.js";
 import { COPY_CONTROL_CLASS, EXTENSION_NAME } from "../../config/constants.js";
 import { MESSAGE_TYPES, TICKETS_UI_MESSAGES } from "../../config/messages.js";
 import { sendLogToPopup } from "../../utils/logger.js";
@@ -15,6 +16,8 @@ import {
   normalizeText,
   findColumnIndex,
   getDataTableCellText,
+  getJQueryDataTable,
+  matchesKeywords,
 } from "../../utils/tableHelpers.js";
 import {
   buildClientMapUrlFromServiceSlug,
@@ -65,19 +68,14 @@ export function initTicketNotify(notifyFn) {
   _notify = notifyFn;
 }
 
-function log(consoleMsg, popupMsg, level = "info") {
-  sendLogToPopup("Tickets", level, consoleMsg, popupMsg);
+function log(consoleMsg, popupMsg, level = "info", details = {}) {
+  sendLogToPopup("Tickets", level, consoleMsg, popupMsg, details);
 }
 
 function getSelectedTicketIds() {
   return Array.from(
     document.querySelectorAll("input.editor-active:checked"),
   ).map((cb) => cb.value);
-}
-
-function matchesKeywords(text, keywords) {
-  const normalized = normalizeText(text).toLowerCase();
-  return keywords.some((kw) => normalized.includes(kw));
 }
 
 function getCellTextBySelectors(row, selector) {
@@ -88,17 +86,11 @@ function getCellTextBySelectors(row, selector) {
 }
 
 function getDataTableRowIndex(row) {
-  const $ = window.jQuery;
-  if (!$ || !$.fn?.DataTable) {
+  const dtResult = getJQueryDataTable(TABLE_SELECTOR);
+  if (!dtResult) {
     return null;
   }
-
-  const tableEl = $(TABLE_SELECTOR);
-  if (!tableEl.length || !$.fn.DataTable.isDataTable(tableEl)) {
-    return null;
-  }
-
-  const index = tableEl.DataTable().row(row).index();
+  const index = dtResult.dt.row(row).index();
   return Number.isFinite(index) ? index : null;
 }
 
@@ -171,9 +163,7 @@ function trimIssueText(value) {
 
 function buildTicketCopyText(row, table) {
   if (!row || !table) {
-    console.warn(
-      "[Tickets] buildTicketCopyText: missing row or table reference",
-    );
+    log("buildTicketCopyText: missing row or table reference", undefined, "warn");
     return "";
   }
 
@@ -192,15 +182,8 @@ function buildTicketCopyText(row, table) {
   );
   const rowIndex = getDataTableRowIndex(row);
 
-  console.log(
-    "[Tickets] Column indices → locality:",
-    localityCol,
-    "| client:",
-    clientCol,
-    "| subject:",
-    subjectCol,
-    "| rowIndex:",
-    rowIndex,
+  log(
+    `Column indices → locality: ${localityCol} | client: ${clientCol} | subject: ${subjectCol} | rowIndex: ${rowIndex}`,
   );
 
   // Priority: 1) DataTables API (logical index, always correct)
@@ -230,14 +213,9 @@ function buildTicketCopyText(row, table) {
     getValueFromResponsiveRows(row, rowIndex, SUBJECT_KEYWORDS);
   const issue = trimIssueText(issueRaw);
 
-  console.log(
-    "[Tickets] Extracted → locality:",
-    JSON.stringify(locality),
-    "| client:",
-    JSON.stringify(client),
-    "| issue:",
-    JSON.stringify(issue),
-  );
+  const logMsg = `Extracted → locality: ${JSON.stringify(locality)} | ` +
+    `client: ${JSON.stringify(client)} | issue: ${JSON.stringify(issue)}`;
+  log(logMsg);
 
   // Require at least client and issue; locality is optional
   if (!client || !issue) {
@@ -282,16 +260,14 @@ function buildTicketCopyText(row, table) {
         .filter(Boolean);
       descFirstLine = lines[0] || "";
     }
-    console.log(
-      "[Tickets] Maintenance client detected,",
-      "first desc line:",
-      JSON.stringify(descFirstLine),
+    log(
+      `Maintenance client detected, first desc line: ${JSON.stringify(descFirstLine)}`,
     );
     return [client, descFirstLine, issue].filter(Boolean).join(" - ");
   }
 
   if (!locality) {
-    console.log("[Tickets] Locality is empty, building text without it");
+    log("Locality is empty, building text without it");
   }
 
   return [locality, client, issue].filter(Boolean).join(" - ");
@@ -619,24 +595,15 @@ function initTicketActionButtons() {
 
     const { copyCount, mapCount } = injectTicketCopyButtons();
     if (copyCount > 0) {
-      log(
-        `Copy button added to ${copyCount} ticket(s)`,
-        `Botón de copiado agregado en ${copyCount} ticket(s)`,
-      );
+      log(`Copy button added to ${copyCount} ticket(s)`);
     }
     if (mapCount > 0) {
-      log(
-        `Map button added to ${mapCount} ticket(s)`,
-        `Botón de mapa agregado en ${mapCount} ticket(s)`,
-      );
+      log(`Map button added to ${mapCount} ticket(s)`);
     }
 
     const linkCount = injectClientViewLinks();
     if (linkCount > 0) {
-      log(
-        `Client view link added to ${linkCount} ticket(s)`,
-        `Enlace de ver cliente agregado en ${linkCount} ticket(s)`,
-      );
+      log(`Client view link added to ${linkCount} ticket(s)`);
     }
 
     bindTicketCopyClickHandler(table);
@@ -694,7 +661,7 @@ function handleMarkAsNew() {
     `Marking ${ticketIds.length} ticket(s) as New...`,
     `Marcando ${ticketIds.length} ticket(s) como Nuevos...`,
   );
-  console.log("[Tickets] Selected IDs:", ticketIds);
+  log(`Selected IDs: ${ticketIds.join(", ")}`);
 
   const dismissLoading = _notify(
     TICKETS_UI_MESSAGES.PROCESSING(ticketIds.length),
@@ -765,13 +732,21 @@ function processResults(results, ticketIds) {
   }
 
   const { success, failed, errors } = results;
-  console.log("[Tickets] API result:", JSON.stringify(results));
+  log(`API result: ${JSON.stringify(results)}`);
 
   if (failed === 0) {
     _notify(TICKETS_UI_MESSAGES.SUCCESS_MARKED(success), "success", 5000);
     log(
       `${success} of ${ticketIds.length} ticket(s) marked as New`,
       `${success} de ${ticketIds.length} ticket(s) marcados como Nuevos`,
+      "success",
+      {
+        kind: "audit",
+        action: "Marcados como Nuevos",
+        pagePath: window.location.pathname,
+        pageUrl: window.location.href,
+        stateColor: "success",
+      },
     );
   } else if (success > 0) {
     _notify(TICKETS_UI_MESSAGES.PARTIAL_SUCCESS(success, failed), "warning", 7000);
@@ -832,10 +807,7 @@ function resolveSuccessfulTicketIds(requestedIds, results) {
 
 function removeTicketRows(successfulIds) {
   try {
-    const $ = window.jQuery;
-    const tableEl = $ ? $(TABLE_SELECTOR) : null;
-    const hasDT =
-      tableEl && $.fn.DataTable && $.fn.DataTable.isDataTable(tableEl);
+    const dtResult = getJQueryDataTable(TABLE_SELECTOR);
 
     successfulIds.forEach((id) => {
       const cb = document.querySelector(`input.editor-active[value="${id}"]`);
@@ -843,15 +815,15 @@ function removeTicketRows(successfulIds) {
       if (!tr) {
         return;
       }
-      if (hasDT) {
-        tableEl.DataTable().row(tr).remove();
+      if (dtResult) {
+        dtResult.dt.row(tr).remove();
       } else {
         tr.remove();
       }
     });
 
-    if (hasDT) {
-      tableEl.DataTable().draw(false);
+    if (dtResult) {
+      dtResult.dt.draw(false);
     }
 
     const select = document.getElementById("id_accion_select");
@@ -864,7 +836,7 @@ function removeTicketRows(successfulIds) {
       `${successfulIds.length} fila(s) eliminadas de la tabla`,
     );
   } catch (err) {
-    console.error("[Tickets] Row removal failed:", err);
+    log(`Row removal failed: ${err?.message || err}`, undefined, "error");
     window.location.reload();
   }
 }
@@ -874,8 +846,8 @@ export function initTicketActions() {
     return;
   }
 
-  console.log(`[${EXTENSION_NAME}] Tickets page detected`);
-  log("Tickets module loaded", "Módulo de tickets cargado");
+  log("Tickets page detected");
+  log("Tickets module loaded");
   initTicketActionButtons();
 
   waitForElement("#id_accion_select").then((select) => {
@@ -884,7 +856,34 @@ export function initTicketActions() {
     }
     injectOption(select);
     interceptSubmit();
-    log('"Mark as New" option added', 'Opción "Marcar como Nuevos" añadida');
+    log('"Mark as New" option added');
+  });
+}
+
+export function initTicketEditorActions() {
+  if (!TICKETS_EDITOR_PATH_RE.test(window.location.pathname)) {
+    return;
+  }
+
+  const form = document.querySelector("form");
+  if (!form) {
+    return;
+  }
+
+  form.addEventListener("submit", () => {
+    sendLogToPopup(
+      "Tickets",
+      "success",
+      "Ticket form submitted",
+      "Ticket guardado",
+      {
+        kind: "audit",
+        action: "Ticket guardado",
+        pagePath: window.location.pathname,
+        pageUrl: window.location.href,
+        stateColor: "info",
+      },
+    );
   });
 }
 
