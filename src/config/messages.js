@@ -19,6 +19,9 @@ export const MESSAGE_TYPES = {
   DIAGNOSTIC_RUN_RESPONSE: "WISPHUB_DIAGNOSTIC_RUN_RESPONSE",
   PROFILE_SWITCH_REQUEST: "WISPHUB_PROFILE_SWITCH_REQUEST",
   PROFILE_SWITCH_ACK: "WISPHUB_PROFILE_SWITCH_ACK",
+  SESSION_CAPTURE_REQUEST: "WISPHUB_SESSION_CAPTURE_REQUEST",
+  CLIENT_QUICK_INFO_REQUEST: "WISPHUB_CLIENT_QUICK_INFO_REQUEST",
+  CLIENT_QUICK_INFO_RESPONSE: "WISPHUB_CLIENT_QUICK_INFO_RESPONSE",
 };
 
 export const ACTIONS = {
@@ -28,6 +31,7 @@ export const ACTIONS = {
   RESTORE_COMMENTS: "RESTORE_COMMENTS",
   GET_STAFF_INFO: "GET_STAFF_INFO",
   GET_SESSION_CONTEXT: "GET_SESSION_CONTEXT",
+  FETCH_STAFF: "FETCH_STAFF",
   UPDATE_TICKETS: "UPDATE_TICKETS",
   UPDATE_INSTALLS: "UPDATE_INSTALLS",
   RUN_CLIENT_DIAGNOSTIC: "RUN_CLIENT_DIAGNOSTIC",
@@ -35,6 +39,7 @@ export const ACTIONS = {
   SESSION_CAPTURE_COOKIES: "SESSION_CAPTURE_COOKIES",
   SESSION_HAS_COOKIES: "SESSION_HAS_COOKIES",
   SESSION_SWITCH_COOKIES: "SESSION_SWITCH_COOKIES",
+  CLIENT_QUICK_INFO: "CLIENT_QUICK_INFO",
 };
 
 export const NOTIFICATION_TYPES = {
@@ -70,6 +75,7 @@ export const POPUP_UI_MESSAGES = Object.freeze({
   FORMAT_BUTTON_RESTORE: "Restaurar",
   USE_EDITOR_BUTTON: "Usa el botón en el editor",
   OPEN_EDITOR_PAGE: "Abre una página con el editor",
+  FORMAT_NO_CHANGES: "Sin cambios que aplicar",
   API_KEYS_SAVED:
     "API Keys guardadas, reinicia la página para que surtan efecto",
   API_KEYS_REMOVED: "API Keys eliminadas",
@@ -91,9 +97,10 @@ export const POPUP_UI_MESSAGES = Object.freeze({
   SESSION_SWITCH_TITLE: "Cambiar entre perfiles de sesión",
   SESSION_SWITCH_API_KEYS_MISSING:
     "Falta configurar API Keys. Click para abrir Configuración avanzada",
-  UPCOMING_TOOL: "Esta herramienta estará disponible próximamente",
   API_KEYS_MISSING_BADGE: "API Keys no configuradas",
   STAFF_ID_COPIED: "¡Copiado!",
+  QUICK_INFO_SAVED: "Vista rápida guardada",
+  PWD_NO_TYPE: "Selecciona al menos un tipo de carácter",
 });
 
 export const CONNECTION_UI_MESSAGES = Object.freeze({
@@ -121,6 +128,30 @@ export const TICKETS_UI_MESSAGES = Object.freeze({
   TOTAL_FAILURE: (failed) => `Error al actualizar ${failed} ticket(s)`,
 });
 
+export const INSTALLS_UI_MESSAGES = Object.freeze({
+  COPY_TEXT_BUILD_FAILED: "No se pudo construir el texto de la instalación",
+  COPY_TEXT_FAILED: "No se pudo copiar el texto de la instalación",
+  NO_IN_PROGRESS: 'No se encontraron instalaciones "En Progreso"',
+  CONFIRM_MARK_AS_NEW: (count) =>
+    `¿Marcar ${count} instalación(es) de "En Progreso" a "Nueva"?`,
+  PROCESSING: (count) => `Procesando ${count} instalación(es)...`,
+  SUCCESS_MARKED: (count) => `${count} instalación(es) marcadas como Nuevas`,
+  PARTIAL_SUCCESS: (success, failed) => `${success} OK, ${failed} con error`,
+  TOTAL_FAILURE: (failed) => `Error al actualizar ${failed} instalación(es)`,
+});
+
+export const TICKET_AUTOFILL_UI_MESSAGES = Object.freeze({
+  SPECIAL_SUCCESS: (label) => `Ticket especial "${label}" auto-rellenado`,
+  NORMAL_SUCCESS: "Campos auto-rellenados",
+  PARTIAL_FILL: "Algunos campos no se pudieron auto-rellenar",
+  FILL_ERROR: "Error al auto-rellenar campos",
+});
+
+export const TEMPLATE_UI_MESSAGES = Object.freeze({
+  COPY_SUCCESS: "Plantilla generada y copiada al portapapeles",
+  COPY_ERROR: "Error al generar plantilla",
+});
+
 export const CLIENTS_UI_MESSAGES = Object.freeze({
   TEMPLATE_BUILD_FAILED:
     "No se pudo construir la plantilla del cliente para aprovisionamiento",
@@ -133,6 +164,10 @@ export const CLIENTS_UI_MESSAGES = Object.freeze({
     }
     return `Plantilla copiada con campos pendientes: ${fieldList.join(", ")}`;
   },
+  PHONE_COPIED: (phone) => `Teléfono copiado: ${phone}`,
+  COORDINATES_COPIED: (text) => `Coordenadas copiadas: ${text}`,
+  QUICK_INFO_NO_API_KEY: "Configura las API Keys en la extensión para ver esta sección",
+  QUICK_INFO_API_ERROR: (error) => `Error de API: ${error}`,
   NAME_COPY_FAILED: "No se pudo copiar el nombre del cliente",
   NAME_SETTINGS_INVALID:
     "Configuración inválida. Usa: upper, lower o title; o escribe reset",

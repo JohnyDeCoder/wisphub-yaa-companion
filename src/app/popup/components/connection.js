@@ -31,7 +31,6 @@ function getDisabledToolState() {
   return {
     formatter: false,
     diagnostic: false,
-    upcoming: false,
   };
 }
 
@@ -150,7 +149,6 @@ function applyConnState(elements, state, editorExpected, pathname, log, fromCach
   const tools = {
     formatter: false,
     diagnostic: !!state.diagnosticReady,
-    upcoming: false,
   };
 
   if (editorExpected && state.editorReady) {
