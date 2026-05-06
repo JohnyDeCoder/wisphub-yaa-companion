@@ -51,7 +51,7 @@ El versionado sigue [Semantic Versioning](https://semver.org/lang/es/).
 - Se mejoró la lectura de resultados para distinguir mejor entre completo, parcial, alerta y error.
 - Cuando falta sesión del otro perfil, la extensión ahora guía el inicio de sesión paso a paso.
 - La sesión guardada se mantiene vigente aunque no cambien las cookies, para evitar pedir acceso de nuevo sin necesidad.
-- La plantilla de aprovisionamiento se mejoró para rellenar datos faltantes con el formato _{{POR LLENAR / CAMPO }}_.
+- La plantilla de aprovisionamiento se mejoró para rellenar datos faltantes con el formato *{{POR LLENAR / CAMPO }}*.
 - Mejoras generales de estabilidad, seguridad y rendimiento en los flujos de clientes.
 
 ### Corregido

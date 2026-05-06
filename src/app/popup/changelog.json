@@ -173,7 +173,9 @@
         "Inyección de IDs de staff: columna automática con el ID numérico de cada miembro en la tabla de personal.",
         "Compatible con Chrome, Edge y Firefox. Funciona SÓLO en wisphub.io y wisphub.app."
       ],
-      "Cambiado": ["Avatar por defecto reemplazado en toda la UI."]
+      "Cambiado": [
+        "Avatar por defecto reemplazado en toda la UI."
+      ]
     }
   }
 ]

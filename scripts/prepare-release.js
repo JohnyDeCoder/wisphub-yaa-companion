@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { runGenerateChangelogCli } = require("./generate-changelog");
 
 const ROOT_DIR = path.resolve(__dirname, "..");
 const DIST_DIR = path.join(ROOT_DIR, "dist");
@@ -168,7 +169,7 @@ function normalizeChangelogEntries(entries, targetVersion, bumpType) {
     entries.unshift({
       version: targetVersion,
       date: getTodayDateString(),
-      changes: ["Describe los cambios principales de esta version."],
+      categories: { Agregado: ["Describe los cambios principales de esta version."] },
     });
   }
 
@@ -187,30 +188,16 @@ function normalizeChangelogEntries(entries, targetVersion, bumpType) {
     if (!isValidDateString(entry.date)) {
       fail(`Invalid date in changelog entry index ${index}. Expected YYYY-MM-DD.`);
     }
-    if (!Array.isArray(entry.changes) || entry.changes.length === 0) {
+    if (!entry.categories || typeof entry.categories !== "object" || Array.isArray(entry.categories)) {
+      fail(`Changelog entry v${entry.version} must have a "categories" object.`);
+    }
+    const hasItems = Object.values(entry.categories).some(
+      (items) => Array.isArray(items) && items.length > 0,
+    );
+    if (!hasItems) {
       fail(`Changelog entry v${entry.version} must include at least one change.`);
     }
   });
-}
-
-function createChangelogMarkdown(projectName, entries) {
-  const lines = [
-    `# Changelog - ${projectName}`,
-    "",
-    "Todos los cambios notables de este proyecto se documentan aqui.",
-    "",
-  ];
-
-  entries.forEach((entry) => {
-    lines.push(`## v${entry.version} - ${entry.date}`);
-    lines.push("");
-    entry.changes.forEach((change) => {
-      lines.push(`- ${change}`);
-    });
-    lines.push("");
-  });
-
-  return lines.join("\n").trimEnd();
 }
 
 function createReleaseNotes(projectName, entry) {
@@ -223,8 +210,8 @@ function createReleaseNotes(projectName, entry) {
     "",
   ];
 
-  entry.changes.forEach((change) => {
-    lines.push(`- ${change}`);
+  Object.values(entry.categories).forEach((items) => {
+    items.forEach((change) => lines.push(`- ${change}`));
   });
 
   return lines.join("\n").trimEnd();
@@ -265,10 +252,7 @@ function syncReleaseMetadata(bumpType) {
   writeText(PATHS.popupHtml, updatePopupVersionBadge(popupHtml, nextVersion));
   writeText(PATHS.constants, updateConstantsVersion(constantsJs, nextVersion));
   writeText(PATHS.readme, updateReadmeVersionBadge(readme, nextVersion));
-  writeText(
-    PATHS.changelogMd,
-    createChangelogMarkdown(manifest.name, changelogEntries),
-  );
+  runGenerateChangelogCli();
 
   return {
     version: nextVersion,

@@ -1,6 +1,6 @@
 export const EXTENSION_NAME = "Wisphub Yaa Companion";
 export const API_KEYS_STORAGE_KEY = "wisphubYaaApiKeys";
-export const EXTENSION_VERSION = "1.4.0";
+export const EXTENSION_VERSION = "1.5.0";
 export const EXTENSION_AUTHOR = "JohnyDeCoder";
 export const EXTENSION_GITHUB = "https://github.com/JohnyDeCoder/wisphub-yaa-companion";
 
