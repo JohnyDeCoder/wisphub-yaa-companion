@@ -1,3 +1,6 @@
+// KaC category order — matches keepachangelog.com/es-ES/1.1.0/
+const CATEGORY_ORDER = ["Agregado", "Cambiado", "Obsoleto", "Eliminado", "Corregido", "Seguridad"];
+
 async function loadChangelog() {
   try {
     const response = await fetch("../popup/changelog.json");
@@ -14,11 +17,24 @@ async function loadChangelog() {
 
     const list = document.getElementById("changesList");
     list.textContent = "";
-    for (const change of latest.changes) {
-      const li = document.createElement("li");
-      li.textContent = change;
-      list.appendChild(li);
-    }
+
+    CATEGORY_ORDER.forEach((cat) => {
+      const items = latest.categories?.[cat];
+      if (!Array.isArray(items) || items.length === 0) {
+        return;
+      }
+
+      const labelLi = document.createElement("li");
+      labelLi.className = "modal-category-label";
+      labelLi.textContent = cat;
+      list.appendChild(labelLi);
+
+      for (const change of items) {
+        const li = document.createElement("li");
+        li.textContent = change;
+        list.appendChild(li);
+      }
+    });
   } catch {
     document.getElementById("versionBadge").textContent = "v--";
   }
