@@ -1,7 +1,10 @@
 import { getDomainKey, isWispHubDomain } from "../config/domains.js";
 import { CACHE_TTL } from "../config/constants.js";
 import { ACTIONS } from "../config/messages.js";
-import { shouldPersistSessionSnapshot } from "../utils/sessionSnapshot.js";
+import {
+  hasUsableSessionCookies,
+  shouldPersistSessionSnapshot,
+} from "../utils/sessionSnapshot.js";
 import { normalizeValue } from "../utils/string.js";
 import { buildProfileSnapshotKey } from "../utils/sessionKey.js";
 
@@ -54,6 +57,12 @@ function isTrustedSessionSender(sender, requestedDomainKey) {
 
   const senderDomainKey = getDomainKey(senderUrl);
   return senderDomainKey === normalizedRequestedDomain;
+}
+
+// Allows popup (no tab URL) and content scripts on WispHub pages; rejects all others.
+function isWispHubSender(sender) {
+  const url = sender?.tab?.url || sender?.url || "";
+  return !url || isWispHubDomain(url);
 }
 
 
@@ -155,7 +164,10 @@ function pruneSessionCookieSnapshots(snapshotMap) {
     if (!Number.isFinite(capturedAt) || capturedAt <= 0) {
       return false;
     }
-    return now - capturedAt <= SESSION_COOKIE_SNAPSHOT_MAX_AGE_MS;
+    return (
+      now - capturedAt <= SESSION_COOKIE_SNAPSHOT_MAX_AGE_MS &&
+      hasUsableSessionCookies(entry, now / 1000)
+    );
   });
 
   validEntries.sort(
@@ -169,11 +181,6 @@ function pruneSessionCookieSnapshots(snapshotMap) {
   );
 }
 
-function getSnapshotCookieNames(cookies) {
-  return (cookies || [])
-    .map((cookie) => String(cookie?.name || "").trim().toLowerCase())
-    .filter(Boolean);
-}
 
 function createCookieNameSet(cookieNames) {
   return new Set(
@@ -217,6 +224,13 @@ async function captureSessionCookies({ domainKey, username }) {
   }
 
   const serializedCookies = selectedCookies.map(serializeCookie);
+  if (!hasUsableSessionCookies({ cookies: serializedCookies })) {
+    return {
+      success: false,
+      error: "No se encontró una cookie de sesión restaurable para este perfil",
+    };
+  }
+
   const existingSnapshot = snapshots[snapshotKey];
   const shouldPersist =
     snapshotsChangedByPrune ||
@@ -259,7 +273,7 @@ async function hasSessionCookies({ domainKey, username }) {
 
   return {
     success: true,
-    hasSnapshot: Boolean(snapshot && Array.isArray(snapshot.cookies) && snapshot.cookies.length > 0),
+    hasSnapshot: hasUsableSessionCookies(snapshot),
     cookieCount: Array.isArray(snapshot?.cookies) ? snapshot.cookies.length : 0,
     username: snapshot?.username || null,
   };
@@ -318,8 +332,7 @@ async function switchSessionCookies({ domainKey, targetUsername }) {
     };
   }
 
-  const snapshotCookieNames = getSnapshotCookieNames(snapshot.cookies);
-  await clearDomainCookies(domainKey, snapshotCookieNames);
+  await clearDomainCookies(domainKey);
 
   const restoreResults = await Promise.allSettled(
     snapshot.cookies.map((cookie) =>
@@ -346,7 +359,6 @@ async function switchSessionCookies({ domainKey, targetUsername }) {
 async function fetchStaffFromApi(apiKey, apiBaseUrl) {
   const cached = staffCache[apiBaseUrl];
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
-    console.log("[Background] Staff cache hit for", apiBaseUrl);
     return cached.data;
   }
 
@@ -369,9 +381,6 @@ async function fetchStaffFromApi(apiKey, apiBaseUrl) {
   }
 
   staffCache[apiBaseUrl] = { data: allStaff, ts: Date.now() };
-  console.log(
-    `[Background] Staff fetched: ${allStaff.length} records from ${apiBaseUrl}`,
-  );
   return allStaff;
 }
 
@@ -385,18 +394,19 @@ async function fetchClientQuickInfo(apiKey, apiBaseUrl, idServicio) {
       fetch(`${apiBaseUrl}tickets/?estado=1&limit=${QUICK_INFO_TICKETS_FETCH_LIMIT}`, { headers }),
     ]);
 
-  if (saldoResult.status === "fulfilled" && !saldoResult.value.ok) {
-    console.warn(`[Background] fetchClientQuickInfo saldo ${idServicio} → HTTP ${saldoResult.value.status}`);
+  const authFailed = [saldoResult, ticketsResult, clientResult, pendingTicketsResult].some(
+    (r) => r.status === "fulfilled" && r.value.status === 401,
+  );
+  if (authFailed) {
+    throw new Error("API Key inválida o sin permisos — verifica la configuración en la extensión");
   }
+
   const saldoJson =
     saldoResult.status === "fulfilled" && saldoResult.value.ok
       ? await saldoResult.value.json().catch(() => null)
       : null;
   const saldo = saldoJson ? { saldo: saldoJson.saldo ?? null } : null;
 
-  if (ticketsResult.status === "fulfilled" && !ticketsResult.value.ok) {
-    console.warn(`[Background] fetchClientQuickInfo tickets ${idServicio} → HTTP ${ticketsResult.value.status}`);
-  }
   const ticketsJson =
     ticketsResult.status === "fulfilled" && ticketsResult.value.ok
       ? await ticketsResult.value.json().catch(() => null)
@@ -412,20 +422,12 @@ async function fetchClientQuickInfo(apiKey, apiBaseUrl, idServicio) {
         .filter((t) => String(t.servicio?.id_servicio) === String(idServicio))
         .slice(0, QUICK_INFO_TICKETS_DISPLAY_LIMIT);
 
-  if (clientResult.status === "fulfilled" && !clientResult.value.ok) {
-    console.warn(`[Background] fetchClientQuickInfo client ${idServicio} → HTTP ${clientResult.value.status}`);
-  }
   const clientJson =
     clientResult.status === "fulfilled" && clientResult.value.ok
       ? await clientResult.value.json().catch(() => null)
       : null;
   const plan = clientJson?.plan_internet ?? null;
 
-  if (pendingTicketsResult.status === "fulfilled" && !pendingTicketsResult.value.ok) {
-    console.warn(
-      `[Background] fetchClientQuickInfo pendingTickets ${idServicio} → HTTP ${pendingTicketsResult.value.status}`,
-    );
-  }
   const pendingTicketsJson =
     pendingTicketsResult.status === "fulfilled" && pendingTicketsResult.value.ok
       ? await pendingTicketsResult.value.json().catch(() => null)
@@ -448,18 +450,13 @@ async function updateTicketStatus(apiKey, apiBaseUrl, ticketId, headers) {
   // Attempt 1: simple status update
   const form1 = new FormData();
   form1.append("estado", "1");
-  console.log(`[Background] PUT #${ticketId} attempt 1 (standard subject)`);
   const res1 = await fetch(url, { method: "PUT", headers, body: form1 });
 
   if (res1.ok) {
-    console.log(`[Background] PUT #${ticketId} attempt 1 → OK`);
     return;
   }
 
   // Attempt 2: include custom subject to satisfy API validation
-  console.log(
-    `[Background] PUT #${ticketId} attempt 1 failed (${res1.status}), trying attempt 2`,
-  );
   const getRes = await fetch(url, { headers });
   if (!getRes.ok) {
     const body = await getRes.text().catch(() => "");
@@ -472,16 +469,12 @@ async function updateTicketStatus(apiKey, apiBaseUrl, ticketId, headers) {
   form2.append("asuntos_default", "Otro Asunto");
   form2.append("asunto", ticket.asunto);
 
-  console.log(
-    `[Background] PUT #${ticketId} attempt 2 (custom subject: "${ticket.asunto}")`,
-  );
   const res2 = await fetch(url, { method: "PUT", headers, body: form2 });
 
   if (!res2.ok) {
     const body = await res2.text().catch(() => "");
     throw new Error(`PUT attempt 2 ${res2.status}: ${body || res2.statusText}`);
   }
-  console.log(`[Background] PUT #${ticketId} attempt 2 → OK`);
 }
 
 
@@ -498,7 +491,7 @@ async function updateTicketsToNew(apiKey, apiBaseUrl, ticketIds) {
       success++;
       updatedIds.push(id);
     } catch (err) {
-      console.warn(`[Background] Ticket #${id} update failed:`, err.message);
+      console.warn("[WYC][Background] Ticket update failed:", err.message);
       failed++;
       errors.push({ id, error: err.message });
     }
@@ -521,15 +514,25 @@ function runAuthorizedSessionAction({
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const handlers = {
-    FETCH_STAFF: () =>
+    [ACTIONS.FETCH_STAFF]: () => {
+      if (!isWispHubSender(sender)) {
+        sendResponse({ success: false, error: "Unauthorized sender" });
+        return;
+      }
       fetchStaffFromApi(message.apiKey, message.apiBaseUrl)
         .then((data) => sendResponse({ success: true, data }))
-        .catch((err) => sendResponse({ success: false, error: err.message })),
+        .catch((err) => sendResponse({ success: false, error: err.message }));
+    },
 
-    UPDATE_TICKETS: () =>
+    [ACTIONS.UPDATE_TICKETS]: () => {
+      if (!isWispHubSender(sender)) {
+        sendResponse({ success: false, error: "Unauthorized sender" });
+        return;
+      }
       updateTicketsToNew(message.apiKey, message.apiBaseUrl, message.ticketIds)
         .then((results) => sendResponse({ success: true, results }))
-        .catch((err) => sendResponse({ success: false, error: err.message })),
+        .catch((err) => sendResponse({ success: false, error: err.message }));
+    },
 
     [ACTIONS.SESSION_CAPTURE_COOKIES]: () =>
       runAuthorizedSessionAction({
@@ -588,7 +591,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ success: false, requiresLogin: true, error: err.message }),
         ),
 
-    [ACTIONS.CLIENT_QUICK_INFO]: () =>
+    [ACTIONS.CLIENT_QUICK_INFO]: () => {
+      if (!isWispHubSender(sender)) {
+        sendResponse({ success: false, data: { saldo: null, tickets: null }, error: "Unauthorized sender" });
+        return;
+      }
       fetchClientQuickInfo(
         message.apiKey,
         message.apiBaseUrl,
@@ -601,8 +608,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             data: { saldo: null, tickets: null },
             error: err.message,
           }),
-        ),
-
+        );
+    },
   };
 
   const handler = handlers[message.action];
@@ -613,7 +620,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.runtime.onUpdateAvailable.addListener((details) => {
-  console.log(`[Background] Update available: ${details.version}`);
+  console.log(`[WYC][Background] Update available: ${details.version}`);
   chrome.action.setBadgeText({ text: "UP" });
   chrome.action.setBadgeBackgroundColor({ color: "#FF0000" });
 });

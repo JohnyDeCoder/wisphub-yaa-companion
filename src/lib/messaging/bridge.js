@@ -1,8 +1,7 @@
-import { EXTENSION_NAME } from "../../config/constants.js";
+import { API_KEYS_STORAGE_KEY } from "../../config/constants.js";
 import { getDomainKey, getApiBaseUrl } from "../../config/domains.js";
 import { MESSAGE_TYPES, ACTIONS } from "../../config/messages.js";
 import { browserAPI } from "../../utils/browser.js";
-import { buildProfileSnapshotKey } from "../../utils/sessionKey.js";
 import {
   LOG_STORAGE_KEY,
   MAX_LOG_ENTRIES,
@@ -15,8 +14,6 @@ import {
   postBridgeMessage,
 } from "../../utils/pageBridge.js";
 
-const API_KEY_STORAGE_KEY = "wisphubYaaApiKeys"; // chrome.storage key for API keys per domain
-
 let editorReady = false;
 let formatterEnabled = false;
 let diagnosticReady = false;
@@ -26,8 +23,6 @@ const DIAGNOSTIC_ACK_TIMEOUT_MS = 1200;
 const DIAGNOSTIC_ACK_POLL_INTERVAL_MS = 40;
 const PROFILE_SWITCH_ACK_TIMEOUT_MS = 120000;
 const PROFILE_SWITCH_ACK_POLL_INTERVAL_MS = 40;
-const SESSION_CAPTURE_MIN_INTERVAL_MS = 2 * 60 * 1000;
-const lastSessionCaptureByProfile = new Map();
 let userSettings = {
   notificationsEnabled: true,
   autoFormatEnabled: false,
@@ -126,6 +121,20 @@ function waitForProfileSwitchAck(timeoutMs = PROFILE_SWITCH_ACK_TIMEOUT_MS) {
   });
 }
 
+function buildProfileSwitchStartFailure(error) {
+  return {
+    success: false,
+    started: false,
+    cancelled: false,
+    info: "",
+    error: error || "No se pudo guardar la sesión actual antes de cambiar de perfil",
+    switchStrategy: "",
+    redirectUrl: "",
+    fallbackRedirectUrl: "",
+    requiresLogin: false,
+  };
+}
+
 function getCurrentUsernameFromDom() {
   const usernameEl = document.querySelector(
     ".user-menu .user-name, .navbar .user-name, .dropdown .user-name",
@@ -134,33 +143,17 @@ function getCurrentUsernameFromDom() {
 }
 
 
-async function captureSessionCookiesSnapshot(domainKey, username, options = {}) {
+async function captureSessionCookiesSnapshot(domainKey, username) {
   if (!domainKey || !username) {
     return { success: false };
   }
 
-  const forceCapture = options.force === true;
-  const cacheKey = buildProfileSnapshotKey(domainKey, username);
-  if (cacheKey && !forceCapture) {
-    const now = Date.now();
-    const lastCapturedAt = Number(lastSessionCaptureByProfile.get(cacheKey) || 0);
-    if (now - lastCapturedAt < SESSION_CAPTURE_MIN_INTERVAL_MS) {
-      return { success: true, skipped: true };
-    }
-  }
-
   try {
-    const result = await browserAPI.runtime.sendMessage({
+    return await browserAPI.runtime.sendMessage({
       action: ACTIONS.SESSION_CAPTURE_COOKIES,
       domainKey,
       username,
     });
-
-    if (result?.success && cacheKey) {
-      lastSessionCaptureByProfile.set(cacheKey, Date.now());
-    }
-
-    return result;
   } catch {
     return { success: false };
   }
@@ -232,6 +225,11 @@ function persistLogEntry(data) {
           before: String(data.before || "").trim(),
           after: String(data.after || "").trim(),
           kind: String(data.kind || "").trim(),
+          pageUrl: String(data.pageUrl || "").trim(),
+          stateColor: String(data.stateColor || "").trim(),
+          tags: Array.isArray(data.tags)
+            ? data.tags.map((t) => String(t || "").trim()).filter(Boolean)
+            : [],
         });
         if (logs.length > MAX_LOG_ENTRIES) {
           logs.splice(0, logs.length - MAX_LOG_ENTRIES);
@@ -252,13 +250,13 @@ async function getApiKeyForCurrentDomain() {
     return { domainKey: null, apiKey: null };
   }
 
-  const result = await browserAPI.storage.local.get(API_KEY_STORAGE_KEY);
-  const keys = result[API_KEY_STORAGE_KEY] || {};
+  const result = await browserAPI.storage.local.get(API_KEYS_STORAGE_KEY);
+  const keys = result[API_KEYS_STORAGE_KEY] || {};
   return { domainKey, apiKey: keys[domainKey] || null };
 }
 
 function shouldSkipTokenValidation(type) {
-  return type === MESSAGE_TYPES.CHANNEL_HELLO;
+  return type === MESSAGE_TYPES.CHANNEL_HELLO || type === MESSAGE_TYPES.LOG_ENTRY;
 }
 
 export function listenToPageMessages() {
@@ -339,6 +337,15 @@ export function listenToPageMessages() {
       return;
     }
 
+    if (type === MESSAGE_TYPES.SESSION_CAPTURE_REQUEST) {
+      const username = getCurrentUsernameFromDom();
+      const domainKey = getDomainKey(window.location.hostname);
+      if (domainKey && username) {
+        captureSessionCookiesSnapshot(domainKey, username, { force: true });
+      }
+      return;
+    }
+
     if (type === MESSAGE_TYPES.LOG_ENTRY) {
       persistLogEntry(data);
       return;
@@ -403,13 +410,17 @@ async function relayTicketUpdate(ticketIds) {
 }
 
 async function relayClientQuickInfo(idServicio) {
+  const empty = { saldo: null, tickets: null, plan: null, pendingTickets: null };
   const sendResult = (result) =>
     postToPage(MESSAGE_TYPES.CLIENT_QUICK_INFO_RESPONSE, { idServicio, result });
 
   try {
     const { domainKey, apiKey } = await getApiKeyForCurrentDomain();
-    if (!domainKey || !apiKey) {
-      return sendResult({ saldo: null, tickets: null });
+    if (!domainKey) {
+      return sendResult(empty);
+    }
+    if (!apiKey) {
+      return sendResult({ ...empty, noApiKey: true });
     }
     const response = await browserAPI.runtime.sendMessage({
       action: ACTIONS.CLIENT_QUICK_INFO,
@@ -417,9 +428,12 @@ async function relayClientQuickInfo(idServicio) {
       apiBaseUrl: getApiBaseUrl(domainKey),
       idServicio,
     });
-    sendResult(response?.data || { saldo: null, tickets: null });
-  } catch {
-    sendResult({ saldo: null, tickets: null });
+    if (response?.success === false && response?.error) {
+      return sendResult({ ...empty, apiError: response.error });
+    }
+    sendResult(response?.data || empty);
+  } catch (err) {
+    sendResult({ ...empty, apiError: err.message });
   }
 }
 
@@ -536,9 +550,14 @@ export function listenToExtensionMessages(options = {}) {
           const targetUsername = String(message.targetUsername || "").trim();
 
           if (domainKey && currentUsername) {
-            await captureSessionCookiesSnapshot(domainKey, currentUsername, {
-              force: true,
-            });
+            const captureResult = await captureSessionCookiesSnapshot(
+              domainKey,
+              currentUsername,
+            );
+            if (captureResult?.success !== true) {
+              sendResponse(buildProfileSwitchStartFailure(captureResult?.error));
+              return;
+            }
           }
 
           const snapshotResult = await hasSessionCookiesSnapshot(domainKey, targetUsername);
@@ -637,7 +656,7 @@ async function handleGetStaffInfo(sendResponse) {
     }
 
     const fetchResult = await browserAPI.runtime.sendMessage({
-      action: "FETCH_STAFF",
+      action: ACTIONS.FETCH_STAFF,
       apiKey,
       apiBaseUrl: getApiBaseUrl(domainKey),
     });
@@ -678,6 +697,6 @@ export async function loadAndSyncSettings() {
       postToPage(MESSAGE_TYPES.SETTINGS_UPDATE, { settings: userSettings });
     }
   } catch (error) {
-    console.error(`[${EXTENSION_NAME}] Settings load error:`, error);
+    console.error(`[WYC] Settings load error:`, error);
   }
 }
