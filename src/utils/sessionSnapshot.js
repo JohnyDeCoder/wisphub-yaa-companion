@@ -20,6 +20,18 @@ function normalizeCookieFingerprint(cookie) {
   ].join("|");
 }
 
+const RESTORABLE_SESSION_COOKIE_RE = /(session|auth|jwt|remember|sid)/i;
+const NON_SESSION_TOKEN_COOKIE_RE = /csrf/i;
+
+function isRestorableSessionCookie(cookie) {
+  const name = String(cookie?.name || "");
+  return (
+    Boolean(name) &&
+    RESTORABLE_SESSION_COOKIE_RE.test(name) &&
+    !NON_SESSION_TOKEN_COOKIE_RE.test(name)
+  );
+}
+
 export function buildSnapshotFingerprint(cookies) {
   return (cookies || [])
     .map((cookie) => normalizeCookieFingerprint(cookie))
@@ -41,3 +53,16 @@ export function shouldPersistSessionSnapshot(existingSnapshot, nextCookies, opti
   return options.refreshTimestamp === true;
 }
 
+export function hasUsableSessionCookies(snapshot, nowSeconds = Date.now() / 1000) {
+  const cookies = Array.isArray(snapshot?.cookies) ? snapshot.cookies : [];
+  if (cookies.length === 0) {
+    return false;
+  }
+
+  return cookies.some((cookie) => {
+    const expiresAt = Number(cookie?.expirationDate);
+    const isUnexpired =
+      !Number.isFinite(expiresAt) || expiresAt <= 0 || expiresAt > nowSeconds;
+    return isUnexpired && isRestorableSessionCookie(cookie);
+  });
+}

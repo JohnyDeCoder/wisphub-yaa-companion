@@ -163,7 +163,21 @@ function formatAccountDomain(username, fallback = "sin-perfil") {
 }
 
 function buildLoginGuideText(username) {
-  return String(username || "").trim();
+  const { accountDomain } = splitUsername(username);
+  return accountDomain ? `una cuenta @${accountDomain}` : "el perfil indicado";
+}
+
+function markLoginPromptShown(pendingRecord, storage) {
+  if (!pendingRecord || pendingRecord.loginPromptShown === true) {
+    return pendingRecord;
+  }
+
+  const nextRecord = {
+    ...pendingRecord,
+    loginPromptShown: true,
+  };
+  savePendingProfileSwitch(nextRecord, storage);
+  return nextRecord;
 }
 
 export function readPendingProfileSwitch(storage = window.localStorage) {
@@ -376,6 +390,7 @@ export function resumeProfileSwitchFlow({
   documentObj = document,
   locationObj = window.location,
   notify = null,
+  onCompleted = null,
 } = {}) {
   const pending = readPendingProfileSwitch(storage);
   if (!pending) {
@@ -398,7 +413,7 @@ export function resumeProfileSwitchFlow({
       notify,
       "Seguimiento del cambio de perfil expiró. Intenta nuevamente.",
       "warning",
-      5000,
+      3000,
     );
     return { active: false, reason: "expired" };
   }
@@ -421,8 +436,15 @@ export function resumeProfileSwitchFlow({
         notify,
         `Sesión cambiada correctamente a ${pending.targetLabel}.`,
         "success",
-        5000,
+        2000,
       );
+      if (typeof onCompleted === "function") {
+        try {
+          onCompleted(context, pending);
+        } catch {
+          // Completion hooks should not block the profile switch flow.
+        }
+      }
       return { active: false, reason: "completed" };
     }
   }
@@ -443,6 +465,7 @@ export function resumeProfileSwitchFlow({
 
   if (context.isLoginPage) {
     prefillLoginUsername(documentObj, pending.targetUsername);
+    markLoginPromptShown(pending, storage);
     const guideText = buildLoginGuideText(pending.targetUsername);
     showPersistentNotification(
       documentObj,
@@ -456,6 +479,18 @@ export function resumeProfileSwitchFlow({
 
   if (context.loggedIn) {
     const guideText = buildLoginGuideText(pending.targetUsername);
+    if (pending.loginPromptShown !== true) {
+      locationObj.assign(buildLogoutRedirectUrl(pending.basePath || "/panel/"));
+      showPersistentNotification(
+        documentObj,
+        notify,
+        `Cerrando sesión actual para continuar con ${pending.targetLabel}...`,
+        "info",
+        cancelTracking,
+      );
+      return { active: true, state: "logging-out" };
+    }
+
     showPersistentNotification(
       documentObj,
       notify,
@@ -463,6 +498,7 @@ export function resumeProfileSwitchFlow({
       "error",
       cancelTracking,
     );
+    locationObj.assign(buildLogoutRedirectUrl(pending.basePath || "/panel/"));
     return { active: true, state: "wrong-profile" };
   }
 

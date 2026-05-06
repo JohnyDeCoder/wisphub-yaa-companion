@@ -48,6 +48,7 @@ import {
 import {
   initTicketNotify,
   initTicketActions,
+  initTicketEditorActions,
 } from "../features/tickets/ticketActions.js";
 import {
   initTemplateNotify,
@@ -69,6 +70,10 @@ import { runDiagnosticFlowForContext } from "../features/clients/diagnostic/diag
 import { normalizeDiagnosticErrorMessage } from "../features/clients/diagnostic/diagnosticRunner.js";
 import { probeDiagnosticStart } from "../features/clients/diagnostic/startProbe.js";
 import { initClientUploadButton } from "../features/clients/clientUploadButton.js";
+import {
+  initClientQuickInfo,
+  updateClientQuickInfoSettings,
+} from "../features/clients/clientQuickInfo.js";
 import { initCoordinateMapButton } from "../features/coordinates/coordinateMapButton.js";
 import { initScrollTopButton } from "../features/navigation/scrollTopButton.js";
 import { initSpecialTickets } from "../features/tickets/specialTickets.js";
@@ -77,6 +82,8 @@ import {
   resumeProfileSwitchFlow,
   startProfileSwitchFlow,
 } from "../features/session-switcher/profileSwitch.js";
+import { resolveSessionProfileLabel } from "../config/sessionProfiles.js";
+import { sendLogToPopup } from "../utils/logger.js";
 import {
   initTicketAutoFill,
   initTicketAutoFillNotify,
@@ -137,6 +144,8 @@ function getPageFeatures() {
 
 const pageFeatures = getPageFeatures();
 let autoPriceCalcDone = false;
+const SESSION_CAPTURE_RETRY_LIMIT = 6;
+const SESSION_CAPTURE_RETRY_DELAY_MS = 250;
 
 function requestBridgeInit() {
   if (getBridgeToken()) {
@@ -147,6 +156,43 @@ function requestBridgeInit() {
 
 function postToBridge(type, payload = {}) {
   return postBridgeMessage(type, payload, { requireToken: true });
+}
+
+function requestSessionCaptureAfterProfileSwitch(context, remainingRetries = SESSION_CAPTURE_RETRY_LIMIT) {
+  const domainKey = String(context?.domainKey || "").trim();
+  const username = String(context?.username || "").trim();
+  if (!domainKey || !username) {
+    return;
+  }
+
+  const sent = postToBridge(MESSAGE_TYPES.SESSION_CAPTURE_REQUEST, {
+    domainKey,
+    username,
+  });
+  if (!sent && remainingRetries > 0) {
+    setTimeout(() => {
+      requestSessionCaptureAfterProfileSwitch(context, remainingRetries - 1);
+    }, SESSION_CAPTURE_RETRY_DELAY_MS);
+  }
+}
+
+function handleProfileSwitchCompleted(context, pending) {
+  const sourceLabel = resolveSessionProfileLabel(
+    pending?.domainKey,
+    pending?.sourceUsername,
+  );
+  const targetLabel = String(pending?.targetLabel || "");
+  sendLogToPopup(
+    "Session",
+    "success",
+    `Profile switch completed to ${targetLabel} (${pending?.targetUsername || ""})`,
+    `Perfil cambiado a ${targetLabel}`,
+    {
+      kind: "audit",
+      tags: [sourceLabel, targetLabel].filter(Boolean),
+    },
+  );
+  requestSessionCaptureAfterProfileSwitch(context);
 }
 
 setOnAutoFormatComplete((formatResult) => {
@@ -232,6 +278,7 @@ function setupMessageListener() {
       }
       updatePriceCalcSettings(settings);
       updateTicketAutoFillSettings(settings);
+      updateClientQuickInfoSettings(settings);
       setTimeout(tryAutoPriceCalc, 300);
     }
 
@@ -428,11 +475,11 @@ function waitForEditor() {
 
 function init() {
   if (!isWispHubDomain(window.location.href)) {
-    console.log(`[${EXTENSION_NAME}] Domain not allowed`);
+    console.log(`[WYC] Domain not allowed`);
     return;
   }
 
-  console.log(`[${EXTENSION_NAME}] Page script loaded`);
+  console.log(`[WYC] Page script loaded`);
   clearBridgeToken();
   setupMessageListener();
   requestBridgeInit();
@@ -440,6 +487,7 @@ function init() {
   setTimeout(requestBridgeInit, TIMING.RETRY_DELAY);
   waitForEditor();
   initTicketActions();
+  initTicketEditorActions();
   initInstallationActions();
   initClientPhoneLinks(showNotification);
   initClientDetailDiagnosticButton();
@@ -449,7 +497,16 @@ function init() {
   initSpecialTickets();
   initTicketAutoFill();
   initFormGuards();
-  resumeProfileSwitchFlow({ notify: showNotification });
+  resumeProfileSwitchFlow({
+    notify: showNotification,
+    onCompleted: handleProfileSwitchCompleted,
+  });
+  if (/^\/clientes\/?$/.test(window.location.pathname)) {
+    initClientQuickInfo({
+      quickInfoEnabled: false,
+      quickInfoDelay: 1000,
+    });
+  }
 }
 
 onDomReady(init);
