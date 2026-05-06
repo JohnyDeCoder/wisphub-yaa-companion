@@ -19,5 +19,6 @@ module.exports = {
         "revert",
       ],
     ],
+    "header-max-length": [1, "always", 150],
   },
 };
