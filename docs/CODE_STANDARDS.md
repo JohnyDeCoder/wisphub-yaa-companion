@@ -1,4 +1,4 @@
-# Estándares de Código
+# Estándares de Código - Wisphub Yaa Companion
 
 Este documento define la filosofía de calidad del proyecto y los criterios que usamos
 para tomar decisiones técnicas de forma consistente.

@@ -56,6 +56,8 @@
         <li><a href="#-reemplazo-de-avatar-por-defecto">Reemplazo de avatar por defecto</a></li>
         <li><a href="#-botón-ir-arriba">Botón "Ir arriba"</a></li>
         <li><a href="#-inyección-de-ids-de-staff">Inyección de IDs de staff</a></li>
+        <li><a href="#-taller-de-utilidades">Taller de Utilidades</a></li>
+        <li><a href="#-vista-rápida-de-clientes">Vista rápida de clientes</a></li>
         <li><a href="#-panel-emergente-panel-de-control">Panel emergente (panel de control)</a></li>
         <li><a href="#-notificaciones-en-página">Notificaciones en página</a></li>
       </ul>
@@ -79,11 +81,11 @@ Su objetivo es simple: **reducir clics, automatizar tareas repetitivas y facilit
 
 **Compatibilidad:**
 
-| Navegador | Soporte                               |
-| --------- | ------------------------------------- |
-| Chrome    | ✅                                    |
-| Edge      | ✅                                    |
-| Opera     | ✅                                    |
+| Navegador | Soporte                                   |
+| --------- | ----------------------------------------- |
+| Chrome    | ✅                                        |
+| Edge      | ✅                                        |
+| Opera     | ✅                                        |
 | Firefox   | ✅ (validar manualmente cada lanzamiento) |
 
 > Funciona en ambos dominios: `wisphub.io` (antenas) y `wisphub.app` (fibra óptica).
@@ -459,25 +461,57 @@ Aparecen junto a los botones de acción que ya tiene WispHub, con separador e ic
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
 
+### 🛠️ Taller de Utilidades
+
+**Dónde funciona:** Panel emergente (siempre disponible).
+
+**Qué hace:** Abre un overlay lateral con tres herramientas de uso rápido para el día a día:
+
+- **Convertidor de texto:** Escribe o pega texto y conviértelo a mayúsculas, minúsculas o formato título. Puedes combinar la conversión con la opción de eliminar acentos y/o limpiar espacios extra antes de copiar el resultado.
+- **Generador de contraseñas:** Genera contraseñas seguras entre 6 y 16 caracteres eligiendo la combinación de letras, números y símbolos que necesites.
+- **Limpiador de texto:** Elimina caracteres de control, saltos de línea múltiples y espacios innecesarios de cualquier texto pegado.
+
+> El Taller recuerda qué sección dejaste abierta entre usos dentro de la misma sesión del popup.
+
+<p align="right">(<a href="#readme-top">ir arriba</a>)</p>
+
+### 👁️ Vista rápida de clientes
+
+**Dónde funciona:** Lista de clientes (`/clientes/`).
+
+**Qué hace:** Al pasar el cursor sobre una fila de cliente, muestra un **popup contextual** con información clave sin necesidad de abrir el perfil completo:
+
+- **Saldo y estado de cuenta** (al corriente, con deuda, sin datos).
+- **Plan de internet** contratado.
+- **Tickets en progreso** con enlace directo a cada ticket.
+- **Tickets pendientes** con enlace directo a cada ticket.
+- **Último movimiento de bitácora del mes:** acción registrada, estado, asesor responsable, fecha y hora.
+- **Accesos directos** al perfil del cliente, sección de pagos y bitácora en una sola pestaña.
+
+> Se puede activar/desactivar y configurar el tiempo de demora antes de mostrar el popup desde los ajustes del panel emergente. Requiere API Key configurada para obtener saldo y tickets.
+
+<p align="right">(<a href="#readme-top">ir arriba</a>)</p>
+
 ### ⚙️ Panel emergente (panel de control)
 
 El icono de la extensión en la barra del navegador abre un **panel de control** con estas secciones:
 
 - **Estado de conexión:** Muestra si estás en WispHub y si el editor está disponible.
 - **Info de sesión:** Nombre de usuario detectado en la página, ID de staff (si hay API Key), badge de advertencia cuando faltan API Keys y acceso directo a Configuración avanzada.
-- **Switch de perfil (Colima/Michoacán):** Botón en la tarjeta de sesión para cambiar rápidamente entre perfiles del dominio actual (`wisphub.io` o `wisphub.app`) con restauración de sesión por cookies cuando existe snapshot del perfil destino (sin volver a capturar contraseña). Si no existe snapshot o expiró, usa fallback asistido de cierre de sesión + login guiado.
+- **Switch de perfil (Colima/Michoacán):** Botón en la tarjeta de sesión para cambiar rápidamente entre perfiles del dominio actual (`wisphub.io` o `wisphub.app`). Reutiliza cookies guardadas cuando vuelves a un perfil ya conocido y, si hace falta login asistido, permite entrar con cualquier cuenta del dominio destino sin exigir el mismo usuario antes del `@`.
   - La vigencia de la sesión guardada se renueva aunque las cookies no cambien, para reducir cambios innecesarios a login asistido.
 - **Formateador:** Botón para formatear o restaurar el comentario desde el panel emergente.
 - **Calculadora:** Calculadora independiente de precios con prorrateo (siempre disponible, sin necesidad de editor ni dominio específico).
 - **Diagnóstico Express (BETA):** Tarjeta contextual que se habilita al seleccionar un cliente en `/clientes/` o al abrir su detalle; inicia el diagnóstico y muestra el resultado en modal dentro de la página.
-- **Próximamente:** Tarjeta reservada para la siguiente herramienta (se muestra deshabilitada para evitar confusión).
+- **Utilidades:** Sección con herramientas rápidas para el día a día, como convertidor de texto, generador de contraseñas y limpieza de texto.
+- **Vista rápida de clientes:** Ajuste opcional para mostrar un popup contextual al pasar el cursor sobre clientes en `/clientes/`, con tickets activos, saldo, último log disponible y accesos directos al perfil, pagos y log.
 - **Ajustes:**
   - Activar/desactivar notificaciones en página.
   - Activar/desactivar auto-formato al cargar.
   - Activar/desactivar auto-cálculo de precios al cargar.
   - Activar/desactivar auto-rellenado de plantilla en editor vacío.
   - Guardar API Keys para `wisphub.io` y `wisphub.app`.
-- **Registros:** Historial de acciones de la extensión (máximo 50, se borran después de 24 horas).
+- **Registros:** Bitácora diaria de acciones y cambios relevantes de la extensión, con hora local en formato de 12 horas y detalles antes/después cuando aplica.
 - **Historial de cambios:** Lista de cambios por versión.
 
 <p align="right">(<a href="#readme-top">ir arriba</a>)</p>
@@ -549,14 +583,14 @@ config → utils → lib → features → app (page.js / content.js / background
 
 ## Seguridad y permisos
 
-| Aspecto           | Detalle                                                       |
-| ----------------- | ------------------------------------------------------------- |
-| **Permisos**      | `storage` y `cookies` (ajustes/caché local + cambio de sesión asistido) |
-| **Dominios**      | Restringido a `*.wisphub.io` y `*.wisphub.app`                |
-| **Código remoto** | No se usa `eval`, `Function()` ni scripts externos            |
-| **API Keys**      | Se guardan localmente en el navegador, nunca salen a terceros |
+| Aspecto               | Detalle                                                                                                    |
+| --------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Permisos**          | `storage` y `cookies` (ajustes/caché local + cambio de sesión asistido)                                    |
+| **Dominios**          | Restringido a `*.wisphub.io` y `*.wisphub.app`                                                             |
+| **Código remoto**     | No se usa `eval`, `Function()` ni scripts externos                                                         |
+| **API Keys**          | Se guardan localmente en el navegador, nunca salen a terceros                                              |
 | **Cookies de sesión** | Snapshot local por perfil (máx. 8 perfiles, máx. 20 cookies por perfil, TTL 24h, sin cookies de analytics) |
-| **Datos**         | No se recopilan datos personales ni se envía telemetría       |
+| **Datos**             | No se recopilan datos personales ni se envía telemetría                                                    |
 
 Para más detalles, consulta la [Política de Privacidad](PRIVACY_POLICY.md).
 
@@ -595,7 +629,7 @@ Consulta el archivo [LICENSE](LICENSE) para el texto completo.
 [issues-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/issues
 [license-shield]: https://img.shields.io/github/license/JohnyDeCoder/wisphub-yaa-companion.svg?style=for-the-badge
 [license-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/blob/master/LICENSE
-[version-shield]: https://img.shields.io/badge/version-1.4.0-blue?style=for-the-badge
+[version-shield]: https://img.shields.io/badge/version-1.5.0-blue?style=for-the-badge
 [release-url]: https://github.com/JohnyDeCoder/wisphub-yaa-companion/releases
 [manifest-shield]: https://img.shields.io/badge/manifest-v3-orange?style=for-the-badge
 [manifest-url]: https://developer.chrome.com/docs/extensions/mv3/intro/

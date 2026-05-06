@@ -1,22 +1,67 @@
 # Changelog - Wisphub Yaa Companion
 
-Todos los cambios notables de este proyecto se documentan aqui.
+Todos los cambios notables de este proyecto se documentan en este archivo.
 
-## v1.4.0 - 2026-03-20
+El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
+El versionado sigue [Semantic Versioning](https://semver.org/lang/es/).
+
+## [Sin publicar]
+
+## [1.5.0] - 2026-05-06
+
+### Agregado
+
+- Nuevo panel 'Taller de Utilidades' en el popup con convertidor de texto (mayúsculas, minúsculas, capitalizar, sin acentos, limpiar espacios), generador de contraseñas configurable (longitud, letras, números y símbolos) y limpiador de texto.
+- Vista rápida de clientes: el popup de hover ahora incluye una sección de tickets pendientes junto a los tickets en progreso, y un resumen del último movimiento en la bitácora del mes con acción, estado, asesor, fecha y hora.
+- Vista rápida de clientes: accesos directos a pagos y bitácora del cliente desde el popup de hover.
+- El registro de actividad ahora muestra la funcionalidad involucrada, el tipo de acción, la ruta de la página y detalles antes/después cuando aplica. Los registros se muestran del más reciente al más antiguo, con estado vacío explicativo.
+- Los overlays del popup (registros, calculadora y taller) ahora bloquean el scroll del dashboard mientras están abiertos para mayor claridad.
+- Fondo animado con partículas flotantes en el panel emergente y en la página de novedades.
+- El cambio de perfil ahora captura automáticamente la sesión nueva al completarse correctamente.
+
+### Cambiado
+
+- El cambio de perfil ya no se queda atascado si llegas a la página correcta sin pasar por el login asistido: ahora cierra sesión automáticamente y te guía al login del perfil destino.
+- El mensaje de guía al hacer login ahora muestra el dominio del perfil destino en lugar del usuario completo.
+- El historial de cambios en el popup ahora muestra solo las 2 versiones más recientes con cambios agrupados por categoría.
+- Los campos de nombre y apellido ahora se guardan sin acentos al formatear (por ejemplo: 'Andrés' → 'ANDRES').
+- La validación de sesión guardada ahora verifica que exista al menos una cookie de sesión restaurable, no solo cualquier cookie.
+- Las notificaciones del cambio de perfil se redujeron en duración para ser menos intrusivas.
+- Los registros del popup ahora muestran la hora en formato de 12 horas.
+
+### Corregido
+
+- El cambio de perfil ya no intentaba guardar sesión si no había cookies válidas para capturar, lo que causaba un cambio fallido sin aviso claro.
+- Las acciones sensibles del background ahora verifican que el mensaje provenga de una página de WispHub, evitando respuestas a orígenes no autorizados.
+- Los registros de actividad ahora llegan correctamente al popup aunque el bridge no haya completado su inicialización.
+- El formateador usado desde el popup ya no generaba error al consultar la pestaña activa.
+- Vista rápida de clientes: si no hay API Keys configuradas, ahora muestra un aviso claro en las secciones de saldo y tickets en lugar de mostrar 'sin datos'. Si hay un error de API (por ejemplo, key inválida o sin permisos), se muestra el error específico.
+
+## [1.4.0] - 2026-03-20
+
+### Agregado
 
 - Nuevo Diagnóstico Express para clientes, con revisión rápida de ping, torch, tráfico semanal y estado de cuenta.
 - El diagnóstico ahora se muestra en un modal con progreso por pasos, detalle final y opción de volver a ejecutarlo.
 - Se agregaron accesos directos desde la vista del cliente para abrir ping, torch y tráfico semanal en una pestaña nueva.
-- Se mejoró la lectura de resultados para distinguir mejor entre completo, parcial, alerta y error.
-- Si el diagnóstico no puede iniciar, ahora se muestra el error real y ya no se marca como iniciado por error.
 - Nuevo cambio rápido de perfil entre Colima y Michoacán en el popup, según el dominio donde estés.
+
+### Cambiado
+
+- Se mejoró la lectura de resultados para distinguir mejor entre completo, parcial, alerta y error.
 - Cuando falta sesión del otro perfil, la extensión ahora guía el inicio de sesión paso a paso.
 - La sesión guardada se mantiene vigente aunque no cambien las cookies, para evitar pedir acceso de nuevo sin necesidad.
 - La plantilla de aprovisionamiento se mejoró para rellenar datos faltantes con el formato _{{POR LLENAR / CAMPO }}_.
-- Se ajustó el formateador para no aplicar cambios ni mostrar aviso cuando el texto ya está correcto.
 - Mejoras generales de estabilidad, seguridad y rendimiento en los flujos de clientes.
 
-## v1.3.0 - 2026-03-19
+### Corregido
+
+- Si el diagnóstico no puede iniciar, ahora se muestra el error real y ya no se marca como iniciado por error.
+- Se ajustó el formateador para no aplicar cambios ni mostrar aviso cuando el texto ya está correcto.
+
+## [1.3.0] - 2026-03-19
+
+### Agregado
 
 - Clientes: nuevo botón para copiar la plantilla de aprovisionamiento en un solo clic.
 - La plantilla se entrega en líneas ordenadas con los datos clave del cliente y del servicio.
@@ -25,54 +70,88 @@ Todos los cambios notables de este proyecto se documentan aqui.
 - Al copiar una plantilla con datos pendientes, se muestra una advertencia para evitar omisiones.
 - Clientes: nuevo botón junto al nombre para copiarlo en formato de aprovisionamiento.
 - El copiado del nombre permite configuración rápida con Ctrl+Click (formato de texto y separador).
+- También puedes escribir reset para volver a la configuración predeterminada rápidamente.
+
+### Cambiado
+
 - La configuración del copiado ahora usa alertas en español, más claras y fáciles de seguir.
 - La opción de separador ahora reconoce vacío o espacio en distintas formas (por ejemplo: vacio, vacío, espacio o " ").
-- También puedes escribir reset para volver a la configuración predeterminada rápidamente.
-- Los tooltips ahora se ocultan correctamente al hacer clic en botones o enlaces.
 - Los botones de copiado muestran mejor su estado visual al deshabilitarse y volver a estar activos.
 - Se mejoró la visualización en listas de clientes de wisphub.io y wisphub.app para mantener botones bien alineados.
 - Mejoras generales de rendimiento y estabilidad en herramientas de clientes.
 
-## v1.2.0 - 2026-03-02
+### Corregido
+
+- Los tooltips ahora se ocultan correctamente al hacer clic en botones o enlaces.
+
+## [1.2.0] - 2026-03-02
+
+### Agregado
 
 - Tickets especiales: nueva opción para crear tickets de 'Mantenimiento (AP) Publicas' desde la barra de navegación.
 - Validación al guardar: si el tipo de equipo no es comodato, dato o propios, se muestra una confirmación antes de guardar. Lo mismo si el costo de instalación coincide con el precio del plan.
-- Copiado de tickets de mantenimiento: al copiar tickets de 'Mantenimiento Publicas' o 'Mantenimiento AP Publicas', ahora incluye cliente, descripción y asunto.
 - Indicador de campos formateados: ahora se muestra 'Campo formateado · Deshacer' debajo de cada campo que fue modificado al formatear (nombre, apellido, dirección, etc.).
-- Tipo de equipo preservado: al formatear comentarios, el tipo de equipo original (DATO, COMO DATO, etc.) se mantiene en su posición correcta junto con el cálculo de precios.
+
+### Cambiado
+
+- Copiado de tickets de mantenimiento: al copiar tickets de 'Mantenimiento Publicas' o 'Mantenimiento AP Publicas', ahora incluye cliente, descripción y asunto.
 - Botón de copiar mejorado: al copiar exitosamente, el ícono cambia a un check por unos segundos en lugar de mostrar una notificación.
-- Ver cliente en vista comprimida: el enlace para ver la información del cliente ahora también aparece cuando la tabla está en vista responsiva (columnas colapsadas).
 - Botones más rápidos: los botones de 'Ver archivos' y 'Ver cliente' ahora aparecen casi al instante en la tabla.
 - Los íconos SVG de la extensión ahora se renderizan completamente desde CSS para mejor rendimiento.
 
-## v1.1.1 - 2026-02-20
+### Corregido
+
+- Tipo de equipo preservado: al formatear comentarios, el tipo de equipo original (DATO, COMO DATO, etc.) se mantiene en su posición correcta junto con el cálculo de precios.
+- Ver cliente en vista comprimida: el enlace para ver la información del cliente ahora también aparece cuando la tabla está en vista responsiva (columnas colapsadas).
+
+## [1.1.1] - 2026-02-20
+
+### Corregido
 
 - Se deshabilitó el formateador en las páginas de agregar tickets y editar servicio del cliente para evitar comportamiento incorrecto.
 - Cálculo de precios: se corrigió un error al actualizar precios dinámicamente cuando dos valores coincidían.
 - Cálculo de precios: ahora se puede actualizar el costo de instalación en comentarios sin necesidad de tener todos los campos.
 
-## v1.1.0 - 2026-02-20
+## [1.1.0] - 2026-02-20
+
+### Agregado
 
 - Tickets especiales: nuevo botón para crear rápidamente tickets de Mantenimiento General, Ir a Sitio y Sitio Día Completo.
 - Auto-rellenado de tickets: al crear un ticket, se rellenan automáticamente el departamento, la fecha estimada y el asunto.
 - Ver cliente desde tickets: enlace directo a la información del cliente desde la lista de tickets.
 - Cálculo de precios dinámico: ahora detecta automáticamente cambios en Plan internet, Costo instalación y Fecha instalación para recalcular precios al instante.
 - Soporte para "Cambio de compañía": comentarios con "CAMBIO DE COMPAÑIA $350 + RESTO DE MES" ahora calculan precios correctamente.
+
+### Cambiado
+
 - Prioridad del plan: el plan seleccionado en el formulario siempre tiene prioridad sobre el que aparece en los comentarios.
-- Caracteres especiales: se corrigió el cálculo de precios en comentarios con Ñ, acentos y otros caracteres especiales.
 - Caché de staff: los IDs de staff se guardan localmente para cargar más rápido.
 - Plantilla más limpia: texto simplificado y sin usuarios admin en el campo ASESOR.
 - Ajustes del popup: la configuración de auto-rellenado ahora cubre tanto tickets como instalaciones.
 
-## v1.0.2 - 2026-02-17
+### Corregido
 
-- Auto-rellenado de plantilla: ahora funciona de forma independiente, sin depender de Auto-formato.
-- Plantilla con formato: la plantilla auto-rellenada se inserta con negritas en las claves automáticamente.
-- Detección de páginas mejorada: las herramientas ahora se activan correctamente en páginas de agregar clientes e instalaciones.
+- Caracteres especiales: se corrigió el cálculo de precios en comentarios con Ñ, acentos y otros caracteres especiales.
+
+## [1.0.2] - 2026-02-17
+
+### Agregado
+
 - Página de novedades: al instalar o actualizar la extensión, se abre automáticamente una página con los cambios recientes.
 - Indicador de actualización: badge "UP" en el icono de la extensión cuando hay una nueva versión disponible.
 
-## v1.0.1 - 2026-02-16
+### Cambiado
+
+- Plantilla con formato: la plantilla auto-rellenada se inserta con negritas en las claves automáticamente.
+
+### Corregido
+
+- Auto-rellenado de plantilla: ahora funciona de forma independiente, sin depender de Auto-formato.
+- Detección de páginas mejorada: las herramientas ahora se activan correctamente en páginas de agregar clientes e instalaciones.
+
+## [1.0.1] - 2026-02-16
+
+### Agregado
 
 - Formateador de comentarios: limpia y organiza el texto del editor con negritas, mayúsculas y saltos de línea automáticos. Usa Ctrl+Shift+F.
 - Calculadora de precios: recalcula automáticamente los precios según la fecha de instalación y el paquete del cliente. Acepta cualquier texto antes del "+" (migración, cortesía, equipos, etc.). Usa Ctrl+Shift+Alt+P.
@@ -90,5 +169,8 @@ Todos los cambios notables de este proyecto se documentan aqui.
 - Panel de control (popup): estado de conexión, configuraciones, registros de actividad y changelog.
 - Detección automática de staff: identifica tu usuario de WispHub y muestra tu ID de staff en el popup.
 - Inyección de IDs de staff: columna automática con el ID numérico de cada miembro en la tabla de personal.
-- Avatar por defecto reemplazado en toda la UI.
 - Compatible con Chrome, Edge y Firefox. Funciona SÓLO en wisphub.io y wisphub.app.
+
+### Cambiado
+
+- Avatar por defecto reemplazado en toda la UI.
