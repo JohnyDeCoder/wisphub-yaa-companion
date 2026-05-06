@@ -1,4 +1,4 @@
-import { TIMING, EXTENSION_NAME } from "../../config/constants.js";
+import { TIMING } from "../../config/constants.js";
 import {
   MESSAGE_TYPES,
   NOTIFICATION_TYPES,
@@ -20,6 +20,7 @@ import { completeCommentStructure } from "./utils/commentCompleter.js";
 import {
   autoFillFormFields,
   clearAllFieldIndicators,
+  initNameFieldWatchers,
 } from "./utils/formFiller.js";
 import { injectButtonIntoToolbar } from "./components/formatterButton.js";
 import {
@@ -35,12 +36,28 @@ import {
   updateButtonVisual,
 } from "./stores/toggleState.js";
 import { postBridgeMessage } from "../../utils/pageBridge.js";
+import { sendLogToPopup } from "../../utils/logger.js";
+import {
+  isInstallationFlowPath,
+  isFormatterScopePath,
+} from "../../config/pagePatterns.js";
 
 let autoFormatEnabled = false;
 let autoFormatExecuted = false;
 let autoFillTemplateEnabled = true;
 let _onAutoFormatComplete = null;
 let _templateFn = null;
+
+function resolvePageSectionTag() {
+  const path = window.location.pathname;
+  if (isInstallationFlowPath(path)) {
+    return "Installs";
+  }
+  if (isFormatterScopePath(path)) {
+    return "Clients";
+  }
+  return "Formatter";
+}
 
 function normalizeComparableText(value) {
   return String(value || "")
@@ -66,6 +83,20 @@ function extractTextFromHtml(html) {
   const doc = new DOMParser().parseFromString(normalizedHtml, "text/html");
   const text = doc.body.textContent || "";
   return text.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function buildFieldChangeSnapshot(changes = [], side) {
+  return changes
+    .map((change) => {
+      const label = String(change?.label || change?.fieldId || "Campo").trim();
+      const value =
+        side === "before"
+          ? String(change?.before || "").trim()
+          : String(change?.after || "").trim();
+      return `${label}: ${value || "Vacío"}`;
+    })
+    .filter(Boolean)
+    .join("\n");
 }
 
 export function setFormatterTemplateFn(fn) {
@@ -110,9 +141,10 @@ export function handleToggle(shouldFormat, options = {}) {
       }
 
       const formattedHtml = formatText(textToFormat);
+      const formattedText = extractTextFromHtml(formattedHtml);
       const contentChanged =
         normalizeComparableText(plainText) !==
-        normalizeComparableText(extractTextFromHtml(formattedHtml));
+        normalizeComparableText(formattedText);
 
       let fieldFillResult = { changed: false, changedCount: 0 };
       if (options.fillFields !== false) {
@@ -139,6 +171,37 @@ export function handleToggle(shouldFormat, options = {}) {
       if (contentChanged) {
         setEditorContent(editor, formattedHtml);
       }
+
+      const auditBefore = [
+        contentChanged ? `Comentarios:\n${plainText}` : null,
+        fieldsChanged ? buildFieldChangeSnapshot(fieldFillResult.changes, "before") : null,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+      const auditAfter = [
+        contentChanged ? `Comentarios:\n${formattedText}` : null,
+        fieldsChanged ? buildFieldChangeSnapshot(fieldFillResult.changes, "after") : null,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+
+      sendLogToPopup(
+        resolvePageSectionTag(),
+        "success",
+        "Formatting applied",
+        contentChanged
+          ? `Comentario actualizado${fieldsChanged ? ` y ${fieldFillResult.changedCount} campo(s)` : ""}`
+          : `Campos actualizados: ${fieldFillResult.changedCount}`,
+        {
+          kind: "audit",
+          action: contentChanged ? "Formateo aplicado" : "Campos autoformateados",
+          pagePath: window.location.pathname,
+          pageUrl: window.location.href,
+          stateColor: "info",
+          before: auditBefore,
+          after: auditAfter,
+        },
+      );
 
       notify(UI_MESSAGES.FORMAT_SUCCESS, NOTIFICATION_TYPES.SUCCESS);
       return {
@@ -254,7 +317,7 @@ export function initFormatter(editor) {
   const success = injectButtonIntoToolbar(editor, handleToggle);
 
   if (success) {
-    console.log(`[${EXTENSION_NAME}] Formatter ready`);
+    sendLogToPopup("Formatter", "info", "Formatter ready");
 
     postBridgeMessage(
       MESSAGE_TYPES.EDITOR_READY,
@@ -265,6 +328,8 @@ export function initFormatter(editor) {
     );
 
     setTimeout(tryAutoFormat, TIMING.CHECK_INTERVAL);
+
+    initNameFieldWatchers(isAutoFormatEnabled);
   }
 
   return success;

@@ -359,7 +359,7 @@ export function initFormGuards() {
     );
   }
 
-  log("Form guards initialized", "Guardias de formulario inicializadas");
+  log("Form guards initialized");
 }
 
 export const __testables__ = {
