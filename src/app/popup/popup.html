@@ -10,6 +10,12 @@
     <div class="dashboard">
       <!-- HEADER -->
       <header class="dashboard-header">
+        <ul class="popup-bg" aria-hidden="true">
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+        </ul>
         <div class="header-top">
           <img
             src="../assets/icons/icon48.png"
@@ -147,7 +153,7 @@
               </div>
 
               <!-- Tool 2: Calculator (always enabled, no data-tool) -->
-              <div class="flip-card">
+              <div class="flip-card" id="calcFlipCard">
                 <div class="flip-card-inner">
                   <div class="flip-card-back">
                     <div class="flip-back-content">
@@ -217,40 +223,19 @@
                 </div>
               </div>
 
-              <!-- Tool 4: Placeholder -->
-              <div class="flip-card disabled" data-tool="upcoming">
+              <!-- Tool 4: Utilidades -->
+              <div class="flip-card" id="tallerFlipCard">
                 <div class="flip-card-inner">
                   <div class="flip-card-back">
                     <div class="flip-back-content">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="32"
-                        height="32"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <rect
-                          x="3"
-                          y="3"
-                          width="18"
-                          height="18"
-                          rx="2"
-                          ry="2"
-                        ></rect>
-                        <line x1="12" y1="8" x2="12" y2="16"></line>
-                        <line x1="8" y1="12" x2="16" y2="12"></line>
-                      </svg>
-                      <strong>Próximamente</strong>
+                      <span class="tool-card-icon tool-card-icon-taller" aria-hidden="true"></span>
+                      <strong>Utilidades</strong>
                     </div>
                   </div>
                   <div class="flip-card-front">
                     <div class="flip-front-content">
-                      <p class="flip-desc">Nueva herramienta en desarrollo</p>
-                      <button
-                        class="btn btn-primary btn-full"
-                        id="btnUpcoming"
+                      <p class="flip-desc">Pequeñas ayudas para tu día a día</p>
+                      <button class="btn btn-primary btn-full" id="btnOpenTaller"
                         >Usar</button
                       >
                     </div>
@@ -262,7 +247,7 @@
         </section>
 
         <!-- SETTINGS -->
-        <section class="card">
+        <section class="card settings-card">
           <div class="card-header">
             <h2>Ajustes</h2>
           </div>
@@ -314,7 +299,55 @@
                 <span class="slider"></span>
               </label>
             </div>
-            <details class="advanced-settings" id="advancedSettings">
+            <details class="advanced-settings" id="quickInfoSettings" data-settings-section>
+              <summary class="advanced-summary">
+                <svg
+                  class="advanced-icon"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M12.675 12L10.3 14.375q-.275.275-.275.688t.275.712q.3.3.713.3t.712-.3L14.8 12.7q.3-.3.3-.7t-.3-.7l-3.1-3.1q-.3-.3-.7-.287t-.7.312q-.275.3-.288.7t.288.7zM12 22q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22"
+                  />
+                </svg>
+                Vista r&#225;pida de clientes
+              </summary>
+              <div class="advanced-content">
+                <div class="advanced-content-inner">
+                  <div class="setting-item">
+                    <div class="setting-info">
+                      <span class="setting-label">Activar vista r&#225;pida</span>
+                      <span class="setting-desc">Mostrar informaci&#243;n avanzada del cliente al pasar el cursor</span>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" id="settingsQuickInfo" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div class="setting-item setting-item-col">
+                    <span class="setting-label">Tiempo de espera</span>
+                    <div class="number-input-wrap">
+                      <input
+                        type="number"
+                        id="settingsQuickInfoDelay"
+                        min="0"
+                        max="10"
+                        step="0.5"
+                        class="api-key-input"
+                      />
+                      <span class="number-input-suffix">segundos</span>
+                    </div>
+                  </div>
+                  <button class="btn btn-primary btn-full" id="btnSaveQuickInfo"
+                    >Guardar cambios</button
+                  >
+                </div>
+              </div>
+            </details>
+            <details class="advanced-settings" id="advancedSettings" data-settings-section>
               <summary class="advanced-summary">
                 <svg
                   class="advanced-icon"
@@ -361,7 +394,7 @@
                     </div>
                   </div>
                   <button class="btn btn-primary btn-full" id="btnSaveApiKeys"
-                    >Guardar API Keys</button
+                    >Guardar cambios</button
                   >
                 </div>
               </div>
@@ -455,11 +488,240 @@
           </div>
           <div class="calc-result-line" id="calcResultLine"></div>
           <button
-            class="btn btn-primary btn-full calc-btn-copy"
+            class="btn btn-secondary btn-full calc-btn-copy"
             id="btnCalcCopy"
             >Copiar línea</button
           >
         </div>
+      </div>
+    </div>
+
+    <div class="calc-overlay" id="tallerOverlay">
+      <div class="calc-header">
+        <h2>Utilidades</h2>
+        <button class="logs-btn" id="btnTallerClose">&#x2715;</button>
+      </div>
+      <div class="calc-body taller-body">
+
+        <!-- Herramienta 1: Convertidor de texto -->
+        <div class="card taller-tool-card">
+          <details class="advanced-settings" data-taller-section>
+            <summary class="advanced-summary taller-summary">
+              <svg class="advanced-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
+              </svg>
+              <span class="taller-name">Convertidor de texto</span>
+            </summary>
+            <div class="advanced-content">
+              <div class="advanced-content-inner taller-content">
+                <div class="calc-field">
+                  <label class="calc-label" for="tallerConvertInput">Texto original</label>
+                  <div class="calc-input-group taller-textarea-group">
+                    <textarea
+                      id="tallerConvertInput"
+                      class="calc-input taller-textarea-input"
+                      placeholder="Escribe o pega el texto que deseas convertir..."
+                      rows="2"
+                    ></textarea>
+                  </div>
+                </div>
+                <div class="taller-choice-section">
+                  <span class="calc-label">Formato</span>
+                  <div class="taller-choice-group">
+                    <label class="taller-choice-label">
+                      <input type="radio" name="tallerConvertFormat" value="upper" checked />
+                      MAY&#218;SCULAS
+                    </label>
+                    <label class="taller-choice-label">
+                      <input type="radio" name="tallerConvertFormat" value="lower" />
+                      min&#250;sculas
+                    </label>
+                    <label class="taller-choice-label">
+                      <input type="radio" name="tallerConvertFormat" value="capitalize" />
+                      Capitalizar
+                    </label>
+                  </div>
+                </div>
+                <div class="taller-choice-section">
+                  <span class="calc-label">Opciones</span>
+                  <div class="taller-choice-group">
+                    <label class="taller-choice-label">
+                      <input type="checkbox" id="tallerConvertNoAccents" />
+                      Quitar acentos
+                    </label>
+                    <label class="taller-choice-label">
+                      <input type="checkbox" id="tallerConvertTrimSpaces" />
+                      Recortar espacios
+                    </label>
+                  </div>
+                </div>
+                <button class="btn btn-primary btn-full" id="btnTallerConvert">
+                  Convertir
+                </button>
+                <div class="calc-result">
+                  <div class="calc-result-header">
+                    <span class="calc-result-title">Resultado</span>
+                  </div>
+                  <div class="calc-result-line taller-result-block">
+                    <textarea
+                      id="tallerConvertOutput"
+                      class="taller-result-area"
+                      placeholder="Aqu&#237; aparecer&#225; el texto transformado, listo para copiar..."
+                      rows="2"
+                    ></textarea>
+                  </div>
+                  <button
+                    class="btn btn-secondary btn-full calc-btn-copy"
+                    id="btnTallerConvertCopy"
+                  >
+                    Copiar resultado
+                  </button>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <!-- Herramienta 2: Generador de contrase&#241;a -->
+        <div class="card taller-tool-card">
+          <details class="advanced-settings" data-taller-section>
+            <summary class="advanced-summary taller-summary">
+              <svg class="advanced-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
+              </svg>
+              <span class="taller-name">Generador de contrase&#241;a</span>
+            </summary>
+            <div class="advanced-content">
+              <div class="advanced-content-inner taller-content">
+                <div class="taller-row taller-row-gap">
+                  <div class="calc-field taller-inline-field taller-inline-field--grow">
+                    <label class="calc-label" for="tallerPwdLength">Longitud</label>
+                    <div class="number-input-wrap">
+                      <input
+                        type="number"
+                        id="tallerPwdLength"
+                        class="api-key-input"
+                        value="8"
+                        min="6"
+                        max="16"
+                      />
+                      <span class="number-input-suffix">caracteres</span>
+                    </div>
+                  </div>
+                  <div class="calc-field taller-inline-field taller-inline-field--grow">
+                    <span class="calc-label">Tipo</span>
+                    <div class="taller-choice-group">
+                      <label class="taller-choice-label">
+                        <input type="checkbox" id="tallerPwdLetters" checked />
+                        Letras
+                      </label>
+                      <label class="taller-choice-label">
+                        <input type="checkbox" id="tallerPwdNumbers" checked />
+                        N&#250;meros
+                      </label>
+                      <label class="taller-choice-label">
+                        <input type="checkbox" id="tallerPwdSymbols" />
+                        S&#237;mbolos
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <button class="btn btn-primary btn-full" id="btnTallerPwdGen">
+                  Generar
+                </button>
+                <div class="calc-result">
+                  <div class="calc-result-header">
+                    <span class="calc-result-title">Resultado</span>
+                  </div>
+                  <div class="calc-result-line taller-result-block">
+                    <input
+                      type="text"
+                      id="tallerPwdOutput"
+                      class="taller-result-input"
+                      readonly
+                      placeholder="Contrase&#241;a generada..."
+                    />
+                  </div>
+                  <button
+                    class="btn btn-secondary btn-full calc-btn-copy"
+                    id="btnTallerPwdCopy"
+                  >
+                    Copiar contrase&#241;a
+                  </button>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <!-- Herramienta 3: Limpiador de texto -->
+        <div class="card taller-tool-card">
+          <details class="advanced-settings" data-taller-section>
+            <summary class="advanced-summary taller-summary">
+              <svg class="advanced-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
+              </svg>
+              <span class="taller-name">Limpiador de texto</span>
+            </summary>
+            <div class="advanced-content">
+              <div class="advanced-content-inner taller-content">
+                <div class="calc-field">
+                  <label class="calc-label" for="tallerCleanInput"
+                    >Texto a limpiar</label
+                  >
+                  <div class="calc-input-group taller-textarea-group">
+                    <textarea
+                      id="tallerCleanInput"
+                      class="calc-input taller-textarea-input"
+                      placeholder="Pega aqu&#237; el texto que deseas limpiar..."
+                      rows="2"
+                    ></textarea>
+                  </div>
+                </div>
+                <div class="taller-choice-section">
+                  <span class="calc-label">Limpieza</span>
+                  <div class="taller-choice-group">
+                    <label class="taller-choice-label">
+                      <input type="radio" name="tallerCleanMode" value="spaces" checked />
+                      Espacios duplicados
+                    </label>
+                    <label class="taller-choice-label">
+                      <input type="radio" name="tallerCleanMode" value="lines" />
+                      Eliminar l&#237;neas vac&#237;as
+                    </label>
+                    <label class="taller-choice-label">
+                      <input type="radio" name="tallerCleanMode" value="both" />
+                      Ambas opciones
+                    </label>
+                  </div>
+                </div>
+                <button class="btn btn-primary btn-full" id="btnTallerClean">
+                  Limpiar
+                </button>
+                <div class="calc-result">
+                  <div class="calc-result-header">
+                    <span class="calc-result-title">Resultado</span>
+                  </div>
+                  <div class="calc-result-line taller-result-block">
+                    <textarea
+                      id="tallerCleanOutput"
+                      class="taller-result-area"
+                      placeholder="Aqu&#237; aparecer&#225; el texto limpio, tambi&#233;n lo puedes editar antes de copiar..."
+                      rows="2"
+                    ></textarea>
+                  </div>
+                  <button
+                    class="btn btn-secondary btn-full calc-btn-copy"
+                    id="btnTallerCleanCopy"
+                  >
+                    Copiar resultado
+                  </button>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+
       </div>
     </div>
 

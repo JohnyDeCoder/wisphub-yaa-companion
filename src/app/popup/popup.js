@@ -7,6 +7,8 @@ import {
 } from "../../config/sessionProfiles.js";
 import { getTodayISO } from "../../utils/date.js";
 import { formatPrice } from "../../utils/formatting.js";
+import { removeAccents } from "../../utils/string.js";
+import { copyToClipboard as clipboardWrite } from "../../utils/clipboard.js";
 import { calculateProration } from "../../features/price-calculator/priceCalculator.js";
 import { loadSettings, saveSettings } from "../../lib/storage/settings.js";
 import {
@@ -14,6 +16,7 @@ import {
   saveAllApiKeys,
 } from "../../features/staff/staffApi.js";
 import { POPUP_CONFIG } from "./config.js";
+import { bindExclusiveDetailsGroup } from "./utils/exclusiveDetails.js";
 import { showToast } from "./components/toast.js";
 import { checkConnection } from "./components/connection.js";
 import { renderChangelog } from "./components/changelog.js";
@@ -40,16 +43,6 @@ let hasAnyApiKey = false;
 let activeTabId = null;
 let isStaffIdWarningMode = false;
 
-function withLogPrefix(feature, message) {
-  const text = String(message || "").trim();
-  if (!text) {
-    return "";
-  }
-  if (/^\[[^\]]+\]\s*/.test(text)) {
-    return text;
-  }
-  return `[${feature}] ${text}`;
-}
 
 function initElements() {
   const $ = (id) => document.getElementById(id);
@@ -80,7 +73,6 @@ function initElements() {
     btnLogsClose: $("btnLogsClose"),
     btnOpenCalc: $("btnOpenCalc"),
     btnRunDiagnostic: $("btnRunDiagnostic"),
-    btnUpcoming: $("btnUpcoming"),
     calcOverlay: $("calcOverlay"),
     btnCalcClose: $("btnCalcClose"),
     calcInstallPrice: $("calcInstallPrice"),
@@ -91,22 +83,52 @@ function initElements() {
     calcResult: $("calcResult"),
     calcResultLine: $("calcResultLine"),
     btnCalcCopy: $("btnCalcCopy"),
+    dashboardContent: document.querySelector(".dashboard-content"),
+    tallerOverlay: $("tallerOverlay"),
+    btnOpenTaller: $("btnOpenTaller"),
+    btnTallerClose: $("btnTallerClose"),
+    tallerConvertInput: $("tallerConvertInput"),
+    tallerConvertOutput: $("tallerConvertOutput"),
+    tallerConvertNoAccents: $("tallerConvertNoAccents"),
+    tallerConvertTrimSpaces: $("tallerConvertTrimSpaces"),
+    btnTallerConvert: $("btnTallerConvert"),
+    btnTallerConvertCopy: $("btnTallerConvertCopy"),
+    tallerPwdLength: $("tallerPwdLength"),
+    tallerPwdLetters: $("tallerPwdLetters"),
+    tallerPwdNumbers: $("tallerPwdNumbers"),
+    tallerPwdSymbols: $("tallerPwdSymbols"),
+    tallerPwdOutput: $("tallerPwdOutput"),
+    btnTallerPwdGen: $("btnTallerPwdGen"),
+    btnTallerPwdCopy: $("btnTallerPwdCopy"),
+    tallerCleanInput: $("tallerCleanInput"),
+    tallerCleanOutput: $("tallerCleanOutput"),
+    btnTallerClean: $("btnTallerClean"),
+    btnTallerCleanCopy: $("btnTallerCleanCopy"),
+    settingsQuickInfo: $("settingsQuickInfo"),
+    settingsQuickInfoDelay: $("settingsQuickInfoDelay"),
+    btnSaveQuickInfo: $("btnSaveQuickInfo"),
+    quickInfoSettings: $("quickInfoSettings"),
+    calcFlipCard: $("calcFlipCard"),
+    tallerFlipCard: $("tallerFlipCard"),
   };
 }
 
 function applySettingsToUI() {
-  if (elements.settingsNotifications) {
-    elements.settingsNotifications.checked = userSettings.notificationsEnabled;
-  }
-  if (elements.settingsAutoFormat) {
-    elements.settingsAutoFormat.checked = userSettings.autoFormatEnabled;
-  }
-  if (elements.settingsAutoPriceCalc) {
-    elements.settingsAutoPriceCalc.checked = userSettings.autoPriceCalcEnabled;
-  }
-  if (elements.settingsAutoFillTemplate) {
-    elements.settingsAutoFillTemplate.checked =
-      userSettings.autoFillTemplateEnabled;
+  const checkboxSettings = [
+    ["settingsNotifications", "notificationsEnabled"],
+    ["settingsAutoFormat", "autoFormatEnabled"],
+    ["settingsAutoPriceCalc", "autoPriceCalcEnabled"],
+    ["settingsAutoFillTemplate", "autoFillTemplateEnabled"],
+    ["settingsQuickInfo", "quickInfoEnabled"],
+  ];
+  checkboxSettings.forEach(([elKey, settingsKey]) => {
+    if (elements[elKey]) {
+      elements[elKey].checked = userSettings[settingsKey];
+    }
+  });
+  if (elements.settingsQuickInfoDelay) {
+    elements.settingsQuickInfoDelay.value =
+      (userSettings.quickInfoDelay ?? 1000) / 1000;
   }
 }
 
@@ -224,20 +246,55 @@ function syncProfileSwitchButtonState() {
     `Perfil actual: ${currentLabel}. Cambiar a ${targetProfile.label}`;
 }
 
-async function writeLog(level, message, feature = "Popup") {
-  await addLog(level, withLogPrefix(feature, message));
+async function writeLog(level, message, feature = "Popup", details = {}) {
+  await addLog(level, String(message || "").trim(), {
+    feature,
+    ...details,
+  });
   if (elements.logsOverlay?.classList.contains("visible")) {
     renderLogs(elements.logsList, await getLogs());
   }
 }
 
+function hasVisibleOverlay() {
+  return [
+    elements.logsOverlay,
+    elements.calcOverlay,
+    elements.tallerOverlay,
+  ].some((overlay) => overlay?.classList.contains("visible"));
+}
+
+function syncOverlayState() {
+  elements.dashboard?.classList.toggle("has-overlay", hasVisibleOverlay());
+}
+
+function setOverlayVisibility(overlay, isVisible) {
+  if (!overlay) {
+    return;
+  }
+
+  overlay.classList.toggle("visible", isVisible);
+  syncOverlayState();
+  document.body.style.overflowY = hasVisibleOverlay() ? "hidden" : "";
+
+  if (isVisible) {
+    elements.dashboard?.scrollTo({ top: 0, behavior: "instant" });
+    elements.dashboardContent?.scrollTo({ top: 0, behavior: "instant" });
+  }
+}
+
+function setupTallerSections() {
+  const sections = bindExclusiveDetailsGroup(elements.tallerOverlay, "[data-taller-section]");
+  sections.forEach((s) => s.addEventListener("toggle", saveTallerState));
+}
+
 async function openLogsViewer() {
   renderLogs(elements.logsList, await getLogs());
-  elements.logsOverlay?.classList.add("visible");
+  setOverlayVisibility(elements.logsOverlay, true);
 }
 
 function closeLogsViewer() {
-  elements.logsOverlay?.classList.remove("visible");
+  setOverlayVisibility(elements.logsOverlay, false);
 }
 
 async function getActiveTab() {
@@ -279,13 +336,6 @@ async function syncSettingsToContentScript() {
       ),
     );
 
-    if (wisphubTabs.length > 0) {
-      await writeLog(
-        "info",
-        `Ajustes sincronizados en ${wisphubTabs.length} pestaña(s)`,
-        "Ajustes",
-      );
-    }
   } catch {
     // Content script may not be ready
   }
@@ -299,10 +349,7 @@ async function handleSettingChange(key, value) {
 
 async function formatComment() {
   try {
-    const [tab] = await browserAPI.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
+    const tab = await getActiveTab();
     if (!tab) {
       showToast(elements.toast, POPUP_UI_MESSAGES.NO_ACTIVE_TAB, "error");
       return;
@@ -332,12 +379,15 @@ async function formatComment() {
         isFormatted
           ? "Formateador aplicado desde popup"
           : "Texto restaurado desde popup",
+        "Popup",
+        {
+          action: isFormatted ? "Formateo aplicado" : "Texto restaurado",
+          pagePath: tab.url ? new URL(tab.url).pathname : "",
+          pageUrl: tab.url || "",
+        },
       );
-    } else if (response?.success && response?.changed === false) {
-      await writeLog(
-        "info",
-        "Formateador sin cambios: no se modificó texto ni campos",
-      );
+    } else if (response?.success && response?.noOp) {
+      showToast(elements.toast, POPUP_UI_MESSAGES.FORMAT_NO_CHANGES, "info");
     } else if (response?.error) {
       showToast(elements.toast, response.error, "error");
       writeLog("error", `Formateador: ${response.error}`);
@@ -350,17 +400,7 @@ async function formatComment() {
 }
 
 async function runDiagnosticFromPopup() {
-  let tab;
-  try {
-    [tab] = await browserAPI.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-  } catch {
-    showToast(elements.toast, POPUP_UI_MESSAGES.NO_ACTIVE_TAB, "error");
-    return;
-  }
-
+  const tab = await getActiveTab().catch(() => null);
   if (!tab) {
     showToast(elements.toast, POPUP_UI_MESSAGES.NO_ACTIVE_TAB, "error");
     return;
@@ -441,21 +481,23 @@ async function runProfileSwitch(targetProfile) {
     }
 
     if (!response || response.success === false) {
-      showToast(
-        elements.toast,
-        response?.error || POPUP_UI_MESSAGES.SESSION_SWITCH_FAILED,
-        "error",
+      const errorMsg = response?.error || POPUP_UI_MESSAGES.SESSION_SWITCH_FAILED;
+      showToast(elements.toast, errorMsg, "error");
+      const currentLabel = resolveSessionProfileLabel(
+        activeSessionContext?.domainKey,
+        activeSessionContext?.username,
       );
+      await writeLog("error", `No se pudo cambiar el perfil desde ${currentLabel}`, "Sesión", {
+        kind: "audit",
+        tags: [currentLabel],
+        before: activeSessionContext?.username || "",
+        after: targetProfile.label,
+      });
       return;
     }
 
     if (response.started) {
       showToast(elements.toast, POPUP_UI_MESSAGES.SESSION_SWITCH_STARTED, "success");
-      await writeLog(
-        "info",
-        `Cambio de perfil iniciado a ${targetProfile.label} (${targetProfile.username})`,
-        "Sesión",
-      );
       window.close();
       return;
     }
@@ -473,9 +515,6 @@ async function runProfileSwitch(targetProfile) {
   }
 }
 
-function openUpcomingToolNotice() {
-  showToast(elements.toast, POPUP_UI_MESSAGES.UPCOMING_TOOL, "info");
-}
 
 function setupEventListeners() {
   elements.btnFormatComment?.addEventListener("click", formatComment);
@@ -484,20 +523,15 @@ function setupEventListeners() {
     window.open(POPUP_CONFIG.GITHUB_URL, "_blank");
   });
 
-  elements.settingsNotifications?.addEventListener("change", (e) => {
-    handleSettingChange("notificationsEnabled", e.target.checked);
-  });
-
-  elements.settingsAutoFormat?.addEventListener("change", (e) => {
-    handleSettingChange("autoFormatEnabled", e.target.checked);
-  });
-
-  elements.settingsAutoPriceCalc?.addEventListener("change", (e) => {
-    handleSettingChange("autoPriceCalcEnabled", e.target.checked);
-  });
-
-  elements.settingsAutoFillTemplate?.addEventListener("change", (e) => {
-    handleSettingChange("autoFillTemplateEnabled", e.target.checked);
+  [
+    ["settingsNotifications", "notificationsEnabled"],
+    ["settingsAutoFormat", "autoFormatEnabled"],
+    ["settingsAutoPriceCalc", "autoPriceCalcEnabled"],
+    ["settingsAutoFillTemplate", "autoFillTemplateEnabled"],
+  ].forEach(([elKey, settingKey]) => {
+    elements[elKey]?.addEventListener("change", (e) => {
+      handleSettingChange(settingKey, e.target.checked);
+    });
   });
 
   elements.btnSaveApiKeys?.addEventListener("click", async () => {
@@ -564,7 +598,6 @@ function setupEventListeners() {
 
   elements.btnOpenCalc?.addEventListener("click", openCalculator);
   elements.btnRunDiagnostic?.addEventListener("click", runDiagnosticFromPopup);
-  elements.btnUpcoming?.addEventListener("click", openUpcomingToolNotice);
   elements.btnCalcClose?.addEventListener("click", closeCalculator);
   elements.btnCalcRun?.addEventListener("click", runCalculator);
   elements.btnCalcClear?.addEventListener("click", clearCalculator);
@@ -573,9 +606,106 @@ function setupEventListeners() {
   elements.calcPackagePrice?.addEventListener("input", saveCalcState);
   elements.calcDate?.addEventListener("change", saveCalcState);
 
+  elements.btnOpenTaller?.addEventListener("click", openTaller);
+  elements.btnTallerClose?.addEventListener("click", closeTaller);
+
+  elements.btnTallerConvert?.addEventListener("click", () => {
+    const format = elements.tallerOverlay?.querySelector('[name="tallerConvertFormat"]:checked')?.value || "upper";
+    let result = elements.tallerConvertInput?.value || "";
+    if (format === "upper") {
+      result = result.toUpperCase();
+    } else if (format === "lower") {
+      result = result.toLowerCase();
+    } else if (format === "capitalize") {
+      result = capitalizeWords(result);
+    }
+    if (elements.tallerConvertNoAccents?.checked) { result = removeAccents(result); }
+    if (elements.tallerConvertTrimSpaces?.checked) { result = cleanSpaces(result); }
+    tallerSetConvertOutput(result);
+  });
+  elements.btnTallerConvertCopy?.addEventListener("click", () => {
+    copyToClipboard(elements.tallerConvertOutput?.value || "");
+  });
+
+  elements.btnTallerPwdGen?.addEventListener("click", () => {
+    const useLetters = elements.tallerPwdLetters?.checked ?? false;
+    const useNumbers = elements.tallerPwdNumbers?.checked ?? false;
+    const useSymbols = elements.tallerPwdSymbols?.checked ?? false;
+    if (!useLetters && !useNumbers && !useSymbols) {
+      showToast(elements.toast, POPUP_UI_MESSAGES.PWD_NO_TYPE, "warning");
+      return;
+    }
+    const length = clamp(parseInt(elements.tallerPwdLength?.value || "8", 10), 6, 16);
+    if (elements.tallerPwdOutput) {
+      elements.tallerPwdOutput.value = generatePassword(length, useLetters, useNumbers, useSymbols);
+    }
+  });
+  elements.btnTallerPwdCopy?.addEventListener("click", () => {
+    copyToClipboard(elements.tallerPwdOutput?.value || "");
+  });
+
+  elements.btnTallerClean?.addEventListener("click", () => {
+    const mode = elements.tallerOverlay?.querySelector('[name="tallerCleanMode"]:checked')?.value || "spaces";
+    let result = elements.tallerCleanInput?.value || "";
+    if (mode === "spaces") {
+      result = cleanSpaces(result);
+    } else if (mode === "lines") {
+      result = removeEmptyLines(result);
+    } else {
+      result = removeEmptyLines(cleanSpaces(result));
+    }
+    if (elements.tallerCleanOutput) {
+      elements.tallerCleanOutput.value = result;
+    }
+  });
+  elements.btnTallerCleanCopy?.addEventListener("click", () => {
+    copyToClipboard(elements.tallerCleanOutput?.value || "");
+  });
+
+  elements.btnSaveQuickInfo?.addEventListener("click", async () => {
+    const enabled = elements.settingsQuickInfo?.checked ?? true;
+    const delaySeconds = parseFloat(
+      elements.settingsQuickInfoDelay?.value ?? "1",
+    );
+    const delayMs = Math.round(clamp(Number.isFinite(delaySeconds) ? delaySeconds : 1, 0, 10) * 1000);
+    await handleSettingChange("quickInfoEnabled", enabled);
+    await handleSettingChange("quickInfoDelay", delayMs);
+    showToast(elements.toast, POPUP_UI_MESSAGES.QUICK_INFO_SAVED, "success");
+  });
+
+  bindNumericClamp(elements.settingsQuickInfoDelay);
+  bindNumericClamp(elements.tallerPwdLength);
+
 }
 
 const CALC_STORAGE_KEY = "wisphubCalcState";
+const TALLER_STORAGE_KEY = "wisphubTallerState";
+
+async function saveTallerState() {
+  const sections = elements.tallerOverlay
+    ? Array.from(elements.tallerOverlay.querySelectorAll("[data-taller-section]"))
+    : [];
+  const openSectionIndex = sections.findIndex((s) => s.open);
+  try {
+    await browserAPI.storage.local.set({
+      [TALLER_STORAGE_KEY]: {
+        overlayOpen: elements.tallerOverlay?.classList.contains("visible") || false,
+        openSectionIndex,
+      },
+    });
+  } catch {
+    // Storage write failed silently
+  }
+}
+
+async function loadTallerState() {
+  try {
+    const r = await browserAPI.storage.local.get(TALLER_STORAGE_KEY);
+    return r[TALLER_STORAGE_KEY] || null;
+  } catch {
+    return null;
+  }
+}
 
 async function saveCalcState() {
   const state = {
@@ -625,13 +755,104 @@ async function openCalculator() {
   } else if (elements.calcDate && !elements.calcDate.value) {
     elements.calcDate.value = getTodayISO();
   }
-  elements.calcOverlay?.classList.add("visible");
+  setOverlayVisibility(elements.calcOverlay, true);
+  elements.calcFlipCard?.classList.add("overlay-active");
   saveCalcState();
 }
 
 function closeCalculator() {
-  elements.calcOverlay?.classList.remove("visible");
+  setOverlayVisibility(elements.calcOverlay, false);
+  elements.calcFlipCard?.classList.remove("overlay-active");
   saveCalcState();
+}
+
+function openTaller() {
+  elements.tallerOverlay
+    ?.querySelectorAll("[data-taller-section]")
+    .forEach((section) => {
+      section.classList.remove("is-closing"); // cancel any in-flight close animation
+      section.open = false;
+    });
+  setOverlayVisibility(elements.tallerOverlay, true);
+  elements.tallerFlipCard?.classList.add("overlay-active");
+  saveTallerState();
+}
+
+function closeTaller() {
+  setOverlayVisibility(elements.tallerOverlay, false);
+  elements.tallerFlipCard?.classList.remove("overlay-active");
+  saveTallerState();
+}
+
+function tallerSetConvertOutput(val) {
+  if (elements.tallerConvertOutput) {
+    elements.tallerConvertOutput.value = val;
+  }
+}
+
+function capitalizeWords(str) {
+  return str.replace(/\S+/g, (word) =>
+    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+  );
+}
+
+function generatePassword(length, useLetters, useNumbers, useSymbols) {
+  const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const numbers = "0123456789";
+  const symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+  let charset = "";
+  if (useLetters) { charset += letters; }
+  if (useNumbers) { charset += numbers; }
+  if (useSymbols) { charset += symbols; }
+
+  const array = new Uint32Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array, (n) => charset[n % charset.length]).join("");
+}
+
+function cleanSpaces(str) {
+  return str
+    .split("\n")
+    .map((line) => line.replace(/[ \t]+/g, " ").trim())
+    .join("\n")
+    .trim();
+}
+
+function removeEmptyLines(str) {
+  return str.replace(/\n{2,}/g, "\n").trim();
+}
+
+function clamp(val, min, max) {
+  return Math.min(max, Math.max(min, val));
+}
+
+function bindNumericClamp(input) {
+  if (!input) { return; }
+  const enforce = () => {
+    const min = parseFloat(input.min);
+    const max = parseFloat(input.max);
+    const val = parseFloat(input.value);
+    if (!Number.isFinite(val)) {
+      input.value = Number.isFinite(min) ? min : 0;
+    } else if (Number.isFinite(min) && val < min) {
+      input.value = min;
+    } else if (Number.isFinite(max) && val > max) {
+      input.value = max;
+    }
+  };
+  input.addEventListener("blur", enforce);
+  input.addEventListener("change", enforce);
+}
+
+function copyToClipboard(text) {
+  if (!text) { return; }
+  clipboardWrite(text).then((ok) => {
+    showToast(
+      elements.toast,
+      ok ? POPUP_UI_MESSAGES.RESULT_LINE_COPIED : POPUP_UI_MESSAGES.COPY_ERROR,
+      ok ? "success" : "error",
+    );
+  });
 }
 
 function clearCalculator() {
@@ -686,18 +907,7 @@ function runCalculator() {
 }
 
 function copyCalcResult() {
-  const text = elements.calcResultLine?.textContent;
-  if (!text) {
-    return;
-  }
-  navigator.clipboard
-    .writeText(text)
-    .then(() => {
-      showToast(elements.toast, POPUP_UI_MESSAGES.RESULT_LINE_COPIED, "success");
-    })
-    .catch(() => {
-      showToast(elements.toast, POPUP_UI_MESSAGES.COPY_ERROR, "error");
-    });
+  copyToClipboard(elements.calcResultLine?.textContent || "");
 }
 
 async function loadApiKeysToUI() {
@@ -774,11 +984,6 @@ async function fetchStaffInfo() {
       );
       showStaffIdValue(response.staff.id);
       saveStaffInfoToCache(activeSessionContext.domainKey, response.staff);
-      writeLog(
-        "info",
-        `Staff detectado: ${response.staff.username} (ID: ${response.staff.id})`,
-        "Staff",
-      );
       return;
     }
 
@@ -822,6 +1027,8 @@ async function initializeSessionCard(tab) {
 
 async function init() {
   initElements();
+  setupTallerSections();
+  bindExclusiveDetailsGroup(document.querySelector(".settings-list"), "[data-settings-section]");
 
   const tab = await getActiveTab().catch(() => null);
   const domainKey = getDomainKey(tab?.url);
@@ -848,12 +1055,20 @@ async function init() {
   setupEventListeners();
   renderChangelog(elements.changelogList);
 
-  const calcState = await loadCalcState();
+  const [calcState, tallerState] = await Promise.all([loadCalcState(), loadTallerState()]);
   if (calcState?.overlayOpen) {
     openCalculator();
   }
+  if (tallerState?.overlayOpen) {
+    setOverlayVisibility(elements.tallerOverlay, true);
+    elements.tallerFlipCard?.classList.add("overlay-active");
+    if (tallerState.openSectionIndex >= 0) {
+      const sections = elements.tallerOverlay?.querySelectorAll("[data-taller-section]");
+      sections?.[tallerState.openSectionIndex]?.setAttribute("open", "");
+    }
+  }
 
-  checkConnection(elements, (level, msg) => writeLog(level, msg, "Conexión"));
+  checkConnection(elements);
   syncProfileSwitchButtonState();
 }
 
