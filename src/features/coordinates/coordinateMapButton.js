@@ -120,7 +120,7 @@ function ensureCoordinateButton() {
 
   if (!inlineContainer.querySelector(`#${MAP_BUTTON_ID}`)) {
     inlineContainer.appendChild(createOpenMapButton(input));
-    log("Coordinates map button injected", "Botón de coordenadas inyectado");
+    log("Coordinates map button injected");
   }
 
   return true;

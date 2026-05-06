@@ -1,10 +1,14 @@
-import { EXTENSION_NAME } from "../../config/constants.js";
 import { getDomainKey, getApiBaseUrl } from "../../config/domains.js";
 import { getApiKeyForDomain, fetchAllStaff } from "./staffApi.js";
 import { loadCachedStaffIds, saveStaffIdsToCache } from "./staffCache.js";
+import { sendLogToPopup } from "../../utils/logger.js";
 
 const COL_CLASS = "wisphub-id-col";
 const CELL_CLASS = "wisphub-id-cell";
+
+function log(consoleMsg, popupMsg, level = "info") {
+  sendLogToPopup("Staff", level, consoleMsg, popupMsg);
+}
 
 function addHeaderCells(table) {
   table.querySelectorAll("thead tr").forEach((row, i) => {
@@ -54,15 +58,13 @@ function injectRowIds(table, usernameToId) {
 async function resolveStaffIds(domainKey) {
   const cached = await loadCachedStaffIds(domainKey);
   if (cached) {
-    console.log(
-      `[${EXTENSION_NAME}] Staff IDs loaded from cache (${cached.size} entries)`,
-    );
+    log(`Staff IDs loaded from cache (${cached.size} entries)`);
     return cached;
   }
 
   const apiKey = await getApiKeyForDomain(domainKey);
   if (!apiKey) {
-    console.log(`[${EXTENSION_NAME}] No API key for ${domainKey}`);
+    log(`No API key for ${domainKey}`);
     return null;
   }
 
@@ -71,9 +73,7 @@ async function resolveStaffIds(domainKey) {
   allStaff.forEach((s) => usernameToId.set(s.username, s.id));
 
   await saveStaffIdsToCache(domainKey, usernameToId);
-  console.log(
-    `[${EXTENSION_NAME}] Staff IDs fetched and cached (${allStaff.length} entries)`,
-  );
+  log(`Staff IDs fetched and cached (${allStaff.length} entries)`);
   return usernameToId;
 }
 
@@ -111,10 +111,8 @@ export async function injectStaffIds() {
       );
     }
 
-    console.log(
-      `[${EXTENSION_NAME}] Staff IDs ready (${usernameToId.size} loaded)`,
-    );
+    log(`Staff IDs ready (${usernameToId.size} loaded)`);
   } catch (e) {
-    console.error(`[${EXTENSION_NAME}] Staff ID injection failed:`, e);
+    log(`Staff ID injection failed: ${e?.message || e}`, undefined, "error");
   }
 }

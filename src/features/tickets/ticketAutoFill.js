@@ -1,3 +1,4 @@
+import { TICKET_AUTOFILL_UI_MESSAGES } from "../../config/messages.js";
 import { sendLogToPopup } from "../../utils/logger.js";
 import { getMexicoDateFormatted } from "../../utils/date.js";
 import { SPECIAL_TICKETS } from "./specialTickets.js";
@@ -17,8 +18,8 @@ export function updateTicketAutoFillSettings(settings) {
   }
 }
 
-function log(consoleMsg, popupMsg, level = "info") {
-  sendLogToPopup("TicketAutoFill", level, consoleMsg, popupMsg);
+function log(consoleMsg, popupMsg = null, level = "info") {
+  sendLogToPopup("Tickets", level, consoleMsg, popupMsg, { tags: ["Auto-rellenado"] });
 }
 
 function findSpecialTicket(idServicio) {
@@ -114,21 +115,21 @@ function fillSpecialTicketFields(specialTicket) {
 
   if (allFilled) {
     _notify(
-      `Ticket especial "${specialTicket.label}" auto-rellenado`,
+      TICKET_AUTOFILL_UI_MESSAGES.SPECIAL_SUCCESS(specialTicket.label),
       "success",
       3000,
     );
     log(
       `Special ticket auto-filled: ${specialTicket.label}`,
-      `Ticket especial auto-rellenado: ${specialTicket.label}`,
+      TICKET_AUTOFILL_UI_MESSAGES.SPECIAL_SUCCESS(specialTicket.label),
     );
   } else {
-    _notify("Algunos campos no se pudieron auto-rellenar", "warning", 4000);
+    _notify(TICKET_AUTOFILL_UI_MESSAGES.PARTIAL_FILL, "warning", 4000);
     log(
       `Partial auto-fill for: ${specialTicket.label}` +
         ` (subject=${subjectFilled}, dept=${deptFilled},` +
         ` desc=${descFilled}, date=${dateFilled})`,
-      "Auto-rellenado parcial — revisa los campos",
+      TICKET_AUTOFILL_UI_MESSAGES.PARTIAL_FILL,
       "warning",
     );
   }
@@ -141,13 +142,13 @@ function fillNormalTicketFields() {
   const allFilled = deptFilled && dateFilled;
 
   if (allFilled) {
-    _notify("Campos auto-rellenados", "success", 3000);
-    log("Normal ticket fields auto-filled", "Campos de ticket auto-rellenados");
+    _notify(TICKET_AUTOFILL_UI_MESSAGES.NORMAL_SUCCESS, "success", 3000);
+    log("Normal ticket fields auto-filled", TICKET_AUTOFILL_UI_MESSAGES.NORMAL_SUCCESS);
   } else {
-    _notify("Algunos campos no se pudieron auto-rellenar", "warning", 4000);
+    _notify(TICKET_AUTOFILL_UI_MESSAGES.PARTIAL_FILL, "warning", 4000);
     log(
       `Partial auto-fill (dept=${deptFilled}, date=${dateFilled})`,
-      "Auto-rellenado parcial — revisa los campos",
+      TICKET_AUTOFILL_UI_MESSAGES.PARTIAL_FILL,
       "warning",
     );
   }
@@ -182,10 +183,10 @@ export function initTicketAutoFill() {
         fillNormalTicketFields();
       }
     } catch (error) {
-      _notify("Error al auto-rellenar campos", "error", 4000);
+      _notify(TICKET_AUTOFILL_UI_MESSAGES.FILL_ERROR, "error", 4000);
       log(
         `Auto-fill error: ${error.message}`,
-        "Error al auto-rellenar campos",
+        TICKET_AUTOFILL_UI_MESSAGES.FILL_ERROR,
         "error",
       );
     }

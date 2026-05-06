@@ -51,7 +51,7 @@ export function getEditorText(editor) {
 
     return text.replace(/\n{3,}/g, "\n\n").trim();
   } catch (err) {
-    console.warn("[CKEditor] getEditorText failed:", err?.message);
+    console.warn("[WYC][CKEditor] getEditorText failed:", err?.message);
     return "";
   }
 }

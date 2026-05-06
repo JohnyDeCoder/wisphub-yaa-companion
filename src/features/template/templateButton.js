@@ -1,5 +1,5 @@
 import { COPY_CONTROL_CLASS, TEMPLATE_BUTTON_ID } from "../../config/constants.js";
-import { NOTIFICATION_TYPES } from "../../config/messages.js";
+import { NOTIFICATION_TYPES, TEMPLATE_UI_MESSAGES } from "../../config/messages.js";
 import { createToolbarButton, injectIntoToolbar } from "../../utils/toolbar.js";
 import { copyToClipboard } from "../../utils/clipboard.js";
 import { generateTemplate } from "../../utils/template.js";
@@ -19,9 +19,9 @@ async function copyTemplate() {
   const text = generateTemplate(_calcFn);
   const ok = await copyToClipboard(text);
   if (ok) {
-    _notify("Plantilla generada y copiada al portapapeles", NOTIFICATION_TYPES.SUCCESS);
+    _notify(TEMPLATE_UI_MESSAGES.COPY_SUCCESS, NOTIFICATION_TYPES.SUCCESS);
   } else {
-    _notify("Error al generar plantilla", NOTIFICATION_TYPES.ERROR);
+    _notify(TEMPLATE_UI_MESSAGES.COPY_ERROR, NOTIFICATION_TYPES.ERROR);
   }
 }
 

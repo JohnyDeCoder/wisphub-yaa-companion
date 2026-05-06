@@ -1,4 +1,5 @@
 import { copyToClipboard } from "../../../utils/clipboard.js";
+import { prefersReducedMotion } from "../../../utils/dom.js";
 import { normalizeText } from "../../../utils/tableHelpers.js";
 import {
   parsePacketLossPercentage,
@@ -315,9 +316,6 @@ function createStepRow(stepId) {
   return row;
 }
 
-function prefersReducedMotion() {
-  return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-}
 
 function setStatus(refs, text, tone = STATUS_TONES.INFO) {
   refs.status.textContent = toInlineText(text);

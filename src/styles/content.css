@@ -1489,8 +1489,6 @@ html[data-darkreader-scheme="dark"] #wisphub-yaa-scroll-top-btn {
 }
 
 .yaa-qi-header {
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 8px;
 }
 
@@ -1509,6 +1507,7 @@ a.yaa-qi-title {
 
 a.yaa-qi-title:hover {
   text-decoration: underline;
+  color: inherit;
 }
 
 .yaa-qi-subtitle {
@@ -1520,9 +1519,6 @@ a.yaa-qi-title:hover {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .yaa-qi-meta-item {
@@ -1561,6 +1557,9 @@ a.yaa-qi-title:hover {
 }
 
 .yaa-qi-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
@@ -1592,4 +1591,45 @@ a.yaa-qi-title:hover {
 .yaa-qi-ticket-link:hover {
   color: #4ade80;
   background: rgba(74, 222, 128, 0.08);
+}
+
+.yaa-qi-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  margin: 6px 0;
+}
+
+.yaa-qi-log-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.yaa-qi-log-label {
+  color: #94a3b8;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.yaa-qi-log-value {
+  color: #e2e8f0;
+  font-size: 11px;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wisphub-yaa-quick-info-popup .wisphub-yaa-view-client-link::before {
+  background-color: #4ade80;
+}
+
+.yaa-qi-footer {
+  font-size: 10px;
+  font-style: italic;
+  color: #64748b;
+  text-align: center;
+  margin: 8px 0 0;
 }

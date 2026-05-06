@@ -29,7 +29,7 @@ function createUploadButton() {
   });
 
   document.body.appendChild(btn);
-  log("Upload Files button injected", "Botón Subir Archivos inyectado");
+  log("Upload Files button injected");
 }
 
 export function initClientUploadButton() {

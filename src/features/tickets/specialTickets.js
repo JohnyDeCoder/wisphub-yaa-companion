@@ -107,10 +107,7 @@ function showDropdown(toggle) {
 
     link.addEventListener("click", () => {
       closeDropdown();
-      log(
-        `Special ticket: ${ticket.label} (${ticket.id})`,
-        `Ticket especial: ${ticket.label}`,
-      );
+      log(`Special ticket: ${ticket.label} (${ticket.id})`);
     });
 
     li.appendChild(link);
@@ -201,7 +198,7 @@ export function initSpecialTickets() {
     navbar.appendChild(navItem);
   }
 
-  log("Special ticket nav added", "Tickets especiales añadidos al navbar");
+  log("Special ticket nav added");
 }
 
 export { SPECIAL_TICKETS };

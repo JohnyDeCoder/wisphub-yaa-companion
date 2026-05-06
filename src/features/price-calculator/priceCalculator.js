@@ -185,8 +185,8 @@ export function calculateProration(monthlyPrice, installDate) {
   };
 }
 
-function sendLog(level, consoleMsg, popupMsg) {
-  sendLogToPopup("PriceCalc", level, consoleMsg, popupMsg);
+function sendLog(level, consoleMsg, popupMsg, details = {}) {
+  sendLogToPopup("PriceCalc", level, consoleMsg, popupMsg, details);
 }
 
 function escapeForRegex(str) {
@@ -347,7 +347,16 @@ function updateExistingPriceLine(editor, match, proration, notify) {
   sendLog(
     "success",
     `Price updated: ${match[0]} → ${newLine}`,
-    `${match[0]} → ${newLine}`,
+    "Precio de instalación actualizado",
+    {
+      kind: "audit",
+      action: "Precio actualizado",
+      pagePath: window.location.pathname,
+      pageUrl: window.location.href,
+      stateColor: "info",
+      before: match[0],
+      after: newLine,
+    },
   );
   notify(UI_MESSAGES.PRICE_UPDATED, NOTIFICATION_TYPES.SUCCESS);
   return { success: true, oldLine: match[0], newLine };
@@ -413,6 +422,15 @@ function buildPriceLine(editor, text, proration, notify) {
     "success",
     `Price generated: ${newLine}`,
     `Precio generado: ${newLine}`,
+    {
+      kind: "audit",
+      action: "Precio generado",
+      pagePath: window.location.pathname,
+      pageUrl: window.location.href,
+      stateColor: "info",
+      before: oldText,
+      after: newLine,
+    },
   );
   notify(UI_MESSAGES.PRICE_UPDATED, NOTIFICATION_TYPES.SUCCESS);
   return { success: true, newLine };
@@ -456,6 +474,15 @@ function fillCostInIncomplete(editor, text, formCost, notify) {
     "success",
     `Cost updated: ${oldText} → ${newText}`,
     `Costo: ${newText}`,
+    {
+      kind: "audit",
+      action: "Costo ajustado",
+      pagePath: window.location.pathname,
+      pageUrl: window.location.href,
+      stateColor: "info",
+      before: oldText,
+      after: newText,
+    },
   );
   notify(UI_MESSAGES.PRICE_UPDATED, NOTIFICATION_TYPES.SUCCESS);
   return { success: true, newLine: newText };
