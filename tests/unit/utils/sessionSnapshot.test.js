@@ -1,6 +1,7 @@
 /* @vitest-environment node */
 import {
   buildSnapshotFingerprint,
+  hasUsableSessionCookies,
   shouldPersistSessionSnapshot,
 } from "../../../src/utils/sessionSnapshot.js";
 
@@ -59,6 +60,43 @@ describe("sessionSnapshot utils", () => {
       shouldPersistSessionSnapshot(existingSnapshot, cookies, {
         refreshTimestamp: false,
       }),
+    ).toBe(false);
+  });
+
+  it("treats snapshots with only expired cookies as unusable", () => {
+    const nowSeconds = 2000;
+    const snapshot = {
+      cookies: [
+        buildCookie({ name: "sessionid", expirationDate: 1500 }),
+        buildCookie({ name: "csrftoken", expirationDate: 1999 }),
+      ],
+    };
+
+    expect(hasUsableSessionCookies(snapshot, nowSeconds)).toBe(false);
+  });
+
+  it("keeps snapshots usable when at least one cookie is not expired", () => {
+    const nowSeconds = 2000;
+
+    expect(
+      hasUsableSessionCookies(
+        { cookies: [buildCookie({ name: "sessionid", expirationDate: 2500 })] },
+        nowSeconds,
+      ),
+    ).toBe(true);
+    expect(
+      hasUsableSessionCookies(
+        { cookies: [buildCookie({ name: "sessionid", expirationDate: undefined })] },
+        nowSeconds,
+      ),
+    ).toBe(true);
+  });
+
+  it("treats csrf-only snapshots as unusable for session restore", () => {
+    expect(
+      hasUsableSessionCookies({
+        cookies: [buildCookie({ name: "csrftoken", expirationDate: 2500 })],
+      }, 2000),
     ).toBe(false);
   });
 });

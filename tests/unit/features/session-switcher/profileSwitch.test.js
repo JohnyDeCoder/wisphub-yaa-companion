@@ -297,14 +297,17 @@ describe("profileSwitch flow", () => {
     expect(state).toMatchObject({ active: true, state: "awaiting-login" });
     expect(document.getElementById("id_login").value).toBe("johny@vwinternetnetworks");
     expect(notify).toHaveBeenCalledWith(
-      "Inicia sesión con johny@vwinternetnetworks.",
+      "Inicia sesión con una cuenta @vwinternetnetworks.",
       "info",
       Number.POSITIVE_INFINITY,
       expect.any(Function),
     );
+    expect(readPendingProfileSwitch(storage)).toMatchObject({
+      loginPromptShown: true,
+    });
   });
 
-  it("shows persistent error when wrong profile is detected and allows closing tracking", () => {
+  it("continues logout without wrong-profile warning before the login prompt was shown", () => {
     const storage = createMemoryStorage();
     savePending(storage);
     document.body.innerHTML = `
@@ -322,9 +325,39 @@ describe("profileSwitch flow", () => {
       notify,
     });
 
+    expect(state).toMatchObject({ active: true, state: "logging-out" });
+    expect(notify).not.toHaveBeenCalledWith(
+      expect.stringContaining("Perfil incorrecto detectado"),
+      "error",
+      expect.any(Number),
+      expect.any(Function),
+    );
+    expect(locationObj.assign).toHaveBeenCalledWith(
+      "/accounts/logout/?next=%2Faccounts%2Flogin%2F%3Fnext%3D%252Fclientes%252F",
+    );
+  });
+
+  it("shows persistent error when wrong profile is detected after login prompt", () => {
+    const storage = createMemoryStorage();
+    savePending(storage, { loginPromptShown: true });
+    document.body.innerHTML = `
+      <div class="user-menu">
+        <span class="user-name">johny@yaa-internet-by-vw</span>
+      </div>
+    `;
+    const notify = vi.fn(() => vi.fn());
+    const locationObj = createLocation("/clientes/");
+
+    const state = resumeProfileSwitchFlow({
+      storage,
+      locationObj,
+      documentObj: document,
+      notify,
+    });
+
     expect(state).toMatchObject({ active: true, state: "wrong-profile" });
     expect(notify).toHaveBeenCalledWith(
-      "Perfil incorrecto detectado. Iniciaste como johny@yaa-internet-by-vw. Debes iniciar con johny@vwinternetnetworks.",
+      "Perfil incorrecto detectado. Iniciaste como johny@yaa-internet-by-vw. Debes iniciar con una cuenta @vwinternetnetworks.",
       "error",
       Number.POSITIVE_INFINITY,
       expect.any(Function),
@@ -333,6 +366,26 @@ describe("profileSwitch flow", () => {
     const onClose = notify.mock.calls[0][3];
     onClose();
     expect(storage.getItem(PROFILE_SWITCH_STORAGE_KEY)).toBeNull();
+  });
+
+  it("auto-redirects to logout URL when wrong profile is detected after login prompt", () => {
+    const storage = createMemoryStorage();
+    savePending(storage, { loginPromptShown: true });
+    const userMenu = document.createElement("div");
+    userMenu.className = "user-menu";
+    const userNameSpan = document.createElement("span");
+    userNameSpan.className = "user-name";
+    userNameSpan.textContent = "johny@yaa-internet-by-vw";
+    userMenu.appendChild(userNameSpan);
+    document.body.appendChild(userMenu);
+    const notify = vi.fn(() => vi.fn());
+    const locationObj = createLocation("/clientes/");
+
+    resumeProfileSwitchFlow({ storage, locationObj, documentObj: document, notify });
+
+    expect(locationObj.assign).toHaveBeenCalledWith(
+      "/accounts/logout/?next=%2Faccounts%2Flogin%2F%3Fnext%3D%252Fclientes%252F",
+    );
   });
 
   it("completes when logged-in user has matching accountDomain but different localPart", () => {
@@ -369,7 +422,46 @@ describe("profileSwitch flow", () => {
     expect(notify).toHaveBeenCalledWith(
       "Sesión cambiada correctamente a Michoacán.",
       "success",
-      5000,
+      2000,
+    );
+  });
+
+  it("reports completed session context so cookies can be captured immediately", () => {
+    const storage = createMemoryStorage();
+    const pending = {
+      id: "switch-mich",
+      domainKey: "wisphub.io",
+      targetUsername: "pina@vwinternetnetworks",
+      targetLabel: "Michoacán",
+      basePath: "/clientes/",
+      createdAt: Date.now(),
+    };
+    savePendingProfileSwitch(pending, storage);
+    document.body.innerHTML = `
+      <div class="user-menu">
+        <span class="user-name">kevin@vwinternetnetworks</span>
+      </div>
+    `;
+    const onCompleted = vi.fn();
+    const locationObj = createLocation("/clientes/");
+
+    const state = resumeProfileSwitchFlow({
+      storage,
+      locationObj,
+      documentObj: document,
+      notify: vi.fn(),
+      onCompleted,
+    });
+
+    expect(state).toMatchObject({ active: false, reason: "completed" });
+    expect(onCompleted).toHaveBeenCalledWith(
+      expect.objectContaining({
+        domainKey: "wisphub.io",
+        username: "kevin@vwinternetnetworks",
+      }),
+      expect.objectContaining({
+        targetUsername: "pina@vwinternetnetworks",
+      }),
     );
   });
 
@@ -396,14 +488,14 @@ describe("profileSwitch flow", () => {
     expect(notify).toHaveBeenCalledWith(
       "Sesión cambiada correctamente a Michoacán.",
       "success",
-      5000,
+      2000,
     );
   });
 
   it("preserves pending record when switch is re-initiated while wrong-profile notification is active", () => {
     const storage = createMemoryStorage();
     const locationObj = createLocation("/clientes/");
-    savePending(storage);
+    savePending(storage, { loginPromptShown: true });
 
     const userMenu = document.createElement("div");
     userMenu.className = "user-menu";
