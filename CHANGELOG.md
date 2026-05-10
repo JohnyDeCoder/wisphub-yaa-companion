@@ -7,6 +7,34 @@ El versionado sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [1.6.0] - 2026-05-09
+
+### Agregado
+
+- Sistema de trucos visuales: escribe un código secreto en el popup para activar efectos especiales en WispHub y en el propio panel emergente.
+- Truco LSD: animación de rotación de tono continua en toda la interfaz.
+- Truco MATRIX: lluvia de caracteres verde sobre la página, con tema oscuro completo en la barra de navegación, menú lateral, página de inicio de sesión y botones.
+- Truco OCEAN: tema azul claro en la página de inicio de sesión.
+- Truco FIRE: tema rojo cálido en la página de inicio de sesión.
+- Truco KAWAII: tema pastel lavanda con carita animada flotante en los encabezados de página, fuente cursiva y colores suaves en toda la interfaz.
+- Truco MIRROR: espejo horizontal de toda la interfaz.
+- Truco STRIPE: rayas de color suave alternadas en tablas según el tema activo.
+- Truco RETRO: efecto de monitor antiguo (CRT) con parpadeo y sombra de texto en toda la interfaz.
+- Truco STARS: estrellas animadas flotantes en el menú lateral y la barra de navegación.
+- Los trucos de color y los efectos animados también se reflejan en el encabezado del panel emergente con coherencia visual.
+- Los trucos activos se guardan y persisten entre sesiones y recargas de página.
+- Múltiples trucos pueden estar activos a la vez; los de color son mutuamente excluyentes entre sí.
+- La página de novedades ahora muestra el mismo tema visual que el truco activo al abrirse.
+- Vista rápida de clientes: se detecta automáticamente el tipo de equipo (Comodato, Prestado, Comprado, Propio, Migración) a partir de los comentarios del servicio.
+- Vista rápida de clientes: nueva sección de fecha de instalación con acceso directo al campo en WispHub.
+- Vista rápida en tabla de tickets: al pasar el cursor sobre una fila, se muestra el nombre del cliente y su ID de servicio. Si la cuenta es de Michoacán, se muestra un aviso indicando que la vista rápida no está disponible para esa región.
+- Los botones de acción en toda la extensión ahora respetan el tema de color del truco activo.
+
+### Cambiado
+
+- El historial de cambios en el popup ahora muestra únicamente la versión más reciente.
+- Los tickets especiales ahora se inyectan en la barra de navegación de forma asíncrona, evitando fallos en páginas que cargan el menú con retraso. En la página de inicio de sesión se omiten silenciosamente.
+
 ## [1.5.0] - 2026-05-06
 
 ### Agregado
@@ -51,7 +79,7 @@ El versionado sigue [Semantic Versioning](https://semver.org/lang/es/).
 - Se mejoró la lectura de resultados para distinguir mejor entre completo, parcial, alerta y error.
 - Cuando falta sesión del otro perfil, la extensión ahora guía el inicio de sesión paso a paso.
 - La sesión guardada se mantiene vigente aunque no cambien las cookies, para evitar pedir acceso de nuevo sin necesidad.
-- La plantilla de aprovisionamiento se mejoró para rellenar datos faltantes con el formato *{{POR LLENAR / CAMPO }}*.
+- La plantilla de aprovisionamiento se mejoró para rellenar datos faltantes con el formato _{{POR LLENAR / CAMPO }}_.
 - Mejoras generales de estabilidad, seguridad y rendimiento en los flujos de clientes.
 
 ### Corregido
