@@ -404,3 +404,178 @@ h1 {
     transform: translateY(-10px);
   }
 }
+
+/* ── Trick theme overrides ── */
+
+/* MATRIX: black bg, hide boxes, full green palette */
+body[data-trick="MATRIX"] .wyc-background {
+  background: #000;
+}
+
+body[data-trick="MATRIX"] .wyc-background li {
+  display: none;
+}
+
+body[data-trick="MATRIX"] h1 {
+  color: #00ff41;
+  text-shadow: 0 0 24px rgba(0, 255, 65, 0.45);
+}
+
+body[data-trick="MATRIX"] .hero-description {
+  color: rgba(0, 255, 65, 0.85);
+}
+
+body[data-trick="MATRIX"] .version-badge {
+  background: rgba(0, 255, 65, 0.1);
+  border-color: rgba(0, 255, 65, 0.35);
+  color: #00ff41;
+}
+
+body[data-trick="MATRIX"] .hero-icon {
+  background: rgba(0, 255, 65, 0.06);
+  border-color: rgba(0, 255, 65, 0.25);
+}
+
+body[data-trick="MATRIX"] .btn-changelog {
+  background: #00ff41;
+  color: #000;
+}
+
+body[data-trick="MATRIX"] .btn-changelog:hover {
+  background: #00cc33;
+}
+
+body[data-trick="MATRIX"] .btn-arrow {
+  background-color: #000;
+}
+
+body[data-trick="MATRIX"] .btn-dismiss {
+  color: rgba(0, 255, 65, 0.55);
+}
+
+body[data-trick="MATRIX"] .btn-dismiss:hover {
+  color: #00ff41;
+}
+
+body[data-trick="MATRIX"] .modal {
+  background: #080808;
+  border: 1px solid rgba(0, 255, 65, 0.22);
+  color: #00ff41;
+}
+
+body[data-trick="MATRIX"] .modal-header {
+  border-bottom-color: rgba(0, 255, 65, 0.15);
+}
+
+body[data-trick="MATRIX"] .modal-header h2,
+body[data-trick="MATRIX"] .modal-close {
+  color: #00ff41;
+}
+
+body[data-trick="MATRIX"] .modal-close:hover {
+  color: #fff;
+}
+
+body[data-trick="MATRIX"] .modal-changes li {
+  color: rgba(0, 255, 65, 0.85);
+  border-bottom-color: rgba(0, 255, 65, 0.08);
+}
+
+body[data-trick="MATRIX"] .modal-changes li::before {
+  background: #00ff41;
+}
+
+body[data-trick="MATRIX"] .modal-category-label {
+  color: #00ff41;
+}
+
+body[data-trick="MATRIX"] .modal-footer {
+  border-top-color: rgba(0, 255, 65, 0.15);
+}
+
+body[data-trick="MATRIX"] .btn-primary {
+  background-color: #00ff41;
+  color: #000;
+}
+
+body[data-trick="MATRIX"] .btn-primary:hover {
+  background-color: #00cc33;
+}
+
+/* ======================================== KAWAII THEME ======================================== */
+
+body[data-trick="KAWAII"] .wyc-background {
+  background: linear-gradient(
+    135deg,
+    #f9e4ff 0%,
+    #e5e4ff 25%,
+    #e4fffe 50%,
+    #f7ffe4 75%,
+    #e5ffe4 100%
+  );
+}
+
+body[data-trick="KAWAII"] .wyc-background li {
+  background: rgba(180, 100, 220, 0.12);
+}
+
+body[data-trick="KAWAII"] h1 {
+  color: #3d1570;
+  text-shadow: 0 2px 8px rgba(180, 100, 220, 0.2);
+}
+
+body[data-trick="KAWAII"] .hero-description {
+  color: rgba(61, 21, 112, 0.85);
+}
+
+body[data-trick="KAWAII"] .version-badge {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(201, 160, 245, 0.5);
+  color: #3d1570;
+}
+
+body[data-trick="KAWAII"] .hero-icon {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(201, 160, 245, 0.4);
+}
+
+body[data-trick="KAWAII"] .btn-changelog {
+  background: linear-gradient(135deg, #f9e4ff, #e5e4ff);
+  color: #3d1570;
+  border: 1.5px solid rgba(201, 160, 245, 0.5);
+}
+
+body[data-trick="KAWAII"] .btn-changelog:hover {
+  background: linear-gradient(135deg, #e5e4ff, #e4fffe);
+  color: #3d1570;
+}
+
+body[data-trick="KAWAII"] .btn-arrow {
+  background-color: #8b2fc9;
+}
+
+body[data-trick="KAWAII"] .btn-dismiss {
+  color: rgba(61, 21, 112, 0.6);
+}
+
+body[data-trick="KAWAII"] .btn-dismiss:hover {
+  color: #3d1570;
+}
+
+body[data-trick="KAWAII"] .modal-changes li::before {
+  background: #c084fc;
+}
+
+body[data-trick="KAWAII"] .modal-category-label {
+  color: #8b2fc9;
+}
+
+body[data-trick="KAWAII"] .btn-primary {
+  background-color: #ddb4fe;
+  color: #3d1570;
+}
+
+body[data-trick="KAWAII"] .btn-primary:hover {
+  background-color: #c084fc;
+  color: #1a0038;
+}
