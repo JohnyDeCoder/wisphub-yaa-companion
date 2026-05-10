@@ -8,6 +8,7 @@ Project-wide defaults for AI coding agents. Keep this file focused on always-fol
 - Keep modules small and focused (single responsibility).
 - Apply DRY and divide-and-conquer: extract reusable helpers/constants when repetition appears.
 - Follow existing architecture layers: `config -> utils -> lib -> features -> app`.
+- Extract feature-specific logic from entry-point files (`page.js`, `content.js`, `background.js`) into dedicated modules under `src/features/*`; keep entry points as thin orchestrators.
 - Keep code flow readable from top to bottom (public entry points first, helpers later).
 - Centralize reusable UI strings in `src/config/messages.js`.
 - Before building new UI patterns/components, verify and reuse existing ones in the codebase whenever possible.
