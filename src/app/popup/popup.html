@@ -25,7 +25,7 @@
           <div class="header-content">
             <div class="header-text">
               <h1>Wisphub Yaa Companion</h1>
-              <span class="badge">v1.5.0</span>
+              <span class="badge">v1.6.0</span>
             </div>
           </div>
           <button
@@ -396,6 +396,35 @@
                   <button class="btn btn-primary btn-full" id="btnSaveApiKeys"
                     >Guardar cambios</button
                   >
+                  <div class="trick-zone" id="trickZone">
+                    <span class="calc-label">Zona de trucos</span>
+                    <div class="trick-input-row">
+                      <input
+                        type="text"
+                        id="trickInput"
+                        class="api-key-input trick-input"
+                        placeholder="C&#211;DIGO"
+                        maxlength="20"
+                        autocomplete="off"
+                        spellcheck="false"
+                      />
+                      <button
+                        class="btn trick-send-btn"
+                        id="trickSendBtn"
+                        type="button"
+                        title="Activar truco"
+                        aria-label="Activar truco"
+                        disabled
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24">
+                          <path fill="currentColor" d="M2.01 21L23 12L2.01 3L2 10l15 2l-15 2z"/>
+                        </svg>
+                      </button>
+                    </div>
+                    <span class="trick-hint hidden" id="trickHint"></span>
+                    <span class="trick-active-title hidden" id="trickActiveTitle">Trucos activados</span>
+                    <div class="trick-active" id="trickActive"></div>
+                  </div>
                 </div>
               </div>
             </details>
@@ -473,7 +502,10 @@
           </div>
         </div>
         <div class="calc-field">
-          <label class="calc-label" for="calcDate">Fecha de instalación</label>
+          <div class="calc-label-row">
+            <label class="calc-label" for="calcDate">Fecha de instalación</label>
+            <span class="calc-date-hint hidden" id="calcDateHint"></span>
+          </div>
           <input type="date" id="calcDate" class="calc-input calc-input-date" />
         </div>
         <div class="calc-actions">

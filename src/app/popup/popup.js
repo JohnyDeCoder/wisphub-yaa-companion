@@ -21,6 +21,8 @@ import { showToast } from "./components/toast.js";
 import { checkConnection } from "./components/connection.js";
 import { renderChangelog } from "./components/changelog.js";
 import { addLog, getLogs, clearLogs, renderLogs } from "./components/logs.js";
+import { TRICK_DEFS } from "../../config/tricks.js";
+import { applyPopupTricks } from "./popupTricks.js";
 
 const STAFF_CACHE_KEY = "wisphubStaffInfoCache";
 const STAFF_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -42,7 +44,6 @@ let activeDomainProfiles = [];
 let hasAnyApiKey = false;
 let activeTabId = null;
 let isStaffIdWarningMode = false;
-
 
 function initElements() {
   const $ = (id) => document.getElementById(id);
@@ -110,6 +111,12 @@ function initElements() {
     quickInfoSettings: $("quickInfoSettings"),
     calcFlipCard: $("calcFlipCard"),
     tallerFlipCard: $("tallerFlipCard"),
+    calcDateHint: $("calcDateHint"),
+    trickInput: $("trickInput"),
+    trickSendBtn: $("trickSendBtn"),
+    trickHint: $("trickHint"),
+    trickActiveTitle: $("trickActiveTitle"),
+    trickActive: $("trickActive"),
   };
 }
 
@@ -130,6 +137,7 @@ function applySettingsToUI() {
     elements.settingsQuickInfoDelay.value =
       (userSettings.quickInfoDelay ?? 1000) / 1000;
   }
+  renderActiveTricks();
 }
 
 function showStaffInfo(username, staffId) {
@@ -173,7 +181,8 @@ function showStaffIdWarningState() {
   currentStaffId = null;
   elements.staffIdBadge.classList.remove("copied");
   elements.staffIdBadge.classList.add("header-badge-warning");
-  elements.staffIdBadge.title = POPUP_UI_MESSAGES.SESSION_SWITCH_API_KEYS_MISSING;
+  elements.staffIdBadge.title =
+    POPUP_UI_MESSAGES.SESSION_SWITCH_API_KEYS_MISSING;
   elements.staffIdBadge.replaceChildren("ID: ", createWarningBadgeIcon());
 }
 
@@ -186,8 +195,12 @@ function showStaffIdValue(staffId) {
   currentStaffId = staffId ? String(staffId) : null;
   elements.staffIdBadge.classList.remove("header-badge-warning");
   elements.staffIdBadge.classList.remove("copied");
-  elements.staffIdBadge.textContent = currentStaffId ? `ID: ${currentStaffId}` : "ID: —";
-  elements.staffIdBadge.title = currentStaffId ? "Click para copiar" : "ID no disponible";
+  elements.staffIdBadge.textContent = currentStaffId
+    ? `ID: ${currentStaffId}`
+    : "ID: —";
+  elements.staffIdBadge.title = currentStaffId
+    ? "Click para copiar"
+    : "ID no disponible";
 }
 
 function openAdvancedSettings() {
@@ -208,21 +221,33 @@ function resolveAutoTargetProfile() {
     return null;
   }
 
-  const currentUsername = String(activeSessionContext.username || "").trim().toLowerCase();
+  const currentUsername = String(activeSessionContext.username || "")
+    .trim()
+    .toLowerCase();
   const currentProfile = activeDomainProfiles.find((profile) => {
-    const candidate = String(profile.username || "").trim().toLowerCase();
+    const candidate = String(profile.username || "")
+      .trim()
+      .toLowerCase();
     return profile.isCurrent || (candidate && candidate === currentUsername);
   });
 
   if (currentProfile) {
-    const target = activeDomainProfiles.find((profile) => profile.key !== currentProfile.key);
+    const target = activeDomainProfiles.find(
+      (profile) => profile.key !== currentProfile.key,
+    );
     return target || null;
   }
 
-  return activeDomainProfiles.find((profile) => {
-    const candidate = String(profile.username || "").trim().toLowerCase();
-    return candidate && candidate !== currentUsername;
-  }) || activeDomainProfiles[0] || null;
+  return (
+    activeDomainProfiles.find((profile) => {
+      const candidate = String(profile.username || "")
+        .trim()
+        .toLowerCase();
+      return candidate && candidate !== currentUsername;
+    }) ||
+    activeDomainProfiles[0] ||
+    null
+  );
 }
 
 function syncProfileSwitchButtonState() {
@@ -233,7 +258,8 @@ function syncProfileSwitchButtonState() {
   const targetProfile = resolveAutoTargetProfile();
   if (!targetProfile) {
     elements.btnProfileSwitch.disabled = true;
-    elements.btnProfileSwitch.title = POPUP_UI_MESSAGES.SESSION_SWITCH_UNAVAILABLE;
+    elements.btnProfileSwitch.title =
+      POPUP_UI_MESSAGES.SESSION_SWITCH_UNAVAILABLE;
     return;
   }
 
@@ -242,8 +268,7 @@ function syncProfileSwitchButtonState() {
     activeSessionContext?.username,
   );
   elements.btnProfileSwitch.disabled = false;
-  elements.btnProfileSwitch.title =
-    `Perfil actual: ${currentLabel}. Cambiar a ${targetProfile.label}`;
+  elements.btnProfileSwitch.title = `Perfil actual: ${currentLabel}. Cambiar a ${targetProfile.label}`;
 }
 
 async function writeLog(level, message, feature = "Popup", details = {}) {
@@ -284,7 +309,10 @@ function setOverlayVisibility(overlay, isVisible) {
 }
 
 function setupTallerSections() {
-  const sections = bindExclusiveDetailsGroup(elements.tallerOverlay, "[data-taller-section]");
+  const sections = bindExclusiveDetailsGroup(
+    elements.tallerOverlay,
+    "[data-taller-section]",
+  );
   sections.forEach((s) => s.addEventListener("toggle", saveTallerState));
 }
 
@@ -335,7 +363,6 @@ async function syncSettingsToContentScript() {
         }),
       ),
     );
-
   } catch {
     // Content script may not be ready
   }
@@ -407,7 +434,11 @@ async function runDiagnosticFromPopup() {
   }
 
   if (!isWispHubDomain(tab.url)) {
-    showToast(elements.toast, POPUP_UI_MESSAGES.DIAGNOSTIC_UNAVAILABLE, "warning");
+    showToast(
+      elements.toast,
+      POPUP_UI_MESSAGES.DIAGNOSTIC_UNAVAILABLE,
+      "warning",
+    );
     return;
   }
 
@@ -417,12 +448,20 @@ async function runDiagnosticFromPopup() {
       action: ACTIONS.PING,
     });
   } catch {
-    showToast(elements.toast, POPUP_UI_MESSAGES.DIAGNOSTIC_START_FAILED, "error");
+    showToast(
+      elements.toast,
+      POPUP_UI_MESSAGES.DIAGNOSTIC_START_FAILED,
+      "error",
+    );
     return;
   }
 
   if (!pingResponse?.diagnosticReady) {
-    showToast(elements.toast, POPUP_UI_MESSAGES.DIAGNOSTIC_UNAVAILABLE, "warning");
+    showToast(
+      elements.toast,
+      POPUP_UI_MESSAGES.DIAGNOSTIC_UNAVAILABLE,
+      "warning",
+    );
     return;
   }
 
@@ -438,8 +477,16 @@ async function runDiagnosticFromPopup() {
       fromPopup: true,
       clientContext: pingResponse.diagnosticContext || null,
     });
-    if (!runResponse || runResponse.success === false || runResponse.started === false) {
-      showToast(elements.toast, POPUP_UI_MESSAGES.DIAGNOSTIC_START_FAILED, "error");
+    if (
+      !runResponse ||
+      runResponse.success === false ||
+      runResponse.started === false
+    ) {
+      showToast(
+        elements.toast,
+        POPUP_UI_MESSAGES.DIAGNOSTIC_START_FAILED,
+        "error",
+      );
       await writeLog(
         "warn",
         `No se pudo iniciar Diagnóstico Express: ${runResponse?.error || "sin respuesta válida"}`,
@@ -450,7 +497,11 @@ async function runDiagnosticFromPopup() {
     await writeLog("info", "Diagnóstico Express iniciado desde popup");
     window.close();
   } catch {
-    showToast(elements.toast, POPUP_UI_MESSAGES.DIAGNOSTIC_START_FAILED, "error");
+    showToast(
+      elements.toast,
+      POPUP_UI_MESSAGES.DIAGNOSTIC_START_FAILED,
+      "error",
+    );
   } finally {
     if (runButton) {
       runButton.disabled = false;
@@ -460,14 +511,22 @@ async function runDiagnosticFromPopup() {
 
 async function runProfileSwitch(targetProfile) {
   if (!targetProfile || !activeTabId) {
-    showToast(elements.toast, POPUP_UI_MESSAGES.SESSION_SWITCH_UNAVAILABLE, "warning");
+    showToast(
+      elements.toast,
+      POPUP_UI_MESSAGES.SESSION_SWITCH_UNAVAILABLE,
+      "warning",
+    );
     return;
   }
 
   elements.btnProfileSwitch.disabled = true;
 
   try {
-    showToast(elements.toast, POPUP_UI_MESSAGES.SESSION_SWITCH_STARTING, "info");
+    showToast(
+      elements.toast,
+      POPUP_UI_MESSAGES.SESSION_SWITCH_STARTING,
+      "info",
+    );
     const response = await browserAPI.tabs.sendMessage(activeTabId, {
       action: ACTIONS.START_PROFILE_SWITCH,
       targetUsername: targetProfile.username,
@@ -476,28 +535,42 @@ async function runProfileSwitch(targetProfile) {
     });
 
     if (response?.cancelled) {
-      showToast(elements.toast, POPUP_UI_MESSAGES.SESSION_SWITCH_CANCELLED, "info");
+      showToast(
+        elements.toast,
+        POPUP_UI_MESSAGES.SESSION_SWITCH_CANCELLED,
+        "info",
+      );
       return;
     }
 
     if (!response || response.success === false) {
-      const errorMsg = response?.error || POPUP_UI_MESSAGES.SESSION_SWITCH_FAILED;
+      const errorMsg =
+        response?.error || POPUP_UI_MESSAGES.SESSION_SWITCH_FAILED;
       showToast(elements.toast, errorMsg, "error");
       const currentLabel = resolveSessionProfileLabel(
         activeSessionContext?.domainKey,
         activeSessionContext?.username,
       );
-      await writeLog("error", `No se pudo cambiar el perfil desde ${currentLabel}`, "Sesión", {
-        kind: "audit",
-        tags: [currentLabel],
-        before: activeSessionContext?.username || "",
-        after: targetProfile.label,
-      });
+      await writeLog(
+        "error",
+        `No se pudo cambiar el perfil desde ${currentLabel}`,
+        "Sesión",
+        {
+          kind: "audit",
+          tags: [currentLabel],
+          before: activeSessionContext?.username || "",
+          after: targetProfile.label,
+        },
+      );
       return;
     }
 
     if (response.started) {
-      showToast(elements.toast, POPUP_UI_MESSAGES.SESSION_SWITCH_STARTED, "success");
+      showToast(
+        elements.toast,
+        POPUP_UI_MESSAGES.SESSION_SWITCH_STARTED,
+        "success",
+      );
       window.close();
       return;
     }
@@ -514,7 +587,6 @@ async function runProfileSwitch(targetProfile) {
     syncProfileSwitchButtonState();
   }
 }
-
 
 function setupEventListeners() {
   elements.btnFormatComment?.addEventListener("click", formatComment);
@@ -553,11 +625,7 @@ function setupEventListeners() {
     }
 
     if (hasAnyApiKey) {
-      showToast(
-        elements.toast,
-        POPUP_UI_MESSAGES.API_KEYS_SAVED,
-        "success",
-      );
+      showToast(elements.toast, POPUP_UI_MESSAGES.API_KEYS_SAVED, "success");
       writeLog("success", "API Keys actualizadas");
       return;
     }
@@ -604,13 +672,19 @@ function setupEventListeners() {
   elements.btnCalcCopy?.addEventListener("click", copyCalcResult);
   elements.calcInstallPrice?.addEventListener("input", saveCalcState);
   elements.calcPackagePrice?.addEventListener("input", saveCalcState);
-  elements.calcDate?.addEventListener("change", saveCalcState);
+  elements.calcDate?.addEventListener("change", () => {
+    saveCalcState();
+    updateCalcDateHint();
+  });
 
   elements.btnOpenTaller?.addEventListener("click", openTaller);
   elements.btnTallerClose?.addEventListener("click", closeTaller);
 
   elements.btnTallerConvert?.addEventListener("click", () => {
-    const format = elements.tallerOverlay?.querySelector('[name="tallerConvertFormat"]:checked')?.value || "upper";
+    const format =
+      elements.tallerOverlay?.querySelector(
+        '[name="tallerConvertFormat"]:checked',
+      )?.value || "upper";
     let result = elements.tallerConvertInput?.value || "";
     if (format === "upper") {
       result = result.toUpperCase();
@@ -619,8 +693,12 @@ function setupEventListeners() {
     } else if (format === "capitalize") {
       result = capitalizeWords(result);
     }
-    if (elements.tallerConvertNoAccents?.checked) { result = removeAccents(result); }
-    if (elements.tallerConvertTrimSpaces?.checked) { result = cleanSpaces(result); }
+    if (elements.tallerConvertNoAccents?.checked) {
+      result = removeAccents(result);
+    }
+    if (elements.tallerConvertTrimSpaces?.checked) {
+      result = cleanSpaces(result);
+    }
     tallerSetConvertOutput(result);
   });
   elements.btnTallerConvertCopy?.addEventListener("click", () => {
@@ -635,9 +713,18 @@ function setupEventListeners() {
       showToast(elements.toast, POPUP_UI_MESSAGES.PWD_NO_TYPE, "warning");
       return;
     }
-    const length = clamp(parseInt(elements.tallerPwdLength?.value || "8", 10), 6, 16);
+    const length = clamp(
+      parseInt(elements.tallerPwdLength?.value || "8", 10),
+      6,
+      16,
+    );
     if (elements.tallerPwdOutput) {
-      elements.tallerPwdOutput.value = generatePassword(length, useLetters, useNumbers, useSymbols);
+      elements.tallerPwdOutput.value = generatePassword(
+        length,
+        useLetters,
+        useNumbers,
+        useSymbols,
+      );
     }
   });
   elements.btnTallerPwdCopy?.addEventListener("click", () => {
@@ -645,7 +732,9 @@ function setupEventListeners() {
   });
 
   elements.btnTallerClean?.addEventListener("click", () => {
-    const mode = elements.tallerOverlay?.querySelector('[name="tallerCleanMode"]:checked')?.value || "spaces";
+    const mode =
+      elements.tallerOverlay?.querySelector('[name="tallerCleanMode"]:checked')
+        ?.value || "spaces";
     let result = elements.tallerCleanInput?.value || "";
     if (mode === "spaces") {
       result = cleanSpaces(result);
@@ -667,7 +756,9 @@ function setupEventListeners() {
     const delaySeconds = parseFloat(
       elements.settingsQuickInfoDelay?.value ?? "1",
     );
-    const delayMs = Math.round(clamp(Number.isFinite(delaySeconds) ? delaySeconds : 1, 0, 10) * 1000);
+    const delayMs = Math.round(
+      clamp(Number.isFinite(delaySeconds) ? delaySeconds : 1, 0, 10) * 1000,
+    );
     await handleSettingChange("quickInfoEnabled", enabled);
     await handleSettingChange("quickInfoDelay", delayMs);
     showToast(elements.toast, POPUP_UI_MESSAGES.QUICK_INFO_SAVED, "success");
@@ -676,6 +767,46 @@ function setupEventListeners() {
   bindNumericClamp(elements.settingsQuickInfoDelay);
   bindNumericClamp(elements.tallerPwdLength);
 
+  elements.trickInput?.addEventListener("input", () => {
+    if (!elements.trickInput) {
+      return;
+    }
+    elements.trickInput.value = elements.trickInput.value
+      .toUpperCase()
+      .replace(/[^A-Z]/g, "");
+    if (elements.trickSendBtn) {
+      elements.trickSendBtn.disabled = !elements.trickInput.value;
+    }
+  });
+
+  elements.trickSendBtn?.addEventListener("click", () => {
+    const code = (elements.trickInput?.value || "").trim();
+    if (!code) {
+      return;
+    }
+    applyTrick(code);
+    if (elements.trickInput) {
+      elements.trickInput.value = "";
+    }
+    if (elements.trickSendBtn) {
+      elements.trickSendBtn.disabled = true;
+    }
+  });
+
+  elements.trickInput?.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") {
+      return;
+    }
+    const code = (elements.trickInput?.value || "").trim();
+    if (!code) {
+      return;
+    }
+    applyTrick(code);
+    elements.trickInput.value = "";
+    if (elements.trickSendBtn) {
+      elements.trickSendBtn.disabled = true;
+    }
+  });
 }
 
 const CALC_STORAGE_KEY = "wisphubCalcState";
@@ -683,13 +814,16 @@ const TALLER_STORAGE_KEY = "wisphubTallerState";
 
 async function saveTallerState() {
   const sections = elements.tallerOverlay
-    ? Array.from(elements.tallerOverlay.querySelectorAll("[data-taller-section]"))
+    ? Array.from(
+      elements.tallerOverlay.querySelectorAll("[data-taller-section]"),
+    )
     : [];
   const openSectionIndex = sections.findIndex((s) => s.open);
   try {
     await browserAPI.storage.local.set({
       [TALLER_STORAGE_KEY]: {
-        overlayOpen: elements.tallerOverlay?.classList.contains("visible") || false,
+        overlayOpen:
+          elements.tallerOverlay?.classList.contains("visible") || false,
         openSectionIndex,
       },
     });
@@ -732,6 +866,210 @@ async function loadCalcState() {
   }
 }
 
+
+let trickHintTimer = null;
+
+function showTrickHintError() {
+  if (!elements.trickHint) {
+    return;
+  }
+  elements.trickHint.textContent = POPUP_UI_MESSAGES.TRICK_NOT_FOUND;
+  elements.trickHint.classList.add("trick-hint--error");
+  elements.trickHint.classList.remove("hidden");
+  clearTimeout(trickHintTimer);
+  trickHintTimer = setTimeout(() => {
+    if (!elements.trickHint) {
+      return;
+    }
+    elements.trickHint.classList.add("hidden");
+    elements.trickHint.classList.remove("trick-hint--error");
+    elements.trickHint.textContent = "";
+  }, 5000);
+}
+
+function renderActiveTricks() {
+  const tricks = Array.isArray(userSettings.activeTricks)
+    ? userSettings.activeTricks
+    : [];
+  const hasValid = tricks.some((c) => !!TRICK_DEFS[c]);
+
+  if (elements.trickActiveTitle) {
+    elements.trickActiveTitle.classList.toggle("hidden", !hasValid);
+  }
+
+  applyPopupTricks(userSettings.activeTricks);
+
+  if (!elements.trickActive) {
+    return;
+  }
+  elements.trickActive.replaceChildren();
+  tricks.forEach((code) => {
+    const effect = TRICK_DEFS[code];
+    if (!effect) {
+      return;
+    }
+    const chip = document.createElement("span");
+    chip.className = "trick-chip";
+    chip.textContent = effect.name;
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "trick-chip-remove";
+    removeBtn.setAttribute("aria-label", `Desactivar ${effect.name}`);
+    removeBtn.textContent = "×";
+    removeBtn.addEventListener("click", () => removeTrick(code));
+    chip.appendChild(removeBtn);
+    elements.trickActive.appendChild(chip);
+  });
+}
+
+async function removeTrick(code) {
+  const effect = TRICK_DEFS[code];
+  userSettings.activeTricks = (userSettings.activeTricks || []).filter(
+    (c) => c !== code,
+  );
+  await saveSettings(userSettings);
+  await syncSettingsToContentScript();
+  renderActiveTricks();
+  if (effect) {
+    showToast(
+      elements.toast,
+      POPUP_UI_MESSAGES.TRICK_DEACTIVATED(effect.name),
+      "info",
+    );
+  }
+}
+
+async function applyTrick(code) {
+  const tricks = Array.isArray(userSettings.activeTricks)
+    ? userSettings.activeTricks
+    : [];
+  if (tricks.includes(code)) {
+    await removeTrick(code);
+    return;
+  }
+  const effect = TRICK_DEFS[code];
+  if (!effect) {
+    showTrickHintError();
+    return;
+  }
+  if (effect.group) {
+    const conflicting = tricks.find(
+      (c) => TRICK_DEFS[c]?.group === effect.group,
+    );
+    if (conflicting) {
+      showToast(
+        elements.toast,
+        POPUP_UI_MESSAGES.TRICK_CONFLICT(TRICK_DEFS[conflicting].name),
+        "warning",
+      );
+      return;
+    }
+  }
+  userSettings.activeTricks = [...tricks, code];
+  await saveSettings(userSettings);
+  await syncSettingsToContentScript();
+  renderActiveTricks();
+  showToast(
+    elements.toast,
+    POPUP_UI_MESSAGES.TRICK_ACTIVATED(effect.name),
+    "success",
+  );
+}
+
+function getRelativeDateLabel(dateStr) {
+  if (!dateStr) {
+    return null;
+  }
+  const parts = dateStr.split("-").map(Number);
+  if (parts.length !== 3 || parts.some((n) => isNaN(n))) {
+    return null;
+  }
+  const [y, m, d] = parts;
+
+  const nowMx = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }),
+  );
+  const today = new Date(
+    nowMx.getFullYear(),
+    nowMx.getMonth(),
+    nowMx.getDate(),
+  );
+  const selected = new Date(y, m - 1, d);
+  const diffDays = Math.round((today - selected) / 86400000);
+
+  if (diffDays < 0) {
+    const absDiff = Math.abs(diffDays);
+    if (absDiff < 31) {
+      return `Dentro de ${absDiff} día${absDiff === 1 ? "" : "s"}`;
+    }
+    let fwdMonths = (y - nowMx.getFullYear()) * 12 + (m - 1 - nowMx.getMonth());
+    if (nowMx.getDate() > d) {
+      fwdMonths--;
+    }
+    if (fwdMonths < 1) {
+      return `Dentro de ${absDiff} días`;
+    }
+    if (fwdMonths < 12) {
+      return fwdMonths === 1
+        ? "Dentro de 1 mes"
+        : `Dentro de ${fwdMonths} meses`;
+    }
+    const fwdYears = Math.floor(fwdMonths / 12);
+    return fwdYears === 1 ? "Dentro de 1 año" : `Dentro de ${fwdYears} años`;
+  }
+  if (diffDays === 0) {
+    return "Hoy";
+  }
+  if (diffDays === 1) {
+    return "Ayer";
+  }
+  if (diffDays < 31) {
+    return `Hace ${diffDays} días`;
+  }
+
+  let months = (nowMx.getFullYear() - y) * 12 + (nowMx.getMonth() - (m - 1));
+  if (nowMx.getDate() < d) {
+    months--;
+  }
+  if (months < 1) {
+    return `Hace ${diffDays} días`;
+  }
+  if (months < 12) {
+    return months === 1 ? "Hace 1 mes" : `Hace ${months} meses`;
+  }
+
+  const years = Math.floor(months / 12);
+  return years === 1 ? "Hace 1 año" : `Hace ${years} años`;
+}
+
+function updateCalcDateHint() {
+  const hint = elements.calcDateHint;
+  if (!hint) {
+    return;
+  }
+  const label = getRelativeDateLabel(elements.calcDate?.value || "");
+  if (label) {
+    const isFuture = label.startsWith("Dentro de");
+    hint.textContent = label;
+    hint.title = label;
+    hint.classList.remove("hidden");
+    hint.classList.toggle("calc-date-hint--today", label === "Hoy");
+    hint.classList.toggle(
+      "calc-date-hint--other",
+      !isFuture && label !== "Hoy",
+    );
+    hint.classList.toggle("calc-date-hint--future", isFuture);
+  } else {
+    hint.classList.remove(
+      "calc-date-hint--today",
+      "calc-date-hint--other",
+      "calc-date-hint--future",
+    );
+    hint.classList.add("hidden");
+    hint.textContent = "";
+    hint.title = "";
+  }
+}
+
 async function openCalculator() {
   const saved = await loadCalcState();
   if (saved) {
@@ -757,6 +1095,7 @@ async function openCalculator() {
   }
   setOverlayVisibility(elements.calcOverlay, true);
   elements.calcFlipCard?.classList.add("overlay-active");
+  updateCalcDateHint();
   saveCalcState();
 }
 
@@ -791,8 +1130,9 @@ function tallerSetConvertOutput(val) {
 }
 
 function capitalizeWords(str) {
-  return str.replace(/\S+/g, (word) =>
-    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+  return str.replace(
+    /\S+/g,
+    (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
   );
 }
 
@@ -801,9 +1141,15 @@ function generatePassword(length, useLetters, useNumbers, useSymbols) {
   const numbers = "0123456789";
   const symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?";
   let charset = "";
-  if (useLetters) { charset += letters; }
-  if (useNumbers) { charset += numbers; }
-  if (useSymbols) { charset += symbols; }
+  if (useLetters) {
+    charset += letters;
+  }
+  if (useNumbers) {
+    charset += numbers;
+  }
+  if (useSymbols) {
+    charset += symbols;
+  }
 
   const array = new Uint32Array(length);
   crypto.getRandomValues(array);
@@ -827,7 +1173,9 @@ function clamp(val, min, max) {
 }
 
 function bindNumericClamp(input) {
-  if (!input) { return; }
+  if (!input) {
+    return;
+  }
   const enforce = () => {
     const min = parseFloat(input.min);
     const max = parseFloat(input.max);
@@ -845,7 +1193,9 @@ function bindNumericClamp(input) {
 }
 
 function copyToClipboard(text) {
-  if (!text) { return; }
+  if (!text) {
+    return;
+  }
   clipboardWrite(text).then((ok) => {
     showToast(
       elements.toast,
@@ -869,6 +1219,7 @@ function clearCalculator() {
   if (elements.calcResultLine) {
     elements.calcResultLine.textContent = "";
   }
+  updateCalcDateHint();
   saveCalcState();
 }
 
@@ -877,13 +1228,21 @@ function runCalculator() {
   const packagePrice = parseInt(elements.calcPackagePrice?.value, 10) || 0;
 
   if (packagePrice <= 0) {
-    showToast(elements.toast, POPUP_UI_MESSAGES.PACKAGE_PRICE_REQUIRED, "warning");
+    showToast(
+      elements.toast,
+      POPUP_UI_MESSAGES.PACKAGE_PRICE_REQUIRED,
+      "warning",
+    );
     return;
   }
 
   const dateStr = elements.calcDate?.value;
   if (!dateStr) {
-    showToast(elements.toast, POPUP_UI_MESSAGES.INSTALL_DATE_REQUIRED, "warning");
+    showToast(
+      elements.toast,
+      POPUP_UI_MESSAGES.INSTALL_DATE_REQUIRED,
+      "warning",
+    );
     return;
   }
 
@@ -934,8 +1293,12 @@ async function loadCachedStaffInfo(domainKey, sessionUsername = "") {
       return false;
     }
 
-    const cachedUsername = String(entry.username || "").trim().toLowerCase();
-    const targetUsername = String(sessionUsername || "").trim().toLowerCase();
+    const cachedUsername = String(entry.username || "")
+      .trim()
+      .toLowerCase();
+    const targetUsername = String(sessionUsername || "")
+      .trim()
+      .toLowerCase();
     if (!cachedUsername || cachedUsername !== targetUsername) {
       return false;
     }
@@ -1014,7 +1377,11 @@ async function initializeSessionCard(tab) {
   }
 
   const sessionContext = await fetchSessionContext(tab.id);
-  if (!sessionContext?.loggedIn || !sessionContext.username || !sessionContext.domainKey) {
+  if (
+    !sessionContext?.loggedIn ||
+    !sessionContext.username ||
+    !sessionContext.domainKey
+  ) {
     return false;
   }
 
@@ -1028,7 +1395,10 @@ async function initializeSessionCard(tab) {
 async function init() {
   initElements();
   setupTallerSections();
-  bindExclusiveDetailsGroup(document.querySelector(".settings-list"), "[data-settings-section]");
+  bindExclusiveDetailsGroup(
+    document.querySelector(".settings-list"),
+    "[data-settings-section]",
+  );
 
   const tab = await getActiveTab().catch(() => null);
   const domainKey = getDomainKey(tab?.url);
@@ -1055,7 +1425,10 @@ async function init() {
   setupEventListeners();
   renderChangelog(elements.changelogList);
 
-  const [calcState, tallerState] = await Promise.all([loadCalcState(), loadTallerState()]);
+  const [calcState, tallerState] = await Promise.all([
+    loadCalcState(),
+    loadTallerState(),
+  ]);
   if (calcState?.overlayOpen) {
     openCalculator();
   }
@@ -1063,7 +1436,9 @@ async function init() {
     setOverlayVisibility(elements.tallerOverlay, true);
     elements.tallerFlipCard?.classList.add("overlay-active");
     if (tallerState.openSectionIndex >= 0) {
-      const sections = elements.tallerOverlay?.querySelectorAll("[data-taller-section]");
+      const sections = elements.tallerOverlay?.querySelectorAll(
+        "[data-taller-section]",
+      );
       sections?.[tallerState.openSectionIndex]?.setAttribute("open", "");
     }
   }
