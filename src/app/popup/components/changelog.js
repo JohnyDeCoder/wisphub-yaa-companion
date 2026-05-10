@@ -37,7 +37,7 @@ export function renderChangelog(container) {
   }
 
   container.replaceChildren();
-  const visible = CHANGELOG.slice(0, 2);
+  const visible = CHANGELOG.slice(0, 1);
 
   visible.forEach((entry) => {
     const div = document.createElement("div");
@@ -68,14 +68,14 @@ export function renderChangelog(container) {
     container.appendChild(div);
   });
 
-  if (CHANGELOG.length > 2) {
+  if (CHANGELOG.length > 1) {
     const link = document.createElement("a");
     link.className = "changelog-more-link";
     link.href =
       "https://raw.githubusercontent.com/JohnyDeCoder/wisphub-yaa-companion/refs/heads/master/CHANGELOG.md";
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.textContent = `y ${CHANGELOG.length - 2} versiones más...`;
+    link.textContent = `y ${CHANGELOG.length - 1} versiones más...`;
     container.appendChild(link);
   }
 }
