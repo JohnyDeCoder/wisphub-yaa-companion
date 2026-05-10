@@ -101,6 +101,11 @@ export const POPUP_UI_MESSAGES = Object.freeze({
   STAFF_ID_COPIED: "¡Copiado!",
   QUICK_INFO_SAVED: "Vista rápida guardada",
   PWD_NO_TYPE: "Selecciona al menos un tipo de carácter",
+  TRICK_NOT_FOUND: "Truco no encontrado",
+  TRICK_ACTIVATED: (name) => `¡Truco activado: ${name}!`,
+  TRICK_DEACTIVATED: (name) => `Truco desactivado: ${name}`,
+  TRICK_CONFLICT: (name) =>
+    `Desactiva "${name}" antes de activar otro truco de color`,
 });
 
 export const CONNECTION_UI_MESSAGES = Object.freeze({
@@ -166,7 +171,8 @@ export const CLIENTS_UI_MESSAGES = Object.freeze({
   },
   PHONE_COPIED: (phone) => `Teléfono copiado: ${phone}`,
   COORDINATES_COPIED: (text) => `Coordenadas copiadas: ${text}`,
-  QUICK_INFO_NO_API_KEY: "Configura las API Keys en la extensión para ver esta sección",
+  QUICK_INFO_NO_API_KEY:
+    "Configura las API Keys en la extensión para ver esta sección",
   QUICK_INFO_API_ERROR: (error) => `Error de API: ${error}`,
   NAME_COPY_FAILED: "No se pudo copiar el nombre del cliente",
   NAME_SETTINGS_INVALID:

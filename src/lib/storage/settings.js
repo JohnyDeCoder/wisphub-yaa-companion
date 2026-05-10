@@ -7,6 +7,7 @@ const DEFAULT_SETTINGS = {
   autoFillTemplateEnabled: true,
   quickInfoEnabled: true,
   quickInfoDelay: 1000,
+  activeTricks: [],
 };
 
 export async function loadSettings() {
