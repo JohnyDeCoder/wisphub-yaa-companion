@@ -1,4 +1,5 @@
 import { sendLogToPopup } from "../../utils/logger.js";
+import { waitForElement } from "../../utils/polling.js";
 
 const SPECIAL_TICKETS = [
   {
@@ -121,14 +122,6 @@ function showDropdown(toggle) {
   document.body.appendChild(dropdown);
 }
 
-function findNavbar() {
-  return (
-    document.querySelector(".menu-top ul.nav") ||
-    document.querySelector(".navbar-nav") ||
-    document.querySelector("ul.nav.navbar-nav")
-  );
-}
-
 function findAyudaItem(navbar) {
   const items = navbar.querySelectorAll("li");
   for (const li of items) {
@@ -164,6 +157,11 @@ function createNavDropdown() {
 }
 
 export function initSpecialTickets() {
+  // Login page has no top navbar — skip silently to avoid false-positive warnings.
+  if (document.body.classList.contains("login")) {
+    return;
+  }
+
   if (shouldDisableForCurrentProfile()) {
     document.querySelector(`.${NAV_ITEM_CLASS}`)?.remove();
     closeDropdown();
@@ -179,26 +177,31 @@ export function initSpecialTickets() {
     return;
   }
 
-  const navbar = findNavbar();
-  if (!navbar) {
-    log(
-      "Navbar not found, skipping special tickets",
-      "Navbar no encontrado",
-      "warning",
-    );
-    return;
-  }
+  waitForElement(".menu-top ul.nav", { timeout: 5000 }).then((navbar) => {
+    if (!navbar) {
+      log(
+        "Navbar not found, skipping special tickets",
+        "Navbar no encontrado",
+        "warning",
+      );
+      return;
+    }
 
-  const navItem = createNavDropdown();
-  const ayudaLi = findAyudaItem(navbar);
+    if (document.querySelector(`.${NAV_ITEM_CLASS}`)) {
+      return;
+    }
 
-  if (ayudaLi) {
-    navbar.insertBefore(navItem, ayudaLi);
-  } else {
-    navbar.appendChild(navItem);
-  }
+    const navItem = createNavDropdown();
+    const ayudaLi = findAyudaItem(navbar);
 
-  log("Special ticket nav added");
+    if (ayudaLi) {
+      navbar.insertBefore(navItem, ayudaLi);
+    } else {
+      navbar.appendChild(navItem);
+    }
+
+    log("Special ticket nav added");
+  });
 }
 
 export { SPECIAL_TICKETS };
