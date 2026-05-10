@@ -100,6 +100,16 @@ a.cke_button.wisphub-toolbar-btn.cke_button_on:hover {
   --wisphub-yaa-copy-disabled-border: #c2c8d0;
   --wisphub-yaa-copy-disabled-fg: #717b88;
   --wisphub-yaa-copy-disabled-icon: #717b88;
+
+  --wyc-btn-color: #28a745;
+  --wyc-btn-color-light: #3ed15e;
+  --wyc-btn-hover: #218838;
+  --wyc-btn-hover-dark: #1e7e34;
+  --wyc-diag-btn-color: #00a87d;
+  --wyc-diag-btn-hover: #009f76;
+  --wyc-scroll-color: #00c491;
+  --wyc-scroll-dark: #00a87d;
+  --wyc-link-color: #218838;
 }
 
 html[data-darkreader-scheme="dark"] {
@@ -121,14 +131,14 @@ button.wisphub-yaa-action-btn {
   height: 30px;
   padding: 0 !important;
   margin: 2px 0 2px 1px;
-  background-color: #28a745 !important;
+  background-color: var(--wyc-btn-color) !important;
   background-image: linear-gradient(
     135deg,
-    #28a745 0%,
-    #3ed15e 100%
+    var(--wyc-btn-color) 0%,
+    var(--wyc-btn-color-light) 100%
   ) !important;
   color: #fff !important;
-  border: 1px solid #28a745 !important;
+  border: 1px solid var(--wyc-btn-color) !important;
   border-radius: 3px;
   transition: all 0.2s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
@@ -142,14 +152,14 @@ button.wisphub-yaa-action-btn {
 }
 
 .wisphub-yaa-action-btn:hover {
-  background: linear-gradient(135deg, #218838 0%, #28a745 100%) !important;
-  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.35);
+  background: linear-gradient(135deg, var(--wyc-btn-hover) 0%, var(--wyc-btn-color) 100%) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   color: #fff !important;
   text-decoration: none !important;
 }
 
 .wisphub-yaa-action-btn:active {
-  background: linear-gradient(135deg, #1e7e34 0%, #218838 100%) !important;
+  background: linear-gradient(135deg, var(--wyc-btn-hover-dark) 0%, var(--wyc-btn-hover) 100%) !important;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
@@ -273,9 +283,9 @@ button.wisphub-yaa-action-btn {
   gap: 8px;
   padding: 7px 12px !important;
   min-height: 34px;
-  border: 1px solid #00a87d !important;
+  border: 1px solid var(--wyc-diag-btn-color) !important;
   border-radius: 4px;
-  background-color: #00a87d !important;
+  background-color: var(--wyc-diag-btn-color) !important;
   color: #ffffff !important;
   font-size: 12px;
   font-weight: 400;
@@ -289,8 +299,8 @@ button.wisphub-yaa-action-btn {
 }
 
 .wisphub-yaa-diagnostic-header-btn:hover {
-  background-color: #009f76 !important;
-  box-shadow: 0 2px 4px rgba(0, 196, 145, 0.32);
+  background-color: var(--wyc-diag-btn-hover) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
 }
 
 .wisphub-yaa-diagnostic-header-btn:disabled,
@@ -409,7 +419,7 @@ td .wisphub-yaa-action-btn::before,
   display: block;
   width: 100%;
   height: 100%;
-  background-color: #218838;
+  background-color: var(--wyc-link-color);
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h6q.425 0 .713.288T12 4t-.288.713T11 5H5v14h14v-6q0-.425.288-.712T20 12t.713.288T21 13v6q0 .825-.587 1.413T19 21zM19 6.4L10.4 15q-.275.275-.7.275T9 15t-.275-.7t.275-.7L17.6 5H15q-.425 0-.712-.288T14 4t.288-.712T15 3h5q.425 0 .713.288T21 4v5q0 .425-.288.713T20 10t-.712-.288T19 9z'/%3E%3C/svg%3E")
     no-repeat center / contain;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h6q.425 0 .713.288T12 4t-.288.713T11 5H5v14h14v-6q0-.425.288-.712T20 12t.713.288T21 13v6q0 .825-.587 1.413T19 21zM19 6.4L10.4 15q-.275.275-.7.275T9 15t-.275-.7t.275-.7L17.6 5H15q-.425 0-.712-.288T14 4t.288-.712T15 3h5q.425 0 .713.288T21 4v5q0 .425-.288.713T20 10t-.712-.288T19 9z'/%3E%3C/svg%3E")
@@ -450,7 +460,7 @@ td .wisphub-yaa-action-btn::before,
   display: block;
   width: 100%;
   height: 100%;
-  background-color: #218838;
+  background-color: var(--wyc-link-color);
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='currentColor' d='M8.246 2a.75.75 0 0 1 .695.467l5.11 12.543a2.24 2.24 0 0 0-1.688-.168l-.954-2.342H5.084L3.44 16.533a.75.75 0 1 1-1.39-.566l5.5-13.5A.75.75 0 0 1 8.247 2M13 15.75a1.25 1.25 0 0 1 1.237 1.067q.013.09.013.183A1.25 1.25 0 1 1 13 15.75M5.695 11h5.103L8.246 4.738zm4.555 6a1.25 1.25 0 1 1-2.5 0a1.25 1.25 0 0 1 2.5 0M17 18.25a1.25 1.25 0 1 0 0-2.5a1.25 1.25 0 0 0 0 2.5'/%3E%3C/svg%3E")
     no-repeat center / contain;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='currentColor' d='M8.246 2a.75.75 0 0 1 .695.467l5.11 12.543a2.24 2.24 0 0 0-1.688-.168l-.954-2.342H5.084L3.44 16.533a.75.75 0 1 1-1.39-.566l5.5-13.5A.75.75 0 0 1 8.247 2M13 15.75a1.25 1.25 0 0 1 1.237 1.067q.013.09.013.183A1.25 1.25 0 1 1 13 15.75M5.695 11h5.103L8.246 4.738zm4.555 6a1.25 1.25 0 1 1-2.5 0a1.25 1.25 0 0 1 2.5 0M17 18.25a1.25 1.25 0 1 0 0-2.5a1.25 1.25 0 0 0 0 2.5'/%3E%3C/svg%3E")
@@ -1004,7 +1014,7 @@ a.cke_button.wisphub-toolbar-btn.wisphub-yaa-copy-control.disabled:hover {
   align-items: center;
   gap: 6px;
   color: #fff !important;
-  background-color: #28a745 !important;
+  background-color: var(--wyc-btn-color) !important;
   padding: 11px 16px !important;
   font-weight: 600;
   cursor: pointer;
@@ -1025,7 +1035,7 @@ a.cke_button.wisphub-toolbar-btn.wisphub-yaa-copy-control.disabled:hover {
 }
 
 .wisphub-yaa-nav-special-tickets:hover {
-  background-color: #218838 !important;
+  background-color: var(--wyc-btn-hover) !important;
   color: #fff !important;
 }
 
@@ -1199,10 +1209,10 @@ html[data-darkreader-scheme="dark"] .wisphub-yaa-action-separator {
   height: 52px;
   border: none;
   border-radius: 50%;
-  background: linear-gradient(135deg, #00c491 0%, #00a87d 100%);
+  background: linear-gradient(135deg, var(--wyc-scroll-color) 0%, var(--wyc-scroll-dark) 100%);
   box-shadow:
-    0 6px 20px rgba(0, 196, 145, 0.35),
-    0 2px 10px rgba(0, 0, 0, 0.2);
+    0 6px 20px rgba(0, 0, 0, 0.2),
+    0 2px 10px rgba(0, 0, 0, 0.15);
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -1237,9 +1247,9 @@ html[data-darkreader-scheme="dark"] .wisphub-yaa-action-separator {
 }
 
 #wisphub-yaa-scroll-top-btn:hover {
-  background: linear-gradient(135deg, #00b586 0%, #009f76 100%);
+  background: linear-gradient(135deg, var(--wyc-scroll-dark) 0%, var(--wyc-btn-hover) 100%);
   box-shadow:
-    0 8px 22px rgba(0, 168, 125, 0.38),
+    0 8px 22px rgba(0, 0, 0, 0.25),
     0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -1550,6 +1560,25 @@ a.yaa-qi-title:hover {
 .yaa-qi-pay-link:hover,
 .yaa-qi-pay-link:hover .yaa-qi-meta-item {
   text-decoration: underline;
+}
+
+.yaa-qi-meta-item--equipment {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.1);
+}
+
+.yaa-qi-equip-link {
+  text-decoration: none;
+}
+
+.yaa-qi-equip-link:hover,
+.yaa-qi-equip-link:hover .yaa-qi-meta-item {
+  text-decoration: underline;
+}
+
+.yaa-qi-date-value {
+  font-size: 12px;
+  color: #e2e8f0;
 }
 
 .yaa-qi-section {

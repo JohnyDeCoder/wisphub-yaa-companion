@@ -14,11 +14,15 @@ const LOG_REQUEST_TIMEOUT_MS = 20_000; // 20 seconds
 
 let activeLogController = null;
 
+const MICHOACAN_DOMAINS = ["vwinternetnetworks", "vwinm"];
+
 let hoverTimer = null;
 let activePopup = null;
 let leaveTimer = null;
 let isInitialized = false;
 let activeTbody = null;
+let isTicketInitialized = false;
+let ticketActiveTbody = null;
 let quickInfoEnabled = false;
 let quickInfoDelay = DEFAULT_DELAY_MS;
 let lastCursorX = 0;
@@ -58,11 +62,67 @@ function parseRowData(row) {
   const sepIdx = val.indexOf("#");
   const idServicio = sepIdx >= 0 ? val.slice(0, sepIdx) : val;
   const username = sepIdx >= 0 ? val.slice(sepIdx + 1) : "";
-  const nameCell = row.querySelector("td:nth-child(3)");
-  const nombre = nameCell?.textContent?.trim() || username || idServicio;
+  const nameCell = row.querySelector("td.user");
+  const clientNameEl = nameCell?.querySelector("[data-client-name]");
+  const nombre =
+    clientNameEl?.getAttribute("data-client-name")?.trim() ||
+    nameCell?.textContent?.trim() ||
+    username ||
+    idServicio;
   const ipCell = row.querySelector("td.ip");
   const ip = ipCell?.textContent?.trim() || "";
-  return { idServicio, username, nombre, ip };
+  const comentariosCell = row.querySelector("td.comentarios");
+  const comentariosText = comentariosCell?.textContent?.trim() || "";
+  return { idServicio, username, nombre, ip, comentariosText };
+}
+
+function detectEquipmentType(rawText) {
+  if (!rawText) {
+    return null;
+  }
+  const fullNorm = String(rawText)
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+  const isMigration = /\bmigraci?on\b/.test(fullNorm);
+  // Scan line-by-line: return the FIRST equipment type found from top
+  let equipType = null;
+  for (const line of String(rawText).split(/\r?\n/)) {
+    const norm = line
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase()
+      .trim();
+    if (!norm) {
+      continue;
+    }
+    if (/\bcomodato\b/.test(norm) || /\bcomo[\s-]*dato\b/.test(norm)) {
+      equipType = "Comodato";
+      break;
+    }
+    if (/\bprestado(s)?\b/.test(norm)) {
+      equipType = "Prestado";
+      break;
+    }
+    if (/\bcomprado(s)?\b/.test(norm)) {
+      equipType = "Comprado";
+      break;
+    }
+    if (/\bpropio(s)?\b/.test(norm)) {
+      equipType = "Propio";
+      break;
+    }
+  }
+  if (!equipType && !isMigration) {
+    return null;
+  }
+  if (isMigration && equipType) {
+    return `Migración · ${equipType}`;
+  }
+  if (isMigration) {
+    return "Migración";
+  }
+  return equipType;
 }
 
 function getCached(idServicio) {
@@ -86,7 +146,7 @@ function requestQuickInfo(idServicio) {
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
       pendingRequests.delete(idServicio);
-      resolve({ saldo: null, tickets: null, plan: null, pendingTickets: null });
+      resolve({ saldo: null, tickets: null, plan: null, pendingTickets: null, fechaInstalacion: null });
     }, REQUEST_TIMEOUT_MS);
     pendingRequests.set(idServicio, { resolve, timer });
     postBridgeMessage(
@@ -117,6 +177,7 @@ function handleQuickInfoResponse(event) {
     tickets: null,
     plan: null,
     pendingTickets: null,
+    fechaInstalacion: null,
   };
   // Don't cache transient states so the popup retries after the user configures the API key.
   if (!safeResult.noApiKey && !safeResult.apiError) {
@@ -273,19 +334,22 @@ function buildApiInfoMessage(noApiKey, apiError) {
   return null;
 }
 
+function buildSectionHeader(titleText, extUrl, sourceRow) {
+  const header = document.createElement("div");
+  header.className = "yaa-qi-section-header";
+  const titleSpan = document.createElement("span");
+  titleSpan.textContent = titleText;
+  header.appendChild(titleSpan);
+  if (extUrl) {
+    header.appendChild(buildSectionExtLink(extUrl, sourceRow));
+  }
+  return header;
+}
+
 function buildTicketSectionEl(title, tickets, emptyText, sourceRow, extUrl, apiMsg = null) {
   const section = document.createElement("div");
   section.className = "yaa-qi-section";
-
-  const sectionHeader = document.createElement("div");
-  sectionHeader.className = "yaa-qi-section-header";
-  const titleSpan = document.createElement("span");
-  titleSpan.textContent = title;
-  sectionHeader.appendChild(titleSpan);
-  if (extUrl) {
-    sectionHeader.appendChild(buildSectionExtLink(extUrl, sourceRow));
-  }
-  section.appendChild(sectionHeader);
+  section.appendChild(buildSectionHeader(title, extUrl, sourceRow));
 
   const list = Array.isArray(tickets) ? tickets : [];
   const emptyEl = document.createElement("p");
@@ -316,9 +380,44 @@ function buildTicketSectionEl(title, tickets, emptyText, sourceRow, extUrl, apiM
   return section;
 }
 
+function formatInstallDate(rawDate) {
+  const s = String(rawDate || "").trim();
+  if (!s) {
+    return null;
+  }
+  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+  }
+  return s;
+}
+
+function buildInstallDateSection(fechaInstalacion, apiMsg, username, idServicio, sourceRow) {
+  const section = document.createElement("div");
+  section.className = "yaa-qi-section";
+
+  const extUrl = username && idServicio
+    ? `${window.location.origin}/clientes/editar/servicio/${username}/${idServicio}/#id_cliente-fecha_instalacion`
+    : null;
+  section.appendChild(buildSectionHeader("Fecha de instalación", extUrl, sourceRow));
+
+  const contentEl = document.createElement("p");
+  if (apiMsg) {
+    contentEl.className = "yaa-qi-empty";
+    contentEl.textContent = apiMsg;
+  } else {
+    const formatted = formatInstallDate(fechaInstalacion);
+    contentEl.className = formatted ? "yaa-qi-date-value" : "yaa-qi-empty";
+    contentEl.textContent = formatted ?? "Sin fecha de instalación";
+  }
+  section.appendChild(contentEl);
+
+  return section;
+}
+
 function buildPopupEl(rowData, data, sourceRow) {
-  const { nombre, idServicio, ip, username } = rowData;
-  const { saldo, tickets, plan, pendingTickets, log, noApiKey, apiError } = data;
+  const { nombre, idServicio, ip, username, comentariosText } = rowData;
+  const { saldo, tickets, plan, pendingTickets, log, fechaInstalacion, noApiKey, apiError } = data;
   const apiMsg = buildApiInfoMessage(noApiKey, apiError);
 
   const popup = document.createElement("div");
@@ -357,6 +456,26 @@ function buildPopupEl(rowData, data, sourceRow) {
     ipEl.className = "yaa-qi-meta-item";
     ipEl.textContent = `IP: ${ip}`;
     meta.appendChild(ipEl);
+  }
+
+  const equipmentLabel = detectEquipmentType(comentariosText);
+  if (equipmentLabel) {
+    const equipEl = document.createElement("span");
+    equipEl.className = "yaa-qi-meta-item yaa-qi-meta-item--equipment";
+    equipEl.textContent = equipmentLabel;
+    if (username && idServicio) {
+      const equipLink = document.createElement("a");
+      const equipEditBase = `/clientes/editar/servicio/${username}/${idServicio}/`;
+      equipLink.href = `${window.location.origin}${equipEditBase}#id_cliente-comentarios`;
+      equipLink.target = "_blank";
+      equipLink.rel = "noopener noreferrer";
+      equipLink.className = "yaa-qi-equip-link";
+      equipLink.addEventListener("click", () => selectRow(sourceRow));
+      equipLink.appendChild(equipEl);
+      meta.appendChild(equipLink);
+    } else {
+      meta.appendChild(equipEl);
+    }
   }
 
   const saldoInfo = formatSaldo(saldo);
@@ -411,24 +530,15 @@ function buildPopupEl(rowData, data, sourceRow) {
     ),
   );
   popup.appendChild(buildDivider());
+  popup.appendChild(buildInstallDateSection(fechaInstalacion, apiMsg, username, idServicio, sourceRow));
+  popup.appendChild(buildDivider());
 
   const logSection = document.createElement("div");
   logSection.className = "yaa-qi-section";
-
-  const logSectionHeader = document.createElement("div");
-  logSectionHeader.className = "yaa-qi-section-header";
-  const logTitleSpan = document.createElement("span");
-  logTitleSpan.textContent = "Último log del mes";
-  logSectionHeader.appendChild(logTitleSpan);
-  if (username) {
-    logSectionHeader.appendChild(
-      buildSectionExtLink(
-        `${window.location.origin}/clientes/ver/${username}/#retab7`,
-        sourceRow,
-      ),
-    );
-  }
-  logSection.appendChild(logSectionHeader);
+  const logExtUrl = username
+    ? `${window.location.origin}/clientes/ver/${username}/#retab7`
+    : null;
+  logSection.appendChild(buildSectionHeader("Último log del mes", logExtUrl, sourceRow));
 
   const logContentEl = document.createElement("div");
   logContentEl.className = "yaa-qi-log-content";
@@ -545,24 +655,76 @@ async function showPopup(rowData, sourceRow, cursorX, cursorY) {
   }
 }
 
-export function initClientQuickInfo(settings) {
-  updateQuickInfoState(settings || {});
-
-  if (isInitialized) {
-    return;
+function parseTicketRowData(row) {
+  const userCell = row.querySelector("td.usuario");
+  const serviceSlug = (userCell?.textContent || "").trim().replace(/\s+/g, "");
+  if (!serviceSlug) {
+    return null;
   }
 
-  const tbody = document.querySelector("#lista-clientes tbody");
-  if (!tbody) {
+  const atIdx = serviceSlug.indexOf("@");
+  const idServicio = atIdx >= 0 ? serviceSlug.slice(0, atIdx) : serviceSlug;
+  const domain = atIdx >= 0 ? serviceSlug.slice(atIdx + 1).toLowerCase() : "";
+
+  if (!idServicio || !/^\d+$/.test(idServicio)) {
+    return null;
+  }
+
+  const clientCell = row.querySelector("td.cliente");
+  const nombre = (clientCell?.textContent || "").trim() || serviceSlug;
+
+  return { idServicio, username: serviceSlug, nombre, domain };
+}
+
+function buildMichoacanPopupEl(rowData) {
+  const popup = document.createElement("div");
+  popup.className = POPUP_CLASS;
+
+  const header = document.createElement("div");
+  header.className = "yaa-qi-header";
+
+  const titleEl = document.createElement("div");
+  titleEl.className = "yaa-qi-title";
+  titleEl.textContent = rowData.nombre;
+  header.appendChild(titleEl);
+
+  const subtitleEl = document.createElement("div");
+  subtitleEl.className = "yaa-qi-subtitle";
+  subtitleEl.textContent = `ID: ${rowData.idServicio}`;
+  header.appendChild(subtitleEl);
+
+  popup.appendChild(header);
+  popup.appendChild(buildDivider());
+
+  const msgSection = document.createElement("div");
+  msgSection.className = "yaa-qi-section";
+  const msgEl = document.createElement("p");
+  msgEl.className = "yaa-qi-empty";
+  msgEl.textContent = "Vista rápida no disponible para cuentas de Michoacán";
+  msgSection.appendChild(msgEl);
+  popup.appendChild(msgSection);
+
+  const footer = document.createElement("p");
+  footer.className = "yaa-qi-footer";
+  footer.textContent = "Wisphub Yaa Companion";
+  popup.appendChild(footer);
+
+  return popup;
+}
+
+async function showTicketPopup(rowData, sourceRow, cursorX, cursorY) {
+  if (MICHOACAN_DOMAINS.includes(rowData.domain)) {
+    removeActivePopup();
+    const popup = buildMichoacanPopupEl(rowData);
+    positionPopup(popup, cursorX, cursorY);
+    attachPopupHoverListeners(popup);
+    activePopup = popup;
     return;
   }
-  isInitialized = true;
-  activeTbody = tbody;
-  window.addEventListener("scroll", removeActivePopup, {
-    passive: true,
-    capture: true,
-  });
+  await showPopup(rowData, sourceRow, cursorX, cursorY);
+}
 
+function attachTbodyHover(tbody, parseFn, showFn) {
   let lastRow = null;
 
   tbody.addEventListener("mousemove", (event) => {
@@ -574,7 +736,6 @@ export function initClientQuickInfo(settings) {
     if (!quickInfoEnabled) {
       return;
     }
-
     const row = event.target.closest("tr");
     if (!row || row === lastRow) {
       return;
@@ -582,13 +743,13 @@ export function initClientQuickInfo(settings) {
     lastRow = row;
     clearTimeout(hoverTimer);
 
-    const rowData = parseRowData(row);
+    const rowData = parseFn(row);
     if (!rowData?.idServicio) {
       return;
     }
 
     hoverTimer = setTimeout(() => {
-      showPopup(rowData, row, lastCursorX, lastCursorY);
+      showFn(rowData, row, lastCursorX, lastCursorY);
     }, quickInfoDelay);
   });
 
@@ -599,6 +760,21 @@ export function initClientQuickInfo(settings) {
   });
 }
 
+export function initClientQuickInfo(settings) {
+  updateQuickInfoState(settings || {});
+  if (isInitialized) {
+    return;
+  }
+  const tbody = document.querySelector("#lista-clientes tbody");
+  if (!tbody) {
+    return;
+  }
+  isInitialized = true;
+  activeTbody = tbody;
+  window.addEventListener("scroll", removeActivePopup, { passive: true, capture: true });
+  attachTbodyHover(tbody, parseRowData, showPopup);
+}
+
 export function updateClientQuickInfoSettings(settings) {
   updateQuickInfoState(settings || {});
   if (!quickInfoEnabled && activeTbody) {
@@ -606,8 +782,31 @@ export function updateClientQuickInfoSettings(settings) {
   }
 }
 
+export function initTicketQuickInfo(settings) {
+  updateQuickInfoState(settings || {});
+  if (isTicketInitialized) {
+    return;
+  }
+  const tbody = document.querySelector("#data-table-tickets tbody");
+  if (!tbody) {
+    return;
+  }
+  isTicketInitialized = true;
+  ticketActiveTbody = tbody;
+  window.addEventListener("scroll", removeActivePopup, { passive: true, capture: true });
+  attachTbodyHover(tbody, parseTicketRowData, showTicketPopup);
+}
+
+export function updateTicketQuickInfoSettings(settings) {
+  updateQuickInfoState(settings || {});
+  if (!quickInfoEnabled && ticketActiveTbody) {
+    ticketActiveTbody.dispatchEvent(new Event("mouseleave"));
+  }
+}
+
 export const __testables__ = {
   normalizeQuickInfoDelay,
   parseRowData,
   formatSaldo,
+  detectEquipmentType,
 };
