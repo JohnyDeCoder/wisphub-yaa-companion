@@ -14,8 +14,10 @@ const SESSION_COOKIE_SNAPSHOTS_KEY = "wisphubYaaSessionCookieSnapshots";
 const SESSION_COOKIE_SNAPSHOT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const SESSION_COOKIE_SNAPSHOT_MAX_PROFILES = 4;
 const SESSION_COOKIE_MAX_PER_PROFILE = 20;
-const SESSION_COOKIE_NAME_HINT_RE = /(session|csrftoken|auth|token|jwt|remember|sid)/i;
-const SESSION_COOKIE_IGNORED_NAME_RE = /^(_ga|_gid|_gat|_fbp|_gcl_au|_hj|amplitude|mixpanel)/i;
+const SESSION_COOKIE_NAME_HINT_RE =
+  /(session|csrftoken|auth|token|jwt|remember|sid)/i;
+const SESSION_COOKIE_IGNORED_NAME_RE =
+  /^(_ga|_gid|_gat|_fbp|_gcl_au|_hj|amplitude|mixpanel)/i;
 const SUPPORTED_SESSION_DOMAINS = ["wisphub.io", "wisphub.app"];
 const QUICK_INFO_TICKETS_FETCH_LIMIT = 100;
 const QUICK_INFO_TICKETS_DISPLAY_LIMIT = 5;
@@ -65,10 +67,13 @@ function isWispHubSender(sender) {
   return !url || isWispHubDomain(url);
 }
 
-
 function isCookieUnderDomain(cookie, domainKey) {
-  const safeDomain = String(cookie?.domain || "").replace(/^\./, "").toLowerCase();
-  const safeTarget = String(domainKey || "").trim().toLowerCase();
+  const safeDomain = String(cookie?.domain || "")
+    .replace(/^\./, "")
+    .toLowerCase();
+  const safeTarget = String(domainKey || "")
+    .trim()
+    .toLowerCase();
   if (!safeDomain || !safeTarget) {
     return false;
   }
@@ -76,7 +81,9 @@ function isCookieUnderDomain(cookie, domainKey) {
 }
 
 function buildCookieUrl(cookie, fallbackDomain) {
-  const rawDomain = String(cookie?.domain || "").replace(/^\./, "").trim();
+  const rawDomain = String(cookie?.domain || "")
+    .replace(/^\./, "")
+    .trim();
   const domain = rawDomain || String(fallbackDomain || "").trim();
   const path = String(cookie?.path || "/").trim() || "/";
   const scheme = cookie?.secure === false ? "http" : "https";
@@ -93,7 +100,9 @@ function isLikelySessionCookie(cookie) {
     return false;
   }
 
-  return cookie?.httpOnly === true || SESSION_COOKIE_NAME_HINT_RE.test(cookieName);
+  return (
+    cookie?.httpOnly === true || SESSION_COOKIE_NAME_HINT_RE.test(cookieName)
+  );
 }
 
 function selectSessionCookiesForSnapshot(domainCookies) {
@@ -101,8 +110,11 @@ function selectSessionCookiesForSnapshot(domainCookies) {
     (cookie) => !shouldIgnoreCookieName(cookie?.name),
   );
   const preferredCookies = filteredDomainCookies.filter(isLikelySessionCookie);
-  const fallbackCookies = filteredDomainCookies.filter((cookie) => cookie?.secure !== false);
-  const sourceCookies = preferredCookies.length > 0 ? preferredCookies : fallbackCookies;
+  const fallbackCookies = filteredDomainCookies.filter(
+    (cookie) => cookie?.secure !== false,
+  );
+  const sourceCookies =
+    preferredCookies.length > 0 ? preferredCookies : fallbackCookies;
   return sourceCookies.slice(0, SESSION_COOKIE_MAX_PER_PROFILE);
 }
 
@@ -181,24 +193,32 @@ function pruneSessionCookieSnapshots(snapshotMap) {
   );
 }
 
-
 function createCookieNameSet(cookieNames) {
   return new Set(
     (cookieNames || [])
-      .map((value) => String(value || "").trim().toLowerCase())
+      .map((value) =>
+        String(value || "")
+          .trim()
+          .toLowerCase(),
+      )
       .filter(Boolean),
   );
 }
 
-
 async function captureSessionCookies({ domainKey, username }) {
   if (!isSupportedSessionDomain(domainKey)) {
-    return { success: false, error: "Dominio no soportado para captura de sesión" };
+    return {
+      success: false,
+      error: "Dominio no soportado para captura de sesión",
+    };
   }
 
   const safeUsername = normalizeValue(username);
   if (!safeUsername) {
-    return { success: false, error: "No se pudo detectar usuario para capturar sesión" };
+    return {
+      success: false,
+      error: "No se pudo detectar usuario para capturar sesión",
+    };
   }
 
   const allCookies = await chrome.cookies.getAll({ domain: domainKey });
@@ -217,7 +237,8 @@ async function captureSessionCookies({ domainKey, username }) {
   const rawSnapshots = await readSessionCookieSnapshots();
   const snapshots = pruneSessionCookieSnapshots(rawSnapshots);
   const snapshotsChangedByPrune =
-    Object.keys(rawSnapshots || {}).length !== Object.keys(snapshots || {}).length;
+    Object.keys(rawSnapshots || {}).length !==
+    Object.keys(snapshots || {}).length;
   const snapshotKey = buildProfileSnapshotKey(domainKey, safeUsername);
   if (!snapshotKey) {
     return { success: false, error: "No se pudo construir clave de sesión" };
@@ -259,15 +280,25 @@ async function captureSessionCookies({ domainKey, username }) {
 
 async function hasSessionCookies({ domainKey, username }) {
   if (!isSupportedSessionDomain(domainKey)) {
-    return { success: false, hasSnapshot: false, error: "Dominio no soportado" };
+    return {
+      success: false,
+      hasSnapshot: false,
+      error: "Dominio no soportado",
+    };
   }
 
   const safeUsername = normalizeValue(username);
   if (!safeUsername) {
-    return { success: false, hasSnapshot: false, error: "Usuario inválido para verificar sesión" };
+    return {
+      success: false,
+      hasSnapshot: false,
+      error: "Usuario inválido para verificar sesión",
+    };
   }
 
-  const snapshots = pruneSessionCookieSnapshots(await readSessionCookieSnapshots());
+  const snapshots = pruneSessionCookieSnapshots(
+    await readSessionCookieSnapshots(),
+  );
   const snapshotKey = buildProfileSnapshotKey(domainKey, safeUsername);
   const snapshot = snapshotKey ? snapshots[snapshotKey] : null;
 
@@ -287,7 +318,9 @@ async function clearDomainCookies(domainKey, cookieNames = []) {
       return false;
     }
 
-    const lowerName = String(cookie?.name || "").trim().toLowerCase();
+    const lowerName = String(cookie?.name || "")
+      .trim()
+      .toLowerCase();
     if (!lowerName || shouldIgnoreCookieName(lowerName)) {
       return false;
     }
@@ -312,23 +345,38 @@ async function clearDomainCookies(domainKey, cookieNames = []) {
 
 async function switchSessionCookies({ domainKey, targetUsername }) {
   if (!isSupportedSessionDomain(domainKey)) {
-    return { success: false, requiresLogin: true, error: "Dominio no soportado para cambio de sesión" };
+    return {
+      success: false,
+      requiresLogin: true,
+      error: "Dominio no soportado para cambio de sesión",
+    };
   }
 
   const safeTargetUsername = normalizeValue(targetUsername);
   if (!safeTargetUsername) {
-    return { success: false, requiresLogin: true, error: "Usuario destino inválido para cambio de sesión" };
-  }
-
-  const snapshots = pruneSessionCookieSnapshots(await readSessionCookieSnapshots());
-  const snapshotKey = buildProfileSnapshotKey(domainKey, safeTargetUsername);
-  const snapshot = snapshotKey ? snapshots[snapshotKey] : null;
-
-  if (!snapshot || !Array.isArray(snapshot.cookies) || snapshot.cookies.length === 0) {
     return {
       success: false,
       requiresLogin: true,
-      error: "No hay sesión guardada para el perfil destino. Se requiere iniciar sesión.",
+      error: "Usuario destino inválido para cambio de sesión",
+    };
+  }
+
+  const snapshots = pruneSessionCookieSnapshots(
+    await readSessionCookieSnapshots(),
+  );
+  const snapshotKey = buildProfileSnapshotKey(domainKey, safeTargetUsername);
+  const snapshot = snapshotKey ? snapshots[snapshotKey] : null;
+
+  if (
+    !snapshot ||
+    !Array.isArray(snapshot.cookies) ||
+    snapshot.cookies.length === 0
+  ) {
+    return {
+      success: false,
+      requiresLogin: true,
+      error:
+        "No hay sesión guardada para el perfil destino. Se requiere iniciar sesión.",
     };
   }
 
@@ -340,7 +388,9 @@ async function switchSessionCookies({ domainKey, targetUsername }) {
     ),
   );
 
-  const appliedCount = restoreResults.filter((result) => result.status === "fulfilled" && result.value).length;
+  const appliedCount = restoreResults.filter(
+    (result) => result.status === "fulfilled" && result.value,
+  ).length;
   if (appliedCount === 0) {
     return {
       success: false,
@@ -389,16 +439,27 @@ async function fetchClientQuickInfo(apiKey, apiBaseUrl, idServicio) {
   const [saldoResult, ticketsResult, clientResult, pendingTicketsResult] =
     await Promise.allSettled([
       fetch(`${apiBaseUrl}clientes/${idServicio}/saldo/`, { headers }),
-      fetch(`${apiBaseUrl}tickets/?estado=2&limit=${QUICK_INFO_TICKETS_FETCH_LIMIT}`, { headers }),
+      fetch(
+        `${apiBaseUrl}tickets/?estado=2&limit=${QUICK_INFO_TICKETS_FETCH_LIMIT}`,
+        { headers },
+      ),
       fetch(`${apiBaseUrl}clientes/${idServicio}/`, { headers }),
-      fetch(`${apiBaseUrl}tickets/?estado=1&limit=${QUICK_INFO_TICKETS_FETCH_LIMIT}`, { headers }),
+      fetch(
+        `${apiBaseUrl}tickets/?estado=1&limit=${QUICK_INFO_TICKETS_FETCH_LIMIT}`,
+        { headers },
+      ),
     ]);
 
-  const authFailed = [saldoResult, ticketsResult, clientResult, pendingTicketsResult].some(
-    (r) => r.status === "fulfilled" && r.value.status === 401,
-  );
+  const authFailed = [
+    saldoResult,
+    ticketsResult,
+    clientResult,
+    pendingTicketsResult,
+  ].some((r) => r.status === "fulfilled" && r.value.status === 401);
   if (authFailed) {
-    throw new Error("API Key inválida o sin permisos — verifica la configuración en la extensión");
+    throw new Error(
+      "API Key inválida o sin permisos — verifica la configuración en la extensión",
+    );
   }
 
   const saldoJson =
@@ -427,13 +488,15 @@ async function fetchClientQuickInfo(apiKey, apiBaseUrl, idServicio) {
       ? await clientResult.value.json().catch(() => null)
       : null;
   const plan = clientJson?.plan_internet ?? null;
+  const fechaInstalacion = clientJson?.fecha_instalacion ?? null;
 
   const pendingTicketsJson =
     pendingTicketsResult.status === "fulfilled" && pendingTicketsResult.value.ok
       ? await pendingTicketsResult.value.json().catch(() => null)
       : null;
   const pendingTicketsRaw =
-    pendingTicketsJson?.results ?? (Array.isArray(pendingTicketsJson) ? pendingTicketsJson : null);
+    pendingTicketsJson?.results ??
+    (Array.isArray(pendingTicketsJson) ? pendingTicketsJson : null);
   const pendingTickets =
     pendingTicketsRaw === null
       ? null
@@ -441,7 +504,7 @@ async function fetchClientQuickInfo(apiKey, apiBaseUrl, idServicio) {
         .filter((t) => String(t.servicio?.id_servicio) === String(idServicio))
         .slice(0, QUICK_INFO_TICKETS_DISPLAY_LIMIT);
 
-  return { saldo, tickets, plan, pendingTickets };
+  return { saldo, tickets, plan, pendingTickets, fechaInstalacion };
 }
 
 async function updateTicketStatus(apiKey, apiBaseUrl, ticketId, headers) {
@@ -476,7 +539,6 @@ async function updateTicketStatus(apiKey, apiBaseUrl, ticketId, headers) {
     throw new Error(`PUT attempt 2 ${res2.status}: ${body || res2.statusText}`);
   }
 }
-
 
 async function updateTicketsToNew(apiKey, apiBaseUrl, ticketIds) {
   let success = 0;
@@ -568,7 +630,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       })
         .then((result) => sendResponse(result))
         .catch((err) =>
-          sendResponse({ success: false, hasSnapshot: false, error: err.message }),
+          sendResponse({
+            success: false,
+            hasSnapshot: false,
+            error: err.message,
+          }),
         ),
 
     [ACTIONS.SESSION_SWITCH_COOKIES]: () =>
@@ -588,12 +654,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       })
         .then((result) => sendResponse(result))
         .catch((err) =>
-          sendResponse({ success: false, requiresLogin: true, error: err.message }),
+          sendResponse({
+            success: false,
+            requiresLogin: true,
+            error: err.message,
+          }),
         ),
 
     [ACTIONS.CLIENT_QUICK_INFO]: () => {
       if (!isWispHubSender(sender)) {
-        sendResponse({ success: false, data: { saldo: null, tickets: null }, error: "Unauthorized sender" });
+        sendResponse({
+          success: false,
+          data: { saldo: null, tickets: null },
+          error: "Unauthorized sender",
+        });
         return;
       }
       fetchClientQuickInfo(

@@ -73,6 +73,8 @@ import { initClientUploadButton } from "../features/clients/clientUploadButton.j
 import {
   initClientQuickInfo,
   updateClientQuickInfoSettings,
+  initTicketQuickInfo,
+  updateTicketQuickInfoSettings,
 } from "../features/clients/clientQuickInfo.js";
 import { initCoordinateMapButton } from "../features/coordinates/coordinateMapButton.js";
 import { initScrollTopButton } from "../features/navigation/scrollTopButton.js";
@@ -83,6 +85,7 @@ import {
   startProfileSwitchFlow,
 } from "../features/session-switcher/profileSwitch.js";
 import { resolveSessionProfileLabel } from "../config/sessionProfiles.js";
+import { applyTricks } from "../features/tricks/tricksManager.js";
 import { sendLogToPopup } from "../utils/logger.js";
 import {
   initTicketAutoFill,
@@ -158,7 +161,10 @@ function postToBridge(type, payload = {}) {
   return postBridgeMessage(type, payload, { requireToken: true });
 }
 
-function requestSessionCaptureAfterProfileSwitch(context, remainingRetries = SESSION_CAPTURE_RETRY_LIMIT) {
+function requestSessionCaptureAfterProfileSwitch(
+  context,
+  remainingRetries = SESSION_CAPTURE_RETRY_LIMIT,
+) {
   const domainKey = String(context?.domainKey || "").trim();
   const username = String(context?.username || "").trim();
   if (!domainKey || !username) {
@@ -196,7 +202,11 @@ function handleProfileSwitchCompleted(context, pending) {
 }
 
 setOnAutoFormatComplete((formatResult) => {
-  if (formatResult?.success && formatResult?.changed && !formatResult.templateFilled) {
+  if (
+    formatResult?.success &&
+    formatResult?.changed &&
+    !formatResult.templateFilled
+  ) {
     showNotification(UI_MESSAGES.AUTO_FORMAT_APPLIED, NOTIFICATION_TYPES.INFO);
   }
 
@@ -279,6 +289,8 @@ function setupMessageListener() {
       updatePriceCalcSettings(settings);
       updateTicketAutoFillSettings(settings);
       updateClientQuickInfoSettings(settings);
+      updateTicketQuickInfoSettings(settings);
+      applyTricks(settings.activeTricks);
       setTimeout(tryAutoPriceCalc, 300);
     }
 
@@ -299,16 +311,13 @@ function setupMessageListener() {
       const activeClientContext = extractActiveClientContextFromPage();
       const diagnosticReady = hasClientServiceContext(activeClientContext);
       const editor = getEditorInstance();
-      postToBridge(
-        MESSAGE_TYPES.PING_RESPONSE,
-        {
-          editorReady: isEditorReady(editor),
-          isWispHub: isWispHubDomain(window.location.href),
-          formatterEnabled: pageFeatures.formatter,
-          diagnosticReady,
-          diagnosticContext: diagnosticReady ? activeClientContext : null,
-        },
-      );
+      postToBridge(MESSAGE_TYPES.PING_RESPONSE, {
+        editorReady: isEditorReady(editor),
+        isWispHub: isWispHubDomain(window.location.href),
+        formatterEnabled: pageFeatures.formatter,
+        diagnosticReady,
+        diagnosticContext: diagnosticReady ? activeClientContext : null,
+      });
       return;
     }
 
@@ -345,7 +354,9 @@ function setupMessageListener() {
 
         const startProbe = await probeDiagnosticStart(execution);
         if (!startProbe.started) {
-          const errorMessage = normalizeDiagnosticErrorMessage(startProbe.error);
+          const errorMessage = normalizeDiagnosticErrorMessage(
+            startProbe.error,
+          );
           postToBridge(MESSAGE_TYPES.DIAGNOSTIC_RUN_ACK, {
             result: {
               success: false,
@@ -503,6 +514,12 @@ function init() {
   });
   if (/^\/clientes\/?$/.test(window.location.pathname)) {
     initClientQuickInfo({
+      quickInfoEnabled: false,
+      quickInfoDelay: 1000,
+    });
+  }
+  if (/^\/tickets\/?$/.test(window.location.pathname)) {
+    initTicketQuickInfo({
       quickInfoEnabled: false,
       quickInfoDelay: 1000,
     });
